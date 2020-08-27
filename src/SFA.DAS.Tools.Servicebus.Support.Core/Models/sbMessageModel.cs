@@ -4,6 +4,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Core
 {
     public class sbMessageModel
     {
+        
+        public Guid id { get; set; }
+        public string UserId { get; set; }
+
         public string MessageId { get; set; }
         public string TimeOfFailure { get; set; }
         public string ExceptionType { get; set; }
