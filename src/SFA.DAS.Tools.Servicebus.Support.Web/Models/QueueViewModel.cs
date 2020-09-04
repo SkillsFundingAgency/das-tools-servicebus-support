@@ -7,11 +7,9 @@ using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Models
 {
-    public class SearchViewModel
-    {
-        //public IEnumerable<string> Queues { get; set; }
+    public class QueueViewModel
+    {        
         public SelectList Queues { get; set; }
-        public string SelectedQueue { get; set; }
-        public IEnumerable<ErrorMessage> ErrorMessages { get; set; }
+        public string SelectedQueue { get; set; }        
     }
 }

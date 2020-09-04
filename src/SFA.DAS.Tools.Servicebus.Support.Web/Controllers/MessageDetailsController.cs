@@ -7,11 +7,11 @@ using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
-    public class ErrorMessageDetailsController : Controller
+    public class MessageDetailsController : Controller
     {
         private readonly ICosmosMessageService cosmosMessageService;
 
-        public ErrorMessageDetailsController(ICosmosMessageService cosmosMessageService)
+        public MessageDetailsController(ICosmosMessageService cosmosMessageService)
         {
             this.cosmosMessageService = cosmosMessageService;
         }

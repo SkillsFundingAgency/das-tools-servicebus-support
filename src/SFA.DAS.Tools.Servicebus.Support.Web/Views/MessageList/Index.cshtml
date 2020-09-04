@@ -1,0 +1,61 @@
+﻿@model IEnumerable<SFA.DAS.Tools.Servicebus.Support.Core.Models.ErrorMessage>
+
+<div>
+    
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Message Id
+                </th>
+                <th>
+                    Originating Endpoint
+                </th>
+                <th>
+                    Processing Endpoint
+                </th>
+                <th>
+                    Exception Type
+                </th>
+                <th>
+                    Message
+                </th>
+
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.OriginalMessage.MessageId)
+                    </td>
+                    <td>
+                        @item.OriginalMessage.UserProperties["NServiceBus.OriginatingEndpoint"]
+                    </td>
+                    <td>
+                        @item.OriginalMessage.UserProperties["NServiceBus.ProcessingEndpoint"]
+                    </td>
+                    <td>
+                        @item.OriginalMessage.UserProperties["NServiceBus.ExceptionInfo.ExceptionType"]
+                    </td>
+                    <td>
+                        @(item.OriginalMessage.UserProperties["NServiceBus.ExceptionInfo.Message"].ToString().Substring(0, 10))
+                    </td>
+
+                    <td>
+                        <a asp-controller="MessageDetails" asp-action="Index" asp-route-id="@item.id">Details</a> |
+                    </td>
+
+                    <t@*d>
+                        <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                        <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                        <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    </td*@>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

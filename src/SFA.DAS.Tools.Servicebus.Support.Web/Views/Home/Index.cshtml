@@ -1,74 +1,16 @@
-﻿@model SearchViewModel
+﻿@model QueueViewModel
 @{
     ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
     <h1 class="display-4">Error search</h1>
-    
-    
+        
     <form >
         <select asp-for="SelectedQueue" asp-items="Model.Queues">
             <option value="">Select queue</option>
         </select>
-        <input type="submit" value="Peek" method="post" asp-action="Peek" />
+        <input type="submit" value="Peek" method="post" asp-controller="MessageList" asp-action="Index" />
     </form>
-     
-    <table class="table">
-        <thead>
-            <tr>
-                <th>
-                    Message Id
-                </th>
-                <th>
-                    Originating Endpoint
-                </th>
-                <th>
-                    Processing Endpoint
-                </th>
-                <th>
-                    Exception Type
-                </th>
-                <th>
-                    Message
-                </th>
-
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.ErrorMessages)
-            {
-            <tr>
-                <td>
-                    @Html.DisplayFor(modelItem => item.OriginalMessage.MessageId)
-                </td>
-                <td>                    
-                    @item.OriginalMessage.UserProperties["NServiceBus.OriginatingEndpoint"]
-                </td>
-                <td>                    
-                    @item.OriginalMessage.UserProperties["NServiceBus.ProcessingEndpoint"]
-                </td>                
-                <td>
-                    @item.OriginalMessage.UserProperties["NServiceBus.ExceptionInfo.ExceptionType"]
-                </td>
-                <td>                                       
-                    @(item.OriginalMessage.UserProperties["NServiceBus.ExceptionInfo.Message"].ToString().Substring(0, 10))
-                </td>
-
-                <td>
-                    <a asp-controller="ErrorMessageDetails" asp-action="Index" asp-route-id="@item.id">Details</a> |
-                </td>
-
-                <t@*d>
-                        <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                        <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                        <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-                    </td*@>
-            </tr>
-            }
-        </tbody>
-    </table>
-
-    
+         
 </div>

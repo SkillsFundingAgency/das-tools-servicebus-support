@@ -33,11 +33,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var searchVM = new SearchViewModel
+            var searchVM = new QueueViewModel
             {
-                Queues = new SelectList(await _svcBusService.GetErrorQueuesAsync()),
-                ErrorMessages = new List<ErrorMessage>()
+                Queues = new SelectList(await _svcBusService.GetErrorQueuesAsync()),              
             };
+
             //HttpContext.Session.Set<SearchViewModel>("searchVM", searchVM);
 
             //var messages = await _svcBusService.PeekMessagesAsync("errors", 100);
@@ -52,21 +52,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             return View(searchVM);
         }
-
-
-        public async Task<IActionResult> Peek(string selectedQueue)
-        {
-            SearchViewModel searchVM = null;// HttpContext.Session.Get<SearchViewModel>("searchVM");
-
-            if (searchVM == null)
-                searchVM = new SearchViewModel();
-
-            searchVM.ErrorMessages = await _svcBusService.PeekMessagesAsync(selectedQueue, 100);
-
-            return View("Index", searchVM);
-        }
-
-
+      
         public IActionResult Privacy()
         {
             return View();
