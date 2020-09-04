@@ -12,7 +12,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration _configuration)
         {
             services.AddTransient<ISvcBusService, SvcBusService>(s => new SvcBusService(_configuration , s.GetRequiredService<ILogger<SvcBusService>>()));            
-            services.AddTransient<ICosmosMessageService, CosmosMessageService>(s => new CosmosMessageService(s.GetRequiredService<CosmosClient>(), _configuration, s.GetRequiredService<ILogger<CosmosMessageService>>()));
+            services.AddTransient<ICosmosDbContext, CosmosDbContext>(s => new CosmosDbContext(s.GetRequiredService<CosmosClient>(), _configuration, s.GetRequiredService<ILogger<CosmosDbContext>>()));
 
             services.AddSingleton(s =>
             {

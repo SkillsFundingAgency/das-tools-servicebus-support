@@ -9,16 +9,16 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
     public class MessageDetailsController : Controller
     {
-        private readonly ICosmosMessageService cosmosMessageService;
+        private readonly ICosmosDbContext cosmosMessageService;
 
-        public MessageDetailsController(ICosmosMessageService cosmosMessageService)
+        public MessageDetailsController(ICosmosDbContext cosmosMessageService)
         {
             this.cosmosMessageService = cosmosMessageService;
         }
 
         public async Task<IActionResult> Index(string id)
         {
-            var errorMessage = await cosmosMessageService.GetErrorMessageAsync("123456", "5e1c1857-e39d-4e1d-baf1-a0c61680c5a2");
+            var errorMessage = await cosmosMessageService.GetQueueMessageAsync(UserService.GetUserId(), id);
             return View(errorMessage);
         }
     }

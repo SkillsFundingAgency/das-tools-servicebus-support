@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Core.Models
 {
-    public class ErrorMessage
+    public class QueueMessage
     {
         public Guid id { get; set; }
         public string userId { get; set; }

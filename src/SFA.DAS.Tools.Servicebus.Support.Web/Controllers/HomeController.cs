@@ -20,23 +20,37 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly ISvcBusService _svcBusService;
-        private readonly ICosmosMessageService _cosmosMessageService;
+        private readonly ICosmosDbContext _cosmosDbContext;
 
 
-        public HomeController(ILogger<HomeController> logger, ISvcBusService svcBusService, ICosmosMessageService cosmosMessageService)
+        public HomeController(ILogger<HomeController> logger, ISvcBusService svcBusService, ICosmosDbContext cosmosDbContext)
         {
             _logger = logger;
             _svcBusService = svcBusService;
-            _cosmosMessageService = cosmosMessageService;
+            _cosmosDbContext = cosmosDbContext;
 
         }
 
         public async Task<IActionResult> Index()
         {
-            var searchVM = new QueueViewModel
+
+            var count = await _cosmosDbContext.GetUserMessageCountAsync("123456");
+
+            if ( count > 0)
             {
-                Queues = new SelectList(await _svcBusService.GetErrorQueuesAsync()),              
-            };
+                //user has exisitng session 
+                return RedirectToAction(actionName: "Index", controllerName: "MessageList");
+            }
+            else
+            {
+                var searchVM = new QueueViewModel
+                {
+                    Queues = new SelectList(await _svcBusService.GetErrorQueuesAsync()),
+                };
+
+                return View(searchVM);
+            }
+            
 
             //HttpContext.Session.Set<SearchViewModel>("searchVM", searchVM);
 
@@ -50,7 +64,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             //var messages = await _svcBusService.ReceiveMessagesAsync("errors", 10);
 
 
-            return View(searchVM);
+            
         }
       
         public IActionResult Privacy()

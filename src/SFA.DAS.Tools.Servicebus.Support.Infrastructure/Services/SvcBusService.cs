@@ -19,10 +19,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
     public interface ISvcBusService
     {
         Task<IEnumerable<string>> GetErrorQueuesAsync();
-        Task<IEnumerable<ErrorMessage>> PeekMessagesAsync(string queueName, int qty);
-        Task<IEnumerable<ErrorMessage>> ReceiveMessagesAsync(string queueName, int qty);                
-        Task SendMessageToErrorQueueAsync(ErrorMessage msg);
-        Task SendMessageToProcessingQueueAsync(ErrorMessage msg);
+        Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty);
+        Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty);                
+        Task SendMessageToErrorQueueAsync(QueueMessage msg);
+        Task SendMessageToProcessingQueueAsync(QueueMessage msg);
     }
 
     public class SvcBusService : ISvcBusService
@@ -56,7 +56,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             return errorQueues;
         }
 
-        public async Task<IEnumerable<ErrorMessage>> PeekMessagesAsync(string queueName, int qty)
+        public async Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty)
         {                                   
             var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
             var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
@@ -64,7 +64,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
             int totalMessages = 0;
             IList<Message> peekedMessages;
-            var formattedMessages = new List<ErrorMessage>();
+            var formattedMessages = new List<QueueMessage>();
 
             var messageQtyToGet = CalculateMessageQtyToGet(qty, 0, batchSize);
             peekedMessages = await messageReceiver.PeekAsync(messageQtyToGet);
@@ -77,7 +77,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                     totalMessages += peekedMessages.Count;
                     foreach (var msg in peekedMessages)
                     {
-                        formattedMessages.Add(new ErrorMessage
+                        formattedMessages.Add(new QueueMessage
                         {
                             id = Guid.NewGuid(),
                             userId = "123456",
@@ -97,7 +97,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             return formattedMessages;
         }
 
-        public async Task<IEnumerable<ErrorMessage>> ReceiveMessagesAsync(string queueName, int qty)
+        public async Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty)
         {            
             var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
             var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
@@ -106,7 +106,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
             int totalMessages = 0;
             IList<Message> receivedMessages;
-            var formattedMessages = new List<ErrorMessage>();
+            var formattedMessages = new List<QueueMessage>();
 
             var messageQtyToGet = CalculateMessageQtyToGet(qty, 0, batchSize);
 
@@ -121,7 +121,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                     totalMessages += receivedMessages.Count;
                     foreach (var msg in receivedMessages)
                     {
-                        formattedMessages.Add(new ErrorMessage
+                        formattedMessages.Add(new QueueMessage
                         {
                             id = Guid.NewGuid(),
                             userId = "123456",
@@ -140,12 +140,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             return formattedMessages;
         }
 
-        public async Task SendMessageToErrorQueueAsync(ErrorMessage msg)
+        public async Task SendMessageToErrorQueueAsync(QueueMessage msg)
         {
             await SendMessageAsync(msg, msg.Queue);
         }
 
-        public async Task SendMessageToProcessingQueueAsync(ErrorMessage msg)
+        public async Task SendMessageToProcessingQueueAsync(QueueMessage msg)
         {
             var queueName = msg.OriginalMessage.UserProperties["NServiceBus.ProcessingEndpoint"].ToString();
             await SendMessageAsync(msg, queueName);
@@ -162,7 +162,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             return 0;
         }
 
-        private async Task SendMessageAsync(ErrorMessage errorMessage, string queueName)
+        private async Task SendMessageAsync(QueueMessage errorMessage, string queueName)
         {
             var sbConnectionString = _config.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
 
