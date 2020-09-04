@@ -1,7 +1,7 @@
-﻿@model IEnumerable<SFA.DAS.Tools.Servicebus.Support.Core.Models.QueueMessage>
+﻿@model MessageListViewModel
 
 <div>
-    
+    <h1 class="display-4"> @Model.QueueName</h1>
 
     <table class="table">
         <thead>
@@ -26,7 +26,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model)
+            @foreach (var item in Model.Messages)
             {
                 <tr>
                     <td>
