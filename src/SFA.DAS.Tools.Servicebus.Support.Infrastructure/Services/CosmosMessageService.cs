@@ -8,6 +8,7 @@ using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         Task BulkCreateAsync(IEnumerable<ErrorMessage> messsages);        
         void Delete();
         Task<IEnumerable<ErrorMessage>> GetErrorMessagesAsync(string userId);
+        Task<ErrorMessage> GetErrorMessageAsync(string userId, string messageId);
     }
 
 
@@ -124,6 +126,23 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             }
 
             return messages;                          
+        }
+
+        public async Task<ErrorMessage> GetErrorMessageAsync(string userId, string messageId)
+        {
+            var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.id = '{messageId}'";
+
+            Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
+            Container container = await database.CreateContainerIfNotExistsAsync(
+                "Session",
+                "/userId",
+                400);
+
+            QueryDefinition queryDefinition = new QueryDefinition(sqlQuery);
+            FeedIterator<ErrorMessage> queryFeedIterator = container.GetItemQueryIterator<ErrorMessage>(queryDefinition);
+            FeedResponse<ErrorMessage> currentResults = await queryFeedIterator.ReadNextAsync();
+
+            return currentResults.FirstOrDefault();
         }
     }
 }
