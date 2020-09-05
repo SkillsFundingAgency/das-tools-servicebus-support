@@ -76,7 +76,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             foreach (var item in itemsToInsert)
             {
-                tasks.Add(container.CreateItemStreamAsync(item, new PartitionKey("123456"),requestOptions)
+                tasks.Add(container.CreateItemStreamAsync(item, new PartitionKey(UserService.GetUserId()),requestOptions)
                     .ContinueWith((Task<ResponseMessage> task) =>
                     {
                         using (ResponseMessage response = task.Result)

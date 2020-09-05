@@ -34,9 +34,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         public async Task<IActionResult> Index()
         {
 
-            var count = await _cosmosDbContext.GetUserMessageCountAsync("123456");
+            var count = await _cosmosDbContext.GetUserMessageCountAsync(UserService.GetUserId());
 
-            if ( count > 0)
+            if (count > 0)
             {
                 //user has exisitng session 
                 return RedirectToAction(actionName: "Index", controllerName: "MessageList");
@@ -50,23 +50,27 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
                 return View(searchVM);
             }
-            
+
 
             //HttpContext.Session.Set<SearchViewModel>("searchVM", searchVM);
 
-            //var messages = await _svcBusService.PeekMessagesAsync("errors", 100);
-            //await _cosmosMessageService.BulkCreateAsync(messages);
+            //var messages = await _svcBusService.PeekMessagesAsync("sfa.das.notifications.messagehandlers-errors", 100);
+            //await _cosmosDbContext.BulkCreateQueueMessagesAsync(messages);
 
 
-            //var mdbMessages = await _cosmosMessageService.GetErrorMessagesAsync("123456");
-            //_svcBusService.SendMessageAsync(messages.ToList()[0]);
+            //var mdbMessages = await _cosmosDbContext.GetQueueMessagesAsync("123456");
+            //foreach (var msg in mdbMessages)
+            //{
+            //    await _svcBusService.SendMessageToErrorQueueAsync(msg);
+            //}
+
 
             //var messages = await _svcBusService.ReceiveMessagesAsync("errors", 10);
 
+            //return View();
 
-            
         }
-      
+
         public IActionResult Privacy()
         {
             return View();

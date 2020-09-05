@@ -10,7 +10,7 @@
         <select asp-for="SelectedQueue" asp-items="Model.Queues">
             <option value="">Select queue</option>
         </select>
-        <input type="submit" value="Peek" method="post" asp-controller="MessageList" asp-action="Index" />
+        <input type="submit" value="Receive" method="post" asp-controller="MessageList" asp-action="ReceiveMessages" />
     </form>
          
 </div>

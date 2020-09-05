@@ -21,7 +21,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _cosmosDbContext = cosmosDbContext;
         }
 
-        public async Task<IActionResult> Index(string selectedQueue)
+        public async Task<IActionResult> Index()
         {
             var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId());
             
@@ -32,6 +32,15 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             };            
 
             return View(vm);
+        }
+
+
+        public async Task<IActionResult> ReceiveMessages(string selectedQueue)
+        {
+            var messages = await _svcBusService.ReceiveMessagesAsync(selectedQueue, 1);
+            await _cosmosDbContext.BulkCreateQueueMessagesAsync(messages);
+            
+            return RedirectToAction("Index");
         }
 
         private string getQueueName(IEnumerable<QueueMessage> messages)

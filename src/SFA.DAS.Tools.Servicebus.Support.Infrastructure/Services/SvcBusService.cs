@@ -80,7 +80,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                         formattedMessages.Add(new QueueMessage
                         {
                             id = Guid.NewGuid(),
-                            userId = "123456",
+                            userId = UserService.GetUserId(),
                             OriginalMessage = msg,
                             Queue = queueName,
                             IsReadOnly = true
@@ -116,7 +116,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             {
                 _logger.LogDebug($"Received Message Count: {receivedMessages.Count}");
 
-                while (receivedMessages.Count > 0 || totalMessages < qty)
+                while (receivedMessages?.Count > 0 || totalMessages < qty)
                 {
                     totalMessages += receivedMessages.Count;
                     foreach (var msg in receivedMessages)
@@ -124,14 +124,16 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                         formattedMessages.Add(new QueueMessage
                         {
                             id = Guid.NewGuid(),
-                            userId = "123456",
+                            userId = UserService.GetUserId(),
                             OriginalMessage = msg,
                             Queue = queueName,
                             IsReadOnly = false
                         });
+                        await messageReceiver.CompleteAsync(msg.SystemProperties.LockToken);
                     }
+                    
                     messageQtyToGet = CalculateMessageQtyToGet(qty, totalMessages, batchSize);
-                    receivedMessages = await messageReceiver.ReceiveAsync(messageQtyToGet);
+                    receivedMessages = messageQtyToGet > 0 ? await messageReceiver.ReceiveAsync(messageQtyToGet) : null;
                 }
             }
             
