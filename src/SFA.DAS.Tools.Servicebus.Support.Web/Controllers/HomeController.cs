@@ -45,7 +45,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             {
                 var searchVM = new QueueViewModel
                 {
-                    Queues = new SelectList(await _svcBusService.GetErrorQueuesAsync()),
+                    Queues = await _svcBusService.GetErrorMessageQueuesAsync(),
                 };
 
                 return View(searchVM);

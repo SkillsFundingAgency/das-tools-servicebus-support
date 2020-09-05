@@ -9,7 +9,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Models
 {
     public class QueueViewModel
     {        
-        public SelectList Queues { get; set; }
+        public IEnumerable<QueueInfo> Queues { get; set; }
         public string SelectedQueue { get; set; }        
     }
 }

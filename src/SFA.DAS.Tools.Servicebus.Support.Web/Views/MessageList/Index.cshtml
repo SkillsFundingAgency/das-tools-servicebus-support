@@ -1,7 +1,11 @@
 ﻿@model MessageListViewModel
 
 <div>
-    <h1 class="display-3"> @Model.QueueName</h1>
+    <h3 class="display-5"> @Model.QueueInfo.Name</h3>
+    <div>
+        <div>Investigating: @Model.Messages.Count() </div>
+        <div>On the queue: @Model.QueueInfo.MessageCount </div>
+    </div>
 
     <table class="table">
         <thead>

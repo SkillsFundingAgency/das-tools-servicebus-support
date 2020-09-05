@@ -24,20 +24,22 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         public async Task<IActionResult> Index()
         {
             var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId());
-            
+
+            var queueName = getQueueName(messages);
+
             var vm = new MessageListViewModel()
             {
                 Messages = messages,
-                QueueName = getQueueName(messages)
+                QueueInfo = await _svcBusService.GetQueueDetailsAsync(queueName)
             };            
 
             return View(vm);
         }
 
 
-        public async Task<IActionResult> ReceiveMessages(string selectedQueue)
+        public async Task<IActionResult> ReceiveMessages(string queue)
         {
-            var messages = await _svcBusService.ReceiveMessagesAsync(selectedQueue, 1);
+            var messages = await _svcBusService.ReceiveMessagesAsync(queue, 1);
             await _cosmosDbContext.BulkCreateQueueMessagesAsync(messages);
             
             return RedirectToAction("Index");

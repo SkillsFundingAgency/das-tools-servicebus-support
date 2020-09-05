@@ -18,9 +18,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 {
     public interface ISvcBusService
     {
-        Task<IEnumerable<string>> GetErrorQueuesAsync();
+        Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync();
+        Task<QueueInfo> GetQueueDetailsAsync(string name);
         Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty);
-        Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty);                
+        Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty);
         Task SendMessageToErrorQueueAsync(QueueMessage msg);
         Task SendMessageToProcessingQueueAsync(QueueMessage msg);
     }
@@ -42,22 +43,48 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             batchSize = _config.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize");
         }
 
-        public async Task<IEnumerable<string>> GetErrorQueuesAsync()
-        {            
+        public async Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync()
+        {
+            var queues = new List<QueueInfo>();
+
             var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
             var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
             var managementClient = new ManagementClient(sbConnectionStringBuilder, tokenProvider);
 
-            var queues = await managementClient.GetQueuesAsync().ConfigureAwait(false);
+            var queuesDetails = await managementClient.GetQueuesRuntimeInfoAsync().ConfigureAwait(false);
             var regexString = _config.GetValue<string>("ServiceBusRepoSettings:QueueSelectionRegex");
             var queueSelectionRegex = new Regex(regexString);
-            var errorQueues = queues.Where(q => queueSelectionRegex.IsMatch(q.Path)).Select(x => x.Path);
+            var errorQueues = queuesDetails.Where(q => queueSelectionRegex.IsMatch(q.Path));//.Select(x => x.Path);
 
-            return errorQueues;
+            foreach (var queue in errorQueues)
+            {
+                queues.Add(new QueueInfo()
+                {
+                    Name = queue.Path,
+                    MessageCount = queue.MessageCount
+                });
+            }
+
+            return queues;
+        }
+
+        public async Task<QueueInfo> GetQueueDetailsAsync(string name)
+        {
+            var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
+            var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
+            var managementClient = new ManagementClient(sbConnectionStringBuilder, tokenProvider);
+
+            var queue = await managementClient.GetQueueRuntimeInfoAsync(name).ConfigureAwait(false);
+
+            return new QueueInfo()
+            {
+                Name = queue.Path,
+                MessageCount = queue.MessageCount
+            };
         }
 
         public async Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty)
-        {                                   
+        {
             var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
             var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
             var messageReceiver = new MessageReceiver(sbConnectionStringBuilder.Endpoint, queueName, tokenProvider);
@@ -98,7 +125,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
         }
 
         public async Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty)
-        {            
+        {
             var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
             var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
             var messageReceiver = new MessageReceiver(sbConnectionStringBuilder.Endpoint, queueName, tokenProvider);
@@ -112,7 +139,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
             receivedMessages = await messageReceiver.ReceiveAsync(messageQtyToGet);
 
-            if ( receivedMessages != null)
+            if (receivedMessages != null)
             {
                 _logger.LogDebug($"Received Message Count: {receivedMessages.Count}");
 
@@ -131,12 +158,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                         });
                         await messageReceiver.CompleteAsync(msg.SystemProperties.LockToken);
                     }
-                    
+
                     messageQtyToGet = CalculateMessageQtyToGet(qty, totalMessages, batchSize);
                     receivedMessages = messageQtyToGet > 0 ? await messageReceiver.ReceiveAsync(messageQtyToGet) : null;
                 }
             }
-            
+
             await messageReceiver.CloseAsync();
 
             return formattedMessages;
@@ -176,6 +203,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             {
                 await messageSender.SendAsync(errorMessage.OriginalMessage);
             }
-        }        
+        }
     }
 }

@@ -8,7 +8,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Models
 {
     public class MessageListViewModel
     {
-        public string QueueName { get; set; }
+        public QueueInfo QueueInfo { get; set; }
         public IEnumerable<QueueMessage> Messages { get; set; }
     }
 }
