@@ -7,6 +7,11 @@
         <div>On the queue: @Model.QueueInfo.MessageCount </div>
     </div>
 
+    <div>
+
+        <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name">Get More Messages</a>
+    </div>
+
     <table class="table">
         <thead>
             <tr>
@@ -50,7 +55,7 @@
                     </td>
 
                     <td>
-                        <a asp-controller="MessageDetails" asp-action="Index" asp-route-id="@item.id">Details</a> |
+                        <a asp-controller="MessageDetails" asp-action="Index" asp-route-id="@item.id">Details</a> 
                     </td>
 
                     <t@*d>
