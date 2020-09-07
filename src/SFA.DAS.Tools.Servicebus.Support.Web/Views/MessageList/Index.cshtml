@@ -9,8 +9,8 @@
 
     <div>
 
-        <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name">Get More Messages</a> | 
-        <a asp-controller="MessageList" asp-action="AbortMessages">Abort All</a>
+        <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()">Get More Messages</a> | 
+        <a asp-controller="MessageList" asp-action="AbortMessages" onclick="displayBusyIndicator()">Abort All</a>
     </div>
 
     <table class="table">
