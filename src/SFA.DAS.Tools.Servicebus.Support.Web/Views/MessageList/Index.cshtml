@@ -9,12 +9,16 @@
 
     <div>
 
-        <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name">Get More Messages</a>
+        <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name">Get More Messages</a> | 
+        <a asp-controller="MessageList" asp-action="AbortMessages">Abort All</a>
     </div>
 
     <table class="table">
         <thead>
             <tr>
+                <th>
+
+                </th>
                 <th>
                     Message Id
                 </th>

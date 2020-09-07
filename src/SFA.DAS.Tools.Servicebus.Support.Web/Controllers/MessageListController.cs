@@ -39,11 +39,25 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> ReceiveMessages(string queue)
         {
-            var messages = await _svcBusService.ReceiveMessagesAsync(queue, 1);//todo custom qty 
+            var messages = await _svcBusService.ReceiveMessagesAsync(queue, 10);//todo custom qty 
             await _cosmosDbContext.BulkCreateQueueMessagesAsync(messages);
             
             return RedirectToAction("Index");
         }
+
+        public async Task<IActionResult> AbortMessages()
+        {
+            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId());            
+            
+            foreach(var msg in messages)
+            {
+                await _svcBusService.SendMessageToErrorQueueAsync(msg);
+                await _cosmosDbContext.DeleteQueueMessageAsync(msg);
+            }                        
+
+            return RedirectToAction("Index", "Home");
+        }
+        
 
         private string getQueueName(IEnumerable<QueueMessage> messages)
         {

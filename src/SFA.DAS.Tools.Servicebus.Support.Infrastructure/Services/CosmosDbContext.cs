@@ -19,7 +19,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
     {
         Task CreateQueueMessageAsync(QueueMessage msg);
         Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages);        
-        void DeleteQueueMessage();
+        Task DeleteQueueMessageAsync(QueueMessage msg);
         Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId);
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
         Task<int> GetUserMessageCountAsync(string userId);
@@ -94,9 +94,15 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
 
 
-        public void DeleteQueueMessage()
+        public async Task DeleteQueueMessageAsync(QueueMessage msg)
         {
-            throw new NotImplementedException();
+            Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
+            Container container = await database.CreateContainerIfNotExistsAsync(
+                "Session",
+                "/userId",
+                400);
+
+            await container.DeleteItemAsync<QueueMessage>(msg.id.ToString(), new PartitionKey(msg.userId));
         }
 
         public async Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId)
