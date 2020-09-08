@@ -31,7 +31,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             {
                 Messages = messages,
                 QueueInfo = await _svcBusService.GetQueueDetailsAsync(queueName)
-            };            
+            };
 
             return View(vm);
         }
@@ -39,30 +39,31 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> ReceiveMessages(string queue)
         {
-            var messages = await _svcBusService.ReceiveMessagesAsync(queue, 50);//todo custom qty 
-            await _cosmosDbContext.BulkCreateQueueMessagesAsync(messages);
-            
+            var data = await _svcBusService.ReceiveMessagesAsync(queue, 50);//todo custom qty 
+            var result = await _cosmosDbContext.BulkCreateQueueMessagesAsync(data.Messages);
+            await _svcBusService.Complete(data.MessageReceiver, result.SuccessfulDocumentsLockTokens);
+
             return RedirectToAction("Index");
         }
 
         public async Task<IActionResult> AbortMessages()
         {
-            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId());            
-            
-            foreach(var msg in messages)
+            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId());
+
+            foreach (var msg in messages)
             {
                 await _svcBusService.SendMessageToErrorQueueAsync(msg);
                 await _cosmosDbContext.DeleteQueueMessageAsync(msg);
-            }                        
+            }
 
             return RedirectToAction("Index", "Home");
         }
-        
+
 
         private string getQueueName(IEnumerable<QueueMessage> messages)
         {
             var name = "";
-            if ( messages?.Count() > 0 )
+            if (messages?.Count() > 0)
             {
                 name = messages.First().Queue;
             }

@@ -7,6 +7,7 @@ using SFA.DAS.Tools.Servicebus.Support.Core;
 using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -18,7 +19,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
     public interface ICosmosDbContext
     {
         Task CreateQueueMessageAsync(QueueMessage msg);
-        Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages);        
+        Task<BulkOperationResponse<QueueMessage>> BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages);        
         Task DeleteQueueMessageAsync(QueueMessage msg);
         Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId);
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
@@ -52,7 +53,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             ItemResponse<QueueMessage> response = await container.CreateItemAsync(msg);
 
         }
-        public async Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages)
+        public async Task<BulkOperationResponse<QueueMessage>> BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages)
         {                                   
             Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
             Container container = await database.CreateContainerIfNotExistsAsync(
@@ -60,36 +61,28 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
                 "/userId",
                 400);
 
-            List<Stream> itemsToInsert = new List<Stream>();
-            var serializeOptions = new JsonSerializerOptions();
-            serializeOptions.Converters.Add(new TimeSpanToStringConverter());
+
+
+            List<Task<OperationResponse<QueueMessage>>> tasks = new List<Task<OperationResponse<QueueMessage>>>();
+            ItemRequestOptions requestOptions = new ItemRequestOptions() { EnableContentResponseOnWrite = false };
 
             foreach (var msg in messsages)
             {
-                MemoryStream stream = new MemoryStream();
-                await JsonSerializer.SerializeAsync(stream, msg,serializeOptions);
-                itemsToInsert.Add(stream);
+                tasks.Add(container.CreateItemAsync(msg, new PartitionKey(UserService.GetUserId()), requestOptions).CaptureOperationResponse(msg));            
             }
 
-            List<Task> tasks = new List<Task>();
-            ItemRequestOptions requestOptions = new ItemRequestOptions() { EnableContentResponseOnWrite = false };
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            await Task.WhenAll(tasks);
+            stopwatch.Stop();
 
-            foreach (var item in itemsToInsert)
+            return new BulkOperationResponse<QueueMessage>()
             {
-                tasks.Add(container.CreateItemStreamAsync(item, new PartitionKey(UserService.GetUserId()),requestOptions)
-                    .ContinueWith((Task<ResponseMessage> task) =>
-                    {
-                        using (ResponseMessage response = task.Result)
-                        {
-                            if (!response.IsSuccessStatusCode)
-                            {
-                                Console.WriteLine($"Received {response.StatusCode} ({response.ErrorMessage}).");
-                            }
-                        }
-                    }));
-            }
-
-            await Task.WhenAll(tasks);            
+                TotalTimeTaken = stopwatch.Elapsed,
+                TotalRequestUnitsConsumed = tasks.Sum(task => task.Result.RequestUnitsConsumed),
+                SuccessfulDocuments = tasks.Count(task => task.Result.IsSuccessful),
+                Failures = tasks.Where(task => !task.Result.IsSuccessful).Select(task => (task.Result.Item, task.Result.CosmosException)).ToList(),
+                SuccessfulDocumentsLockTokens = tasks.Where(task => task.Result.IsSuccessful).Select(task=> task.Result.Item.OriginalMessage.SystemProperties.LockToken).ToList()
+            };
         }
 
 

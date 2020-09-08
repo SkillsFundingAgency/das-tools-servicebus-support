@@ -38,7 +38,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             if (count > 0)
             {
-                //user has exisitng session 
+                //user has exisitng session
                 return RedirectToAction(actionName: "Index", controllerName: "MessageList");
             }
             else
@@ -54,7 +54,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             //HttpContext.Session.Set<SearchViewModel>("searchVM", searchVM);
 
-            //var messages = await _svcBusService.PeekMessagesAsync("sfa.das.notifications.messagehandlers-errors", 100);
+            //var messages = await _svcBusService.PeekMessagesAsync("sfa.das.notifications.messagehandlers-errors", 250);
             //await _cosmosDbContext.BulkCreateQueueMessagesAsync(messages);
 
 
