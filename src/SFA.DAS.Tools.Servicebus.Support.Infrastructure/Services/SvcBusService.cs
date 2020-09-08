@@ -21,9 +21,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
         Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync();
         Task<QueueInfo> GetQueueDetailsAsync(string name);
         Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty);
-        Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty);
+        Task<ReceiveMessagesResponse> ReceiveMessagesAsync(string queueName, int qty);
         Task SendMessageToErrorQueueAsync(QueueMessage msg);
         Task SendMessageToProcessingQueueAsync(QueueMessage msg);
+        Task Complete(MessageReceiver messageReceiver, IEnumerable<string> lockTokens);
+        Task Complete(MessageReceiver messageReceiver, string lockToken);
     }
 
     public class SvcBusService : ISvcBusService
@@ -34,6 +36,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
         public readonly string serviceBusConnectionString;
         private readonly int batchSize;
 
+        private TokenProvider _tokenProvider;
+        private ServiceBusConnectionStringBuilder _sbConnectionStringBuilder;
+        private ManagementClient _managementClient;
+
         public SvcBusService(IConfiguration config, ILogger<SvcBusService> logger)
         {
             _config = config ?? throw new Exception("config is null");
@@ -41,17 +47,17 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
             serviceBusConnectionString = _config.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
             batchSize = _config.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize");
+
+            _tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
+            _sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
+            _managementClient = new ManagementClient(_sbConnectionStringBuilder, _tokenProvider);
         }
 
         public async Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync()
         {
             var queues = new List<QueueInfo>();
 
-            var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-            var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
-            var managementClient = new ManagementClient(sbConnectionStringBuilder, tokenProvider);
-
-            var queuesDetails = await managementClient.GetQueuesRuntimeInfoAsync().ConfigureAwait(false);
+            var queuesDetails = await _managementClient.GetQueuesRuntimeInfoAsync().ConfigureAwait(false);
             var regexString = _config.GetValue<string>("ServiceBusRepoSettings:QueueSelectionRegex");
             var queueSelectionRegex = new Regex(regexString);
             var errorQueues = queuesDetails.Where(q => queueSelectionRegex.IsMatch(q.Path));//.Select(x => x.Path);
@@ -70,11 +76,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public async Task<QueueInfo> GetQueueDetailsAsync(string name)
         {
-            var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-            var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
-            var managementClient = new ManagementClient(sbConnectionStringBuilder, tokenProvider);
-
-            var queue = await managementClient.GetQueueRuntimeInfoAsync(name).ConfigureAwait(false);
+            var queue = await _managementClient.GetQueueRuntimeInfoAsync(name).ConfigureAwait(false);
 
             return new QueueInfo()
             {
@@ -85,9 +87,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public async Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty)
         {
-            var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
-            var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-            var messageReceiver = new MessageReceiver(sbConnectionStringBuilder.Endpoint, queueName, tokenProvider);
+
+            var messageReceiver = new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
 
             int totalMessages = 0;
             IList<Message> peekedMessages;
@@ -106,7 +107,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                     {
                         formattedMessages.Add(new QueueMessage
                         {
-                            id = Guid.NewGuid(),
+                            id = msg.MessageId,
                             userId = UserService.GetUserId(),
                             OriginalMessage = msg,
                             Queue = queueName,
@@ -124,11 +125,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             return formattedMessages;
         }
 
-        public async Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty)
+        public async Task<ReceiveMessagesResponse> ReceiveMessagesAsync(string queueName, int qty)
         {
-            var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
-            var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-            var messageReceiver = new MessageReceiver(sbConnectionStringBuilder.Endpoint, queueName, tokenProvider);
+
+            var messageReceiver = new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
 
 
             int totalMessages = 0;
@@ -143,20 +143,20 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             {
                 _logger.LogDebug($"Received Message Count: {receivedMessages.Count}");
 
-                while (receivedMessages?.Count > 0 || totalMessages < qty)
+                while (receivedMessages?.Count > 0 && totalMessages < qty)
                 {
                     totalMessages += receivedMessages.Count;
                     foreach (var msg in receivedMessages)
                     {
                         formattedMessages.Add(new QueueMessage
                         {
-                            id = Guid.NewGuid(),
+                            id = msg.MessageId,
                             userId = UserService.GetUserId(),
                             OriginalMessage = msg,
                             Queue = queueName,
                             IsReadOnly = false
                         });
-                        await messageReceiver.CompleteAsync(msg.SystemProperties.LockToken);
+                        //await messageReceiver.CompleteAsync(msg.SystemProperties.LockToken);
                     }
 
                     messageQtyToGet = CalculateMessageQtyToGet(qty, totalMessages, batchSize);
@@ -164,9 +164,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                 }
             }
 
-            await messageReceiver.CloseAsync();
+            //await messageReceiver.CloseAsync();
 
-            return formattedMessages;
+            return new ReceiveMessagesResponse()
+            {
+                Messages = formattedMessages,
+                MessageReceiver = messageReceiver
+            };
         }
 
         public async Task SendMessageToErrorQueueAsync(QueueMessage msg)
@@ -193,16 +197,25 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         private async Task SendMessageAsync(QueueMessage errorMessage, string queueName)
         {
-            var sbConnectionString = _config.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
 
-            var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(sbConnectionString);
-            var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-            var messageSender = new MessageSender(sbConnectionStringBuilder.Endpoint, queueName, tokenProvider);
+            var messageSender = new MessageSender(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
 
             if (!errorMessage.IsReadOnly)
             {
                 await messageSender.SendAsync(errorMessage.OriginalMessage);
             }
+        }
+
+        public async Task Complete(MessageReceiver messageReceiver, IEnumerable<string> lockTokens)
+        {
+            if (lockTokens.Count() > 0)
+                await messageReceiver.CompleteAsync(lockTokens).ConfigureAwait(false);
+        }
+
+        public async Task Complete(MessageReceiver messageReceiver, string lockToken)
+        {
+            if (!string.IsNullOrEmpty(lockToken))
+                await messageReceiver.CompleteAsync(lockToken).ConfigureAwait(false);
         }
     }
 }
