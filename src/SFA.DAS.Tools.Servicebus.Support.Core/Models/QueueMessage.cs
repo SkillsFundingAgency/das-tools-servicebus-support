@@ -7,7 +7,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Core.Models
 {
     public class QueueMessage
     {
-        public Guid id { get; set; }
+        public string id { get; set; }
         public string userId { get; set; }
         public Message OriginalMessage { get; set; }
         public string Queue { get; set; }

@@ -35,7 +35,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public readonly string serviceBusConnectionString;
         private readonly int batchSize;
-        
+
         private TokenProvider _tokenProvider;
         private ServiceBusConnectionStringBuilder _sbConnectionStringBuilder;
         private ManagementClient _managementClient;
@@ -56,7 +56,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
         public async Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync()
         {
             var queues = new List<QueueInfo>();
-           
+
             var queuesDetails = await _managementClient.GetQueuesRuntimeInfoAsync().ConfigureAwait(false);
             var regexString = _config.GetValue<string>("ServiceBusRepoSettings:QueueSelectionRegex");
             var queueSelectionRegex = new Regex(regexString);
@@ -75,7 +75,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
         }
 
         public async Task<QueueInfo> GetQueueDetailsAsync(string name)
-        {           
+        {
             var queue = await _managementClient.GetQueueRuntimeInfoAsync(name).ConfigureAwait(false);
 
             return new QueueInfo()
@@ -87,7 +87,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public async Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty)
         {
-            
+
             var messageReceiver = new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
 
             int totalMessages = 0;
@@ -107,7 +107,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                     {
                         formattedMessages.Add(new QueueMessage
                         {
-                            id = Guid.NewGuid(),
+                            id = msg.MessageId,
                             userId = UserService.GetUserId(),
                             OriginalMessage = msg,
                             Queue = queueName,
@@ -127,7 +127,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public async Task<ReceiveMessagesResponse> ReceiveMessagesAsync(string queueName, int qty)
         {
-            
+
             var messageReceiver = new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
 
 
@@ -150,7 +150,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                     {
                         formattedMessages.Add(new QueueMessage
                         {
-                            id = Guid.NewGuid(),
+                            id = msg.MessageId,
                             userId = UserService.GetUserId(),
                             OriginalMessage = msg,
                             Queue = queueName,
@@ -197,7 +197,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         private async Task SendMessageAsync(QueueMessage errorMessage, string queueName)
         {
-            
+
             var messageSender = new MessageSender(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
 
             if (!errorMessage.IsReadOnly)
@@ -207,13 +207,15 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
         }
 
         public async Task Complete(MessageReceiver messageReceiver, IEnumerable<string> lockTokens)
-        {            
-            await messageReceiver.CompleteAsync(lockTokens).ConfigureAwait(false);
+        {
+            if (lockTokens.Count() > 0)
+                await messageReceiver.CompleteAsync(lockTokens).ConfigureAwait(false);
         }
 
         public async Task Complete(MessageReceiver messageReceiver, string lockToken)
-        {            
-            await messageReceiver.CompleteAsync(lockToken).ConfigureAwait(false);
+        {
+            if (!string.IsNullOrEmpty(lockToken))
+                await messageReceiver.CompleteAsync(lockToken).ConfigureAwait(false);
         }
     }
 }

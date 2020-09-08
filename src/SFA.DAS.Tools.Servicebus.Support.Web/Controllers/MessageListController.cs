@@ -41,7 +41,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         {
             var data = await _svcBusService.ReceiveMessagesAsync(queue, 50);//todo custom qty 
             var result = await _cosmosDbContext.BulkCreateQueueMessagesAsync(data.Messages);
-            await _svcBusService.Complete(data.MessageReceiver, result.SuccessfulDocumentsLockTokens);
+            //todo display errors 
+            if ( result.SuccessfulDocuments > 0 )
+                await _svcBusService.Complete(data.MessageReceiver, result.SuccessfulDocumentsLockTokens);
 
             return RedirectToAction("Index");
         }
