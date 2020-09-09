@@ -1,32 +1,14 @@
 ﻿using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using SFA.DAS.Tools.Servicebus.Support.Core;
 using SFA.DAS.Tools.Servicebus.Support.Core.Models;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 {
-    public interface ICosmosDbContext
-    {
-        Task CreateQueueMessageAsync(QueueMessage msg);
-        Task<BulkOperationResponse<QueueMessage>> BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages);        
-        Task DeleteQueueMessageAsync(QueueMessage msg);
-        Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId);
-        Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
-        Task<int> GetUserMessageCountAsync(string userId);
-        Task<bool> HasUserAnExistingSession(string userId);
-    }
-
     public class CosmosDbContext : ICosmosDbContext
     {
         private readonly ILogger<CosmosDbContext> _logger;
