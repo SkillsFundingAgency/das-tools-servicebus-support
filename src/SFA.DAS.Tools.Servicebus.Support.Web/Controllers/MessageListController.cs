@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 using Microsoft.AspNetCore.Mvc;
 using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
@@ -39,11 +40,27 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> ReceiveMessages(string queue)
         {
-            var data = await _svcBusService.ReceiveMessagesAsync(queue, 50);//todo custom qty 
-            var result = await _cosmosDbContext.BulkCreateQueueMessagesAsync(data.Messages);
-            //todo display errors 
-            if ( result.SuccessfulDocuments > 0 )
-                await _svcBusService.Complete(data.MessageReceiver, result.SuccessfulDocumentsLockTokens);
+            using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                ReceiveMessagesResponse response = null;
+
+                try
+                {
+                    response = await _svcBusService.ReceiveMessagesAsync(queue, 50);//todo custom qty 
+                    var result = await _cosmosDbContext.BulkCreateQueueMessagesAsync(response.Messages);
+                    
+                    ts.Complete();
+                }catch(Exception ex)
+                {
+                    ts.Dispose();
+                }
+                finally
+                {
+                    //if ( response != null)
+                    //    await _svcBusService.CloseMessageReceiver(response.MessageReceiver);
+                }
+                
+            }                        
 
             return RedirectToAction("Index");
         }

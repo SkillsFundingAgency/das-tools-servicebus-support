@@ -26,6 +26,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
         Task SendMessageToProcessingQueueAsync(QueueMessage msg);
         Task Complete(MessageReceiver messageReceiver, IEnumerable<string> lockTokens);
         Task Complete(MessageReceiver messageReceiver, string lockToken);
+        Task CloseMessageReceiver(MessageReceiver messageReceiver);
     }
 
     public class SvcBusService : ISvcBusService
@@ -81,7 +82,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             return new QueueInfo()
             {
                 Name = queue.Path,
-                MessageCount = queue.MessageCount
+                MessageCount = queue.MessageCountDetails.ActiveMessageCount
             };
         }
 
@@ -127,7 +128,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public async Task<ReceiveMessagesResponse> ReceiveMessagesAsync(string queueName, int qty)
         {
-
             var messageReceiver = new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
 
 
@@ -135,9 +135,14 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             IList<Message> receivedMessages;
             var formattedMessages = new List<QueueMessage>();
 
-            var messageQtyToGet = CalculateMessageQtyToGet(qty, 0, batchSize);
+            var queueInfo = await GetQueueDetailsAsync(queueName);
+            if( queueInfo.MessageCount < qty)
+            {
+                qty = Convert.ToInt32(queueInfo.MessageCount);
+            }
 
-            receivedMessages = await messageReceiver.ReceiveAsync(messageQtyToGet);
+            var messageQtyToGet = CalculateMessageQtyToGet(qty, 0, batchSize);
+            receivedMessages = messageQtyToGet > 0 ? await messageReceiver.ReceiveAsync(messageQtyToGet) : null;
 
             if (receivedMessages != null)
             {
@@ -156,7 +161,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                             Queue = queueName,
                             IsReadOnly = false
                         });
-                        //await messageReceiver.CompleteAsync(msg.SystemProperties.LockToken);
+                        await messageReceiver.CompleteAsync(msg.SystemProperties.LockToken);
                     }
 
                     messageQtyToGet = CalculateMessageQtyToGet(qty, totalMessages, batchSize);
@@ -186,12 +191,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         private int CalculateMessageQtyToGet(int totalExpected, int received, int batchSize)
         {
-            var qtyRequried = totalExpected - received;
+            var qtyRequired = totalExpected - received;
 
-            if (qtyRequried >= batchSize)
+            if (qtyRequired >= batchSize)
                 return batchSize;
-            else if (qtyRequried < batchSize && qtyRequried > 0)
-                return qtyRequried;
+            else if (qtyRequired < batchSize && qtyRequired > 0)
+                return qtyRequired;
             return 0;
         }
 
@@ -208,14 +213,28 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public async Task Complete(MessageReceiver messageReceiver, IEnumerable<string> lockTokens)
         {
-            if (lockTokens.Count() > 0)
-                await messageReceiver.CompleteAsync(lockTokens).ConfigureAwait(false);
+            try
+            {
+                if (lockTokens?.Count() > 0)
+                    await messageReceiver.CompleteAsync(lockTokens).ConfigureAwait(false);
+
+            }catch(Exception ex)
+            {
+                _logger.LogError(ex.Message, ex);
+                throw;
+            }
         }
 
         public async Task Complete(MessageReceiver messageReceiver, string lockToken)
         {
             if (!string.IsNullOrEmpty(lockToken))
                 await messageReceiver.CompleteAsync(lockToken).ConfigureAwait(false);
+        }
+
+        public async Task CloseMessageReceiver(MessageReceiver messageReceiver)
+        {
+            if (!messageReceiver.IsClosedOrClosing)
+                await messageReceiver.CloseAsync();
         }
     }
 }
