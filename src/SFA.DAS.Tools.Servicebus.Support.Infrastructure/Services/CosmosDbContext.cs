@@ -1,17 +1,10 @@
 ﻿using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using SFA.DAS.Tools.Servicebus.Support.Core;
 using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
@@ -19,7 +12,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
     public interface ICosmosDbContext
     {
         Task CreateQueueMessageAsync(QueueMessage msg);
-        Task<BulkOperationResponse<QueueMessage>> BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages);        
+        Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages);        
         Task DeleteQueueMessageAsync(QueueMessage msg);
         Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId);
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
@@ -53,38 +46,29 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             ItemResponse<QueueMessage> response = await container.CreateItemAsync(msg);
 
         }
-        public async Task<BulkOperationResponse<QueueMessage>> BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages)
+        public async Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages)
         {                                   
             Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
             Container container = await database.CreateContainerIfNotExistsAsync(
                 "Session",
                 "/userId",
-                400);
+                400);                       
 
-
-
-            List<Task<OperationResponse<QueueMessage>>> tasks = new List<Task<OperationResponse<QueueMessage>>>();
-            ItemRequestOptions requestOptions = new ItemRequestOptions() { EnableContentResponseOnWrite = false };
-
+            TransactionalBatch batch = container.CreateTransactionalBatch(new PartitionKey(UserService.GetUserId()));
+            
             foreach (var msg in messsages)
             {
-                tasks.Add(container.CreateItemAsync(msg, new PartitionKey(UserService.GetUserId()), requestOptions).CaptureOperationResponse(msg));            
+                batch.CreateItem<QueueMessage>(msg);                
             }
 
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            await Task.WhenAll(tasks);
-            stopwatch.Stop();
+            TransactionalBatchResponse batchResponse = await batch.ExecuteAsync();
 
-            return new BulkOperationResponse<QueueMessage>()
+            if (!batchResponse.IsSuccessStatusCode)
             {
-                TotalTimeTaken = stopwatch.Elapsed,
-                TotalRequestUnitsConsumed = tasks.Sum(task => task.Result.RequestUnitsConsumed),
-                SuccessfulDocuments = tasks.Count(task => task.Result.IsSuccessful),
-                Failures = tasks.Where(task => !task.Result.IsSuccessful).Select(task => (task.Result.Item, task.Result.CosmosException)).ToList(),
-                SuccessfulDocumentsLockTokens = tasks.Where(task => task.Result.IsSuccessful).Select(task=> task.Result.Item.OriginalMessage.SystemProperties.LockToken).ToList()
-            };
+                _logger.LogError("Cosmos batch creation failed", batchResponse);
+                throw new Exception("Cosmos batch creation failed");
+            }
         }
-
 
 
         public async Task DeleteQueueMessageAsync(QueueMessage msg)
