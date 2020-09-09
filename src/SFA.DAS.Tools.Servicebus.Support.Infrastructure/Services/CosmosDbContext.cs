@@ -24,6 +24,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId);
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
         Task<int> GetUserMessageCountAsync(string userId);
+        Task<bool> HasUserAnExistingSession(string userId);
     }
 
     public class CosmosDbContext : ICosmosDbContext
@@ -159,5 +160,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             return currentResults.FirstOrDefault();
         }
+
+        public async Task<bool> HasUserAnExistingSession(string userId) => await GetUserMessageCountAsync(userId) > 0;
     }
 }

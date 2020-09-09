@@ -28,17 +28,18 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _logger = logger;
             _svcBusService = svcBusService;
             _cosmosDbContext = cosmosDbContext;
-
         }
 
         public async Task<IActionResult> Index()
         {
+            var userHasExistingSession = await _cosmosDbContext.HasUserAnExistingSession(UserService.GetUserId());
 
-            var count = await _cosmosDbContext.GetUserMessageCountAsync(UserService.GetUserId());
+#if DEBUG
+            Debugger.Break();
+#endif
 
-            if (count > 0)
+            if (userHasExistingSession)
             {
-                //user has exisitng session
                 return RedirectToAction(actionName: "Index", controllerName: "MessageList");
             }
             else
@@ -69,11 +70,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             //return View();
 
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
