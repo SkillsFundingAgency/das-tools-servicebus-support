@@ -6,8 +6,24 @@
         </div>
         <div class="row">
             <div class="col-sm-6">
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <form>
+                            <div class="form-group mt-3">
+                                <label for="queue">Queue</label>
+                                <span id="queue" class="form-control">@Model.Queue</span>
+                            </div>
+                            <div class="form-group mt-3">
+                                <label for="body">Body</label>
+                                <textarea id="body" name="body" rows="8" class="form-control" readonly="readonly">@Model.Body</textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
-                    <table class="table-sm">
+                    <table class="table-sm table-striped">
                         <thead>
                             <tr>
                                 <th scope="col">Key</th>
@@ -15,48 +31,67 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var kvp in Model.ServiceBusProperties)
-                            {
-                                <tr>
-                                    <th scope="row"><span style="word-wrap: break-word;">@kvp.Key</span></th>
-                                    <td><span style="word-wrap: break-word;">@kvp.Value</span></td>
-                                </tr>
-                            }
+                            <tr>
+                                <th>ContentType</th>
+                                <td>@Model.OriginalMessage.ContentType</td>
+                            </tr>
+                            <tr>
+                                <th>CorrelationId</th>
+                                <td>@Model.OriginalMessage.CorrelationId</td>
+                            </tr>
+                            <tr>
+                                <th>Label</th>
+                                <td>@Model.OriginalMessage.Label</td>
+                            </tr>
+                            <tr>
+                                <th>MessageId</th>
+                                <td>@Model.OriginalMessage.MessageId</td>
+                            </tr>
+                            <tr>
+                                <th>PartitionKey</th>
+                                <td>@Model.OriginalMessage.PartitionKey</td>
+                            </tr>
+                            <tr>
+                                <th>ReplyTo</th>
+                                <td>@Model.OriginalMessage.ReplyTo</td>
+                            </tr>
+                            <tr>
+                                <th>ReplyToSessionId</th>
+                                <td>@Model.OriginalMessage.ReplyToSessionId</td>
+                            </tr>
+                            <tr>
+                                <th>ScheduledEnqueueTimeUtc</th>
+                                <td>@Model.OriginalMessage.ScheduledEnqueueTimeUtc</td>
+                            </tr>
+                            <tr>
+                                <th>SessionId</th>
+                                <td>@Model.OriginalMessage.SessionId</td>
+                            </tr>
+                            <tr>
+                                <th>Size</th>
+                                <td>@Model.OriginalMessage.Size</td>
+                            </tr>
+                            <tr>
+                                <th>TimeToLive</th>
+                                <td>@Model.OriginalMessage.TimeToLive</td>
+                            </tr>
+                            <tr>
+                                <th>To</th>
+                                <td>@Model.OriginalMessage.To</td>
+                            </tr>
+                            <tr>
+                                <th>ViaPartitionKey</th>
+                                <td>@Model.OriginalMessage.ViaPartitionKey</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
-                
-                <div class="row">
-                    <div class="col-sm-12">
-                        <form>
-                            <div class="form-group mt-3">
-                                <label for="body">Body</label>
-                                <textarea id="body" name="body" rows="8" class="form-control" readonly="readonly">@Model.Body</textarea>
-                            </div>
-                            <div class="form-group mt-3">
-                                <label for="id">ID</label>
-                                <input id="id" type="text" class="form-control" readonly="readonly" value="@Model.id">
-                            </div>
-                            <div class="form-group mt-3">
-                                <label for="userId">UserId</label>
-                                <input id="userId" type="text" class="form-control" readonly="readonly" value="@Model.userId" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <label for="isReadonly">Is Read Only</label>
-                                <input id="isReadonly" type="text" class="form-control" readonly="readonly" value="@Model.IsReadOnly.ToString()" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <label for="queue">Queue</label>
-                                <input id="queue" type="text" class="form-control" readonly="readonly" value="@Model.Queue" />
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                </div>
+
+            </div>
                 <div class="col-sm-6">
-                    <h2>NServiceBus Properties</h2>
+                    <h2>Message Custom Properties</h2>
                     <div class="table-responsive">
-                        <table class="table-sm">
+                        <table class="table-sm table-striped">
                             <thead>
                                 <tr>
                                     <th scope="col">Key</th>
@@ -64,13 +99,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var kvp in Model.NServiceBusProperties)
-                                {
-                                    <tr>
-                                        <th scope="row"><span style="word-wrap: break-word;">@kvp.Key</span></th>
-                                        <td><span style="word-wrap: break-word;">@kvp.Value</span></td>
-                                    </tr>
-                                }
+                            @foreach (var kvp in Model.UserProperties)
+                            {
+                                <tr>
+                                    <th scope="row"><span style="word-wrap: break-word;">@kvp.Key</span></th>
+                                    <td><span style="word-wrap: break-word;">@kvp.Value</span></td>
+                                </tr>
+                            }
                             </tbody>
                         </table>
                     </div>
