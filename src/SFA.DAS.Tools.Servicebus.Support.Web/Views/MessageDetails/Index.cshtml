@@ -1,28 +1,79 @@
 ﻿@model SFA.DAS.Tools.Servicebus.Support.Core.Models.QueueMessage
 
-<div>
-    <input type="button" onclick="history.go(-1)" value="Return to message list" />
-
-    <table class="table">
-        <thead>
-            <tr>
-                <th>
-                    Key
-                </th>
-                <th>
-                    Value
-                </th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var kvp in Model.OriginalMessage.UserProperties)
-            {
-                <tr>
-                    <td> @kvp.Key</td>
-                    <td> @kvp.Value </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-</div>
+    <div class="container-fluid">
+        <div class="row">
+            <input type="button" onclick="history.go(-1)" value="Return to message list" />
+        </div>
+        <div class="row">
+            <div class="col-sm-6">
+                <div class="table-responsive">
+                    <table class="table-sm">
+                        <thead>
+                            <tr>
+                                <th scope="col">Key</th>
+                                <th scope="col">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var kvp in Model.ServiceBusProperties)
+                            {
+                                <tr>
+                                    <th scope="row"><span style="word-wrap: break-word;">@kvp.Key</span></th>
+                                    <td><span style="word-wrap: break-word;">@kvp.Value</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="row">
+                    <div class="col-sm-12">
+                        <form>
+                            <div class="form-group mt-3">
+                                <label for="body">Body</label>
+                                <textarea id="body" name="body" rows="8" class="form-control" readonly="readonly">@Model.Body</textarea>
+                            </div>
+                            <div class="form-group mt-3">
+                                <label for="id">ID</label>
+                                <input id="id" type="text" class="form-control" readonly="readonly" value="@Model.id">
+                            </div>
+                            <div class="form-group mt-3">
+                                <label for="userId">UserId</label>
+                                <input id="userId" type="text" class="form-control" readonly="readonly" value="@Model.userId" />
+                            </div>
+                            <div class="form-group mt-3">
+                                <label for="isReadonly">Is Read Only</label>
+                                <input id="isReadonly" type="text" class="form-control" readonly="readonly" value="@Model.IsReadOnly.ToString()" />
+                            </div>
+                            <div class="form-group mt-3">
+                                <label for="queue">Queue</label>
+                                <input id="queue" type="text" class="form-control" readonly="readonly" value="@Model.Queue" />
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                </div>
+                <div class="col-sm-6">
+                    <h2>NServiceBus Properties</h2>
+                    <div class="table-responsive">
+                        <table class="table-sm">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Key</th>
+                                    <th scope="col">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var kvp in Model.NServiceBusProperties)
+                                {
+                                    <tr>
+                                        <th scope="row"><span style="word-wrap: break-word;">@kvp.Key</span></th>
+                                        <td><span style="word-wrap: break-word;">@kvp.Value</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+    </div>
