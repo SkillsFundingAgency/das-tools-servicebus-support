@@ -4,21 +4,12 @@ using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
-{
-    public interface ICosmosDbContext
-    {
-        Task CreateQueueMessageAsync(QueueMessage msg);
-        Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages);        
-        Task DeleteQueueMessageAsync(QueueMessage msg);
-        Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId);
-        Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
-        Task<int> GetUserMessageCountAsync(string userId);
-    }
-
+{    
     public class CosmosDbContext : ICosmosDbContext
     {
         private readonly ILogger<CosmosDbContext> _logger;
@@ -143,5 +134,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             return currentResults.FirstOrDefault();
         }
+
+        public async Task<bool> HasUserAnExistingSession(string userId) => await GetUserMessageCountAsync(userId) > 0;
     }
 }
