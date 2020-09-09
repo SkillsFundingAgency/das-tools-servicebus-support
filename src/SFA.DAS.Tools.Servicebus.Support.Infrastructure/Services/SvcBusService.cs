@@ -77,13 +77,16 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public async Task<QueueInfo> GetQueueDetailsAsync(string name)
         {
-            var queue = await _managementClient.GetQueueRuntimeInfoAsync(name).ConfigureAwait(false);
+            var result = new QueueInfo();
 
-            return new QueueInfo()
+            if (!string.IsNullOrEmpty(name))
             {
-                Name = queue.Path,
-                MessageCount = queue.MessageCountDetails.ActiveMessageCount
-            };
+                var queue = await _managementClient.GetQueueRuntimeInfoAsync(name).ConfigureAwait(false);
+
+                result.Name = queue.Path;
+                result.MessageCount = queue.MessageCountDetails.ActiveMessageCount;
+            }
+            return result;
         }
 
         public async Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty)

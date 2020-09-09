@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
@@ -15,11 +16,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
     {
         private readonly ISvcBusService _svcBusService;
         private readonly ICosmosDbContext _cosmosDbContext;
+        private readonly ILogger<MessageListController> _logger;
 
-        public MessageListController(ISvcBusService svcBusService, ICosmosDbContext cosmosDbContext)
+        public MessageListController(ISvcBusService svcBusService, ICosmosDbContext cosmosDbContext, ILogger<MessageListController> logger)
         {
             _svcBusService = svcBusService;
             _cosmosDbContext = cosmosDbContext;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
@@ -47,19 +50,14 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 try
                 {
                     response = await _svcBusService.ReceiveMessagesAsync(queue, 50);//todo custom qty 
-                    var result = await _cosmosDbContext.BulkCreateQueueMessagesAsync(response.Messages);
+                    await _cosmosDbContext.BulkCreateQueueMessagesAsync(response.Messages);
                     
                     ts.Complete();
                 }catch(Exception ex)
                 {
+                    _logger.LogError("Failed to receive messages", ex);
                     ts.Dispose();
-                }
-                finally
-                {
-                    //if ( response != null)
-                    //    await _svcBusService.CloseMessageReceiver(response.MessageReceiver);
-                }
-                
+                }                               
             }                        
 
             return RedirectToAction("Index");

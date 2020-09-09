@@ -7,7 +7,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
     public interface ICosmosDbContext
     {
         Task CreateQueueMessageAsync(QueueMessage msg);
-        Task<BulkOperationResponse<QueueMessage>> BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages);
+        Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages);
         Task DeleteQueueMessageAsync(QueueMessage msg);
         Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId);
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
