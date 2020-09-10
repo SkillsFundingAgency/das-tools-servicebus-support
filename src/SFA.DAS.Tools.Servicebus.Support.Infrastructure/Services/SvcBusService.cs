@@ -99,12 +99,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             var formattedMessages = new List<QueueMessage>();
 
             var messageQtyToGet = CalculateMessageQtyToGet(qty, 0, batchSize);
-            peekedMessages = await messageReceiver.PeekAsync(messageQtyToGet);
+            peekedMessages = messageQtyToGet > 0 ? await messageReceiver.PeekAsync(messageQtyToGet) : null;
 
             _logger.LogDebug($"Peeked Message Count: {peekedMessages.Count}");
-            if (peekedMessages.Count > 0)
+            if (peekedMessages != null)
             {
-                while (totalMessages < qty)
+                while (peekedMessages?.Count > 0 && totalMessages < qty)
                 {
                     totalMessages += peekedMessages.Count;
                     foreach (var msg in peekedMessages)
@@ -118,8 +118,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                             IsReadOnly = true
                         });
                     }
-                    messageQtyToGet = CalculateMessageQtyToGet(qty, totalMessages, batchSize);
-                    peekedMessages = await messageReceiver.PeekAsync(messageQtyToGet);
+                    messageQtyToGet = CalculateMessageQtyToGet(qty, totalMessages, batchSize);                    
+                    peekedMessages = messageQtyToGet > 0 ? await messageReceiver.PeekAsync(messageQtyToGet) : null;
                 }
 
             }
