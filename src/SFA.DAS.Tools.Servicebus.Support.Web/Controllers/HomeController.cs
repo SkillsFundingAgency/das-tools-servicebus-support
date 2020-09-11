@@ -1,18 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
-using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
@@ -21,7 +14,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly ISvcBusService _svcBusService;
         private readonly ICosmosDbContext _cosmosDbContext;
-
 
         public HomeController(ILogger<HomeController> logger, ISvcBusService svcBusService, ICosmosDbContext cosmosDbContext)
         {
@@ -32,11 +24,18 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var userHasExistingSession = await _cosmosDbContext.HasUserAnExistingSession(UserService.GetUserId());
 
 #if DEBUG
             Debugger.Break();
 #endif
+
+#if PEEKMESSAGESTOCOSMOS
+            var messages = await _svcBusService.PeekMessagesAsync("sfa.das.notifications.messagehandlers-errors", 250);
+            await _cosmosDbContext.BulkCreateQueueMessagesAsync(messages);
+
+            return View();
+#else
+            var userHasExistingSession = await _cosmosDbContext.HasUserAnExistingSession(UserService.GetUserId());
 
             if (userHasExistingSession)
             {
@@ -52,11 +51,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 return View(searchVM);
             }
 
-
             //HttpContext.Session.Set<SearchViewModel>("searchVM", searchVM);
 
-            //var messages = await _svcBusService.PeekMessagesAsync("sfa.das.notifications.messagehandlers-errors", 250);
-            //await _cosmosDbContext.BulkCreateQueueMessagesAsync(messages);
 
 
             //var mdbMessages = await _cosmosDbContext.GetQueueMessagesAsync("123456");
@@ -68,8 +64,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             //var messages = await _svcBusService.ReceiveMessagesAsync("errors", 10);
 
-            //return View();
-
+            return View();
+#endif
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

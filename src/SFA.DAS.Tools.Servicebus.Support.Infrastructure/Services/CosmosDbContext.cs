@@ -4,12 +4,11 @@ using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
-{    
+{
     public class CosmosDbContext : ICosmosDbContext
     {
         private readonly ILogger<CosmosDbContext> _logger;
@@ -70,22 +69,15 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
                 "/userId",
                 400);
 
-            await container.DeleteItemAsync<QueueMessage>(msg.id.ToString(), new PartitionKey(msg.userId));
+            await container.DeleteItemAsync<QueueMessage>(msg.Id.ToString(), new PartitionKey(msg.UserId));
         }
 
-        public async Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId)
+        public async Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId, SearchProperties searchProperties)
         {
-            var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}'"; 
+            var sqlQuery = $"SELECT * FROM c WHERE c.userId ='{userId}' {(searchProperties.Sort == null ? string.Empty : "ORDER BY c." + searchProperties.Sort + " " + searchProperties.Order)}  {(searchProperties.Offset == null ? "" : "OFFSET " + searchProperties.Offset)} {(searchProperties.Limit == null ? "" : "LIMIT " + searchProperties.Limit)}";
             
-            Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
-            Container container = await database.CreateContainerIfNotExistsAsync(
-                "Session",
-                "/userId",
-                400);
+            var queryFeedIterator = await QuerySetup<QueueMessage>(sqlQuery);
 
-            QueryDefinition queryDefinition = new QueryDefinition(sqlQuery);
-            FeedIterator<QueueMessage> queryFeedIterator = container.GetItemQueryIterator<QueueMessage>(queryDefinition);
-            
             List<QueueMessage> messages = new List<QueueMessage>();
 
             while (queryFeedIterator.HasMoreResults)
@@ -101,6 +93,28 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             return messages;                          
         }
 
+        public async Task<int> GetUserMessageCountAsync(string userId)
+        {
+            var sqlQuery = $"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}'";
+            var queryFeedIterator = await QuerySetup<int>(sqlQuery);
+            FeedResponse<int> currentResults = await queryFeedIterator.ReadNextAsync();
+
+            return currentResults.First();
+        }
+
+        private async Task<FeedIterator<T>> QuerySetup<T>(string sqlQuery)
+        {
+            Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
+            Container container = await database.CreateContainerIfNotExistsAsync(
+                "Session",
+                "/userId",
+                400);
+
+            QueryDefinition queryDefinition = new QueryDefinition(sqlQuery);
+            var queryFeedIterator = container.GetItemQueryIterator<T>(queryDefinition);
+            return queryFeedIterator;
+        }
+
         public async Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId)
         {
             var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.id = '{messageId}'";
@@ -114,23 +128,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             QueryDefinition queryDefinition = new QueryDefinition(sqlQuery);
             FeedIterator<QueueMessage> queryFeedIterator = container.GetItemQueryIterator<QueueMessage>(queryDefinition);
             FeedResponse<QueueMessage> currentResults = await queryFeedIterator.ReadNextAsync();
-
-            return currentResults.FirstOrDefault();
-        }
-
-        public async Task<int> GetUserMessageCountAsync(string userId)
-        {
-            var sqlQuery = $"SELECT value count(1) FROM c WHERE c.userId = '{userId}'";
-
-            Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
-            Container container = await database.CreateContainerIfNotExistsAsync(
-                "Session",
-                "/userId",
-                400);
-
-            QueryDefinition queryDefinition = new QueryDefinition(sqlQuery);
-            FeedIterator<int> queryFeedIterator = container.GetItemQueryIterator<int>(queryDefinition);
-            FeedResponse<int> currentResults = await queryFeedIterator.ReadNextAsync();
 
             return currentResults.FirstOrDefault();
         }

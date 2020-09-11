@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Transactions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
@@ -27,13 +30,17 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId());
-
-            var queueName = getQueueName(messages);
+            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties
+            {
+                Offset = 0,
+                Limit = 1
+            });
+            var cnt = await _cosmosDbContext.GetUserMessageCountAsync(UserService.GetUserId());
+            var queueName = GetQueueName(messages);
 
             var vm = new MessageListViewModel()
             {
-                Messages = messages,
+                Count = cnt,
                 QueueInfo = await _svcBusService.GetQueueDetailsAsync(queueName)
             };
 
@@ -65,7 +72,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> AbortMessages()
         {
-            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId());
+            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties());
 
             foreach (var msg in messages)
             {
@@ -76,8 +83,44 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        public async Task<IActionResult> Data(string sort, string order, string search, int offset, int limit)
+        {
+            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties
+                {
+                    Sort = sort, 
+                    Order = order, 
+                    Search = search, 
+                    Offset = offset, 
+                    Limit = limit
+                });
+            var cnt = await _cosmosDbContext.GetUserMessageCountAsync(UserService.GetUserId());
+            var queueMessages = messages.ToList();
 
-        private string getQueueName(IEnumerable<QueueMessage> messages)
+            DefaultContractResolver contractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new DefaultNamingStrategy()
+            };
+
+            return Json(new
+            {
+                Total = cnt,
+                TotalNotFiltered = cnt,
+                Rows = queueMessages.Select(msg => new
+                {
+                    Id = msg.Id,
+                    OriginatingEndpoint = msg.OriginatingEndpoint,
+                    ProcessingEndpoint = msg.ProcessingEndpoint,
+                    Body = msg.Body,
+                    Exception = msg.Exception,
+                    ExceptionType = msg.ExceptionType
+                })
+            }/*, new JsonSerializerOptions()
+            {
+                PropertyNamingPolicy = null
+            }*/);
+        }
+
+        private string GetQueueName(IEnumerable<QueueMessage> messages)
         {
             var name = "";
             if (messages?.Count() > 0)

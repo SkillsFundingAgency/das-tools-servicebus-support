@@ -4,12 +4,10 @@ using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SFA.DAS.Tools.Servicebus.Support.Core;
 using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -111,17 +109,21 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                     {
                         formattedMessages.Add(new QueueMessage
                         {
-                            id = msg.MessageId,
-                            userId = UserService.GetUserId(),
+                            Id = msg.MessageId,
+                            UserId = UserService.GetUserId(),
                             OriginalMessage = msg,
                             Queue = queueName,
-                            IsReadOnly = true
+                            IsReadOnly = true,
+                            Body = Encoding.UTF8.GetString(msg.Body),
+                            OriginatingEndpoint = msg.UserProperties["NServiceBus.OriginatingEndpoint"].ToString(),
+                            ProcessingEndpoint = msg.UserProperties["NServiceBus.ProcessingEndpoint"].ToString(),
+                            Exception = msg.UserProperties["NServiceBus.ExceptionInfo.Message"].ToString(),
+                            ExceptionType = msg.UserProperties["NServiceBus.ExceptionInfo.ExceptionType"].ToString()
                         });
                     }
                     messageQtyToGet = CalculateMessageQtyToGet(qty, totalMessages, batchSize);                    
                     peekedMessages = messageQtyToGet > 0 ? await messageReceiver.PeekAsync(messageQtyToGet) : null;
                 }
-
             }
 
             await messageReceiver.CloseAsync();
@@ -158,11 +160,16 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                     {
                         formattedMessages.Add(new QueueMessage
                         {
-                            id = msg.MessageId,
-                            userId = UserService.GetUserId(),
+                            Id = msg.MessageId,
+                            UserId = UserService.GetUserId(),
                             OriginalMessage = msg,
                             Queue = queueName,
-                            IsReadOnly = false
+                            IsReadOnly = false,
+                            Body = Encoding.UTF8.GetString(msg.Body),
+                            OriginatingEndpoint = msg.UserProperties["NServiceBus.OriginatingEndpoint"].ToString(),
+                            ProcessingEndpoint = msg.UserProperties["NServiceBus.ProcessingEndpoint"].ToString(),
+                            Exception = msg.UserProperties["NServiceBus.ExceptionInfo.Message"].ToString(),
+                            ExceptionType = msg.UserProperties["NServiceBus.ExceptionInfo.ExceptionType"].ToString()
                         });
                         await messageReceiver.CompleteAsync(msg.SystemProperties.LockToken);
                     }
