@@ -1,8 +1,41 @@
-﻿@{
+﻿@model QueueViewModel
+@{
     ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Message queues</h1>
+        
+    @*<form >
+        <select asp-for="SelectedQueue" asp-items="Model.Queues">
+            <option value="">Select queue</option>
+        </select>
+        <input type="submit" value="Receive" method="post" asp-controller="MessageList" asp-action="ReceiveMessages" />
+    </form>*@
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Queue
+                </th>
+                <th>
+                    Message Count
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var queue in Model.Queues)
+            {
+                <tr>
+                    <td> @queue.Name</td>
+                    <td> @queue.MessageCount </td>
+                    <td>
+                        <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@queue.Name" onclick="displayBusyIndicator()" >Investigate</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>

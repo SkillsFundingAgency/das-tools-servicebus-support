@@ -4,7 +4,7 @@ using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SFA.DAS.Tools.Servicebus.Support.Core;
+using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,8 +16,15 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 {
     public interface ISvcBusService
     {
-        Task<IList<sbMessageModel>> PeekMessages(string queueName);
-        Task<IEnumerable<string>> GetErrorQueuesAsync();
+        Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync();
+        Task<QueueInfo> GetQueueDetailsAsync(string name);
+        Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty);
+        Task<ReceiveMessagesResponse> ReceiveMessagesAsync(string queueName, int qty);
+        Task SendMessageToErrorQueueAsync(QueueMessage msg);
+        Task SendMessageToProcessingQueueAsync(QueueMessage msg);
+        Task Complete(MessageReceiver messageReceiver, IEnumerable<string> lockTokens);
+        Task Complete(MessageReceiver messageReceiver, string lockToken);
+        Task CloseMessageReceiver(MessageReceiver messageReceiver);
     }
 
     public class SvcBusService : ISvcBusService
@@ -25,131 +32,219 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
         private readonly IConfiguration _config;
         private readonly ILogger _logger;
 
+        public readonly string serviceBusConnectionString;
+        private readonly int batchSize;
+
+        private TokenProvider _tokenProvider;
+        private ServiceBusConnectionStringBuilder _sbConnectionStringBuilder;
+        private ManagementClient _managementClient;
+
         public SvcBusService(IConfiguration config, ILogger<SvcBusService> logger)
         {
             _config = config ?? throw new Exception("config is null");
             _logger = logger ?? throw new Exception("logger is null");
+
+            serviceBusConnectionString = _config.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
+            batchSize = _config.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize");
+
+            _tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
+            _sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
+            _managementClient = new ManagementClient(_sbConnectionStringBuilder, _tokenProvider);
         }
 
-        public async Task<IEnumerable<string>> GetErrorQueuesAsync()
+        public async Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync()
         {
+            var queues = new List<QueueInfo>();
 
-            var sbConnectionString = _config.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
-            var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-            var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(sbConnectionString);
-            var managementClient = new ManagementClient(sbConnectionStringBuilder, tokenProvider);
-
-            var queues = await managementClient.GetQueuesAsync().ConfigureAwait(false);         
+            var queuesDetails = await _managementClient.GetQueuesRuntimeInfoAsync().ConfigureAwait(false);
             var regexString = _config.GetValue<string>("ServiceBusRepoSettings:QueueSelectionRegex");
             var queueSelectionRegex = new Regex(regexString);
-            var errorQueues = queues.Where(q => queueSelectionRegex.IsMatch(q.Path)).Select(x => x.Path);            
+            var errorQueues = queuesDetails.Where(q => queueSelectionRegex.IsMatch(q.Path));//.Select(x => x.Path);
 
-#if DEBUG
-            _logger.LogDebug("Error Queues:");
             foreach (var queue in errorQueues)
             {
-                _logger.LogDebug(queue);
+                queues.Add(new QueueInfo()
+                {
+                    Name = queue.Path,
+                    MessageCount = queue.MessageCount
+                });
             }
-#endif
-            return errorQueues;
+
+            return queues;
         }
 
-        public Task<IList<sbMessageModel>> PeekMessages(string queueName)
+        public async Task<QueueInfo> GetQueueDetailsAsync(string name)
         {
-            throw new NotImplementedException();
+            var result = new QueueInfo();
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                var queue = await _managementClient.GetQueueRuntimeInfoAsync(name).ConfigureAwait(false);
+
+                result.Name = queue.Path;
+                result.MessageCount = queue.MessageCountDetails.ActiveMessageCount;
+            }
+            return result;
         }
 
-        //        public async Task<IList<sbMessageModel>> PeekMessages(string queueName)
-        //        {
-        //            var sbConnectionString = _config.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
-        //            var batchSize = _config.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize");
-        //            var notifyBatchSize = _config.GetValue<int>("ServiceBusRepoSettings:NotifyUIBatchSize");
+        public async Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty)
+        {
 
-        //            var sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(sbConnectionString);
-        //            var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-        //            var messageReceiver = new MessageReceiver(sbConnectionStringBuilder.Endpoint, queueName, tokenProvider);
+            var messageReceiver = new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
 
-        //#if DEBUG
-        //            _logger.LogDebug($"ServiceBusConnectionString: {sbConnectionString}");
-        //            _logger.LogDebug($"PeekMessageBatchSize: {batchSize}");
-        //#endif
+            int totalMessages = 0;
+            IList<Message> peekedMessages;
+            var formattedMessages = new List<QueueMessage>();
 
-        //            int totalMessages = 0;
-        //            IList<Message> peekedMessages;
-        //            var formattedMessages = new List<sbMessageModel>();
+            var messageQtyToGet = CalculateMessageQtyToGet(qty, 0, batchSize);
+            peekedMessages = messageQtyToGet > 0 ? await messageReceiver.PeekAsync(messageQtyToGet) : null;
 
-        //            peekedMessages = await messageReceiver.PeekAsync(batchSize);
+            _logger.LogDebug($"Peeked Message Count: {peekedMessages.Count}");
+            if (peekedMessages != null)
+            {
+                while (peekedMessages?.Count > 0 && totalMessages < qty)
+                {
+                    totalMessages += peekedMessages.Count;
+                    foreach (var msg in peekedMessages)
+                    {
+                        formattedMessages.Add(new QueueMessage
+                        {
+                            Id = msg.MessageId,
+                            UserId = UserService.GetUserId(),
+                            OriginalMessage = msg,
+                            Queue = queueName,
+                            IsReadOnly = true,
+                            Body = Encoding.UTF8.GetString(msg.Body),
+                            OriginatingEndpoint = msg.UserProperties["NServiceBus.OriginatingEndpoint"].ToString(),
+                            ProcessingEndpoint = msg.UserProperties["NServiceBus.ProcessingEndpoint"].ToString(),
+                            Exception = msg.UserProperties["NServiceBus.ExceptionInfo.Message"].ToString(),
+                            ExceptionType = msg.UserProperties["NServiceBus.ExceptionInfo.ExceptionType"].ToString()
+                        });
+                    }
+                    messageQtyToGet = CalculateMessageQtyToGet(qty, totalMessages, batchSize);                    
+                    peekedMessages = messageQtyToGet > 0 ? await messageReceiver.PeekAsync(messageQtyToGet) : null;
+                }
+            }
 
-        //            _logger.LogDebug($"Peeked Message Count: {peekedMessages.Count}");
+            await messageReceiver.CloseAsync();
 
-        //            while (peekedMessages.Count > 0)
-        //            {
-        //                foreach (var msg in peekedMessages)
-        //                {
-        //                    var messageModel = FormatMsgToLog(msg);
-        //                    totalMessages++;
-        //                    if (totalMessages % notifyBatchSize == 0)
-        //                        _logger.LogDebug($"    {queueName} - processed: {totalMessages}");
+            return formattedMessages;
+        }
 
-        //                    formattedMessages.Add(messageModel);
-        //                }
-        //                peekedMessages = await messageReceiver.PeekAsync(batchSize);
-        //            }
-        //            await messageReceiver.CloseAsync();
+        public async Task<ReceiveMessagesResponse> ReceiveMessagesAsync(string queueName, int qty)
+        {
+            var messageReceiver = new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
 
-        //            return formattedMessages;
-        //        }
 
-        //        private sbMessageModel FormatMsgToLog(Message msg)
-        //        {
-        //            object exceptionMessage = string.Empty;
-        //            string exceptionMessageNoCrLf = string.Empty;
-        //            string enclosedMessageTypeTrimmed = string.Empty;
-        //            var messageModel = new sbMessageModel();
-        //            if (msg.UserProperties.TryGetValue("NServiceBus.ExceptionInfo.Message", out exceptionMessage))
-        //            {
-        //                // this is an nServiveBusFailure.
-        //                exceptionMessageNoCrLf = exceptionMessage.ToString().CrLfToTilde();
-        //                enclosedMessageTypeTrimmed = msg.UserProperties.ContainsKey("NServiceBus.EnclosedMessageTypes")
-        //                    ? msg.UserProperties["NServiceBus.EnclosedMessageTypes"].ToString().Split(',')[0]
-        //                    : "";
+            int totalMessages = 0;
+            IList<Message> receivedMessages;
+            var formattedMessages = new List<QueueMessage>();
 
-        //                messageModel.MessageId = msg.UserProperties["NServiceBus.MessageId"].ToString();
-        //                messageModel.TimeOfFailure = msg.UserProperties["NServiceBus.TimeOfFailure"].ToString();
-        //                messageModel.ExceptionType = msg.UserProperties["NServiceBus.ExceptionInfo.ExceptionType"].ToString();
-        //                messageModel.OriginatingEndpoint = msg.UserProperties["NServiceBus.OriginatingEndpoint"].ToString();
-        //                messageModel.ProcessingEndpoint = msg.UserProperties["NServiceBus.ProcessingEndpoint"].ToString();
-        //                messageModel.EnclosedMessageTypes = enclosedMessageTypeTrimmed;
-        //                messageModel.StackTrace = msg.UserProperties["NServiceBus.ExceptionInfo.StackTrace"].ToString().CrLfToTilde();
-        //                messageModel.ExceptionMessage = exceptionMessageNoCrLf;
-        //            }
-        //            else if (msg.UserProperties.TryGetValue("DeadLetterReason", out exceptionMessage))
-        //            {
-        //                exceptionMessageNoCrLf = exceptionMessage.ToString().CrLfToTilde();
-        //                enclosedMessageTypeTrimmed = msg.UserProperties.ContainsKey("NServiceBus.EnclosedMessageTypes")
-        //                    ? msg.UserProperties["NServiceBus.EnclosedMessageTypes"].ToString().Split(',')[0]
-        //                    : "";
+            var queueInfo = await GetQueueDetailsAsync(queueName);
+            if( queueInfo.MessageCount < qty)
+            {
+                qty = Convert.ToInt32(queueInfo.MessageCount);
+            }
 
-        //                messageModel.MessageId = msg.UserProperties["NServiceBus.MessageId"].ToString();
-        //                messageModel.TimeOfFailure = msg.UserProperties["NServiceBus.TimeSent"].ToString();
-        //                messageModel.ExceptionType = "Unknown";
-        //                messageModel.OriginatingEndpoint = msg.UserProperties["NServiceBus.OriginatingEndpoint"].ToString();
-        //                messageModel.ProcessingEndpoint = "Unknown";
-        //                messageModel.StackTrace = string.Empty;
-        //                messageModel.EnclosedMessageTypes = enclosedMessageTypeTrimmed;
-        //                messageModel.ExceptionMessage = exceptionMessageNoCrLf;
-        //            }
+            var messageQtyToGet = CalculateMessageQtyToGet(qty, 0, batchSize);
+            receivedMessages = messageQtyToGet > 0 ? await messageReceiver.ReceiveAsync(messageQtyToGet) : null;
 
-        //#if DEBUG
-        //            // When developing I want to be able to use as simple a message as possible but still see some information in the output
-        //            // so I will just grab the message body and output it raw
-        //            else
-        //            {
-        //                _logger.LogDebug($"msg.Body: {Encoding.UTF8.GetString(msg.Body)}");
-        //                messageModel.RawMessage = Encoding.UTF8.GetString(msg.Body);
-        //            }
-        //#endif
-        //            return messageModel;
-        //        }
+            if (receivedMessages != null)
+            {
+                _logger.LogDebug($"Received Message Count: {receivedMessages.Count}");
+
+                while (receivedMessages?.Count > 0 && totalMessages < qty)
+                {
+                    totalMessages += receivedMessages.Count;
+                    foreach (var msg in receivedMessages)
+                    {
+                        formattedMessages.Add(new QueueMessage
+                        {
+                            Id = msg.MessageId,
+                            UserId = UserService.GetUserId(),
+                            OriginalMessage = msg,
+                            Queue = queueName,
+                            IsReadOnly = false,
+                            Body = Encoding.UTF8.GetString(msg.Body),
+                            OriginatingEndpoint = msg.UserProperties["NServiceBus.OriginatingEndpoint"].ToString(),
+                            ProcessingEndpoint = msg.UserProperties["NServiceBus.ProcessingEndpoint"].ToString(),
+                            Exception = msg.UserProperties["NServiceBus.ExceptionInfo.Message"].ToString(),
+                            ExceptionType = msg.UserProperties["NServiceBus.ExceptionInfo.ExceptionType"].ToString()
+                        });
+                        await messageReceiver.CompleteAsync(msg.SystemProperties.LockToken);
+                    }
+
+                    messageQtyToGet = CalculateMessageQtyToGet(qty, totalMessages, batchSize);
+                    receivedMessages = messageQtyToGet > 0 ? await messageReceiver.ReceiveAsync(messageQtyToGet) : null;
+                }
+            }
+
+            //await messageReceiver.CloseAsync();
+
+            return new ReceiveMessagesResponse()
+            {
+                Messages = formattedMessages,
+                MessageReceiver = messageReceiver
+            };
+        }
+
+        public async Task SendMessageToErrorQueueAsync(QueueMessage msg)
+        {
+            await SendMessageAsync(msg, msg.Queue);
+        }
+
+        public async Task SendMessageToProcessingQueueAsync(QueueMessage msg)
+        {
+            var queueName = msg.OriginalMessage.UserProperties["NServiceBus.ProcessingEndpoint"].ToString();
+            await SendMessageAsync(msg, queueName);
+        }
+
+        private int CalculateMessageQtyToGet(int totalExpected, int received, int batchSize)
+        {
+            var qtyRequired = totalExpected - received;
+
+            if (qtyRequired >= batchSize)
+                return batchSize;
+            else if (qtyRequired < batchSize && qtyRequired > 0)
+                return qtyRequired;
+            return 0;
+        }
+
+        private async Task SendMessageAsync(QueueMessage errorMessage, string queueName)
+        {
+
+            var messageSender = new MessageSender(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
+
+            if (!errorMessage.IsReadOnly)
+            {
+                await messageSender.SendAsync(errorMessage.OriginalMessage);
+            }
+        }
+
+        public async Task Complete(MessageReceiver messageReceiver, IEnumerable<string> lockTokens)
+        {
+            try
+            {
+                if (lockTokens?.Count() > 0)
+                    await messageReceiver.CompleteAsync(lockTokens).ConfigureAwait(false);
+
+            }catch(Exception ex)
+            {
+                _logger.LogError(ex.Message, ex);
+                throw;
+            }
+        }
+
+        public async Task Complete(MessageReceiver messageReceiver, string lockToken)
+        {
+            if (!string.IsNullOrEmpty(lockToken))
+                await messageReceiver.CompleteAsync(lockToken).ConfigureAwait(false);
+        }
+
+        public async Task CloseMessageReceiver(MessageReceiver messageReceiver)
+        {
+            if (!messageReceiver.IsClosedOrClosing)
+                await messageReceiver.CloseAsync();
+        }
     }
 }
