@@ -4,15 +4,13 @@ using System.Text;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 {
-    public static class UserService
+    public class UserService : IUserService
     {
-        private static string userId = "123456";
+        private string userId = "123456";
 
-        public static string GetUserId()
+        public string GetUserId()
         {
             return userId;
         }
-
-    
     }
 }

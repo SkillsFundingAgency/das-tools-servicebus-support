@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SFA.DAS.Tools.Servicebus.Support.Application\SFA.DAS.Tools.Servicebus.Support.Application.csproj" />
     <ProjectReference Include="..\SFA.DAS.Tools.Servicebus.Support.Infrastructure\SFA.DAS.Tools.Servicebus.Support.Infrastructure.csproj" />
   </ItemGroup>
 

@@ -1,7 +1,8 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Core.Models;
+﻿using SFA.DAS.Tools.Servicebus.Support.Domain;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 {

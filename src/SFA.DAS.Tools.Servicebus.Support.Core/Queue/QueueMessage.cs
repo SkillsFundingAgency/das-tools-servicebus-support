@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Core.Models
+namespace SFA.DAS.Tools.Servicebus.Support.Domain.Queue
 {
     public class QueueMessage
     {

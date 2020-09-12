@@ -1,69 +1,99 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Web.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using System.Transactions;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using SFA.DAS.Tools.Servicebus.Support.Core.Models;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
-using SFA.DAS.Tools.Servicebus.Support.Web.Models;
+using SFA.DAS.Tools.Servicebus.Support.Application;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessageToErrorQueue;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
     public class MessageListController : Controller
     {
-        private readonly ISvcBusService _svcBusService;
-        private readonly ICosmosDbContext _cosmosDbContext;
         private readonly ILogger<MessageListController> _logger;
+        private readonly IUserService _userService;
+        private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
+        private readonly IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> _getQueueDetailsQuery;
+        private readonly ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> _bulkCreateMessagesCommand;
+        private readonly IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse> _receiveQueueMessagesQuery;
+        private readonly ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> _sendMessageToErrorQueueCommand;
+        private readonly ICommandHandler<DeleteQueueMessageCommand, DeleteQueueMessageCommandResponse> _deleteQueueMessageCommand;
 
-        public MessageListController(ISvcBusService svcBusService, ICosmosDbContext cosmosDbContext, ILogger<MessageListController> logger)
+        public MessageListController(
+            IUserService userService,
+            IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery,
+            IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> getQueueDetailsQuery,
+            ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> bulkCreateMessagesCommand,
+            IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse> receiveQueueMessagesQuery,
+            ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> sendMessageToErrorQueueCommand,
+            ICommandHandler<DeleteQueueMessageCommand, DeleteQueueMessageCommandResponse> deleteQueueMessageCommand,
+            ILogger<MessageListController> logger)
         {
-            _svcBusService = svcBusService;
-            _cosmosDbContext = cosmosDbContext;
+            _userService = userService;
+            _getMessagesQuery = getMessagesQuery;
+            _getQueueDetailsQuery = getQueueDetailsQuery;
+            _bulkCreateMessagesCommand = bulkCreateMessagesCommand;
+            _receiveQueueMessagesQuery = receiveQueueMessagesQuery;
+            _sendMessageToErrorQueueCommand = sendMessageToErrorQueueCommand;
+            _deleteQueueMessageCommand = deleteQueueMessageCommand;
             _logger = logger;
         }
 
         public async Task<IActionResult> Index()
         {
-            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties
-            {
-                Offset = 0,
-                Limit = 1
+            var response = await _getMessagesQuery.Handle(new GetMessagesQuery() 
+            { 
+                UserId = _userService.GetUserId(),
+                SearchProperties = new SearchProperties
+                {
+                    Offset = 0,
+                    Limit = 1
+                }
             });
-            var cnt = await _cosmosDbContext.GetUserMessageCountAsync(UserService.GetUserId());
-            var queueName = GetQueueName(messages);
-
-            var vm = new MessageListViewModel()
+            
+            return View(new MessageListViewModel()
             {
-                Count = cnt,
-                QueueInfo = await _svcBusService.GetQueueDetailsAsync(queueName)
-            };
-
-            return View(vm);
+                Count = response.Count,
+                QueueInfo = (await _getQueueDetailsQuery.Handle(new GetQueueDetailsQuery()
+                {
+                    QueueName = GetQueueName(response.Messages)
+                })).QueueInfo
+            });
         }
-
 
         public async Task<IActionResult> ReceiveMessages(string queue)
         {
             using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
-                ReceiveMessagesResponse response = null;
-
                 try
                 {
-                    response = await _svcBusService.ReceiveMessagesAsync(queue, 50);//todo custom qty 
-                    await _cosmosDbContext.BulkCreateQueueMessagesAsync(response.Messages);
+                    var response = await _receiveQueueMessagesQuery.Handle(new ReceiveQueueMessagesQuery()
+                        {
+                            QueueName = queue,
+                            Limit = 50 //todo custom qty
+                    });
+
+                    await _bulkCreateMessagesCommand.Handle(new BulkCreateQueueMessagesCommand()
+                        {
+                            Messages = response.Messages
+
+                        });
                     
                     ts.Complete();
-                }catch(Exception ex)
+                }
+                catch(Exception ex)
                 {
                     _logger.LogError("Failed to receive messages", ex);
-                    ts.Dispose();
                 }                               
             }                        
 
@@ -72,12 +102,24 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> AbortMessages()
         {
-            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties());
+            var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
+                {
+                    UserId = _userService.GetUserId(),
+                    SearchProperties = new SearchProperties()
 
-            foreach (var msg in messages)
+                });
+
+            foreach (var msg in response.Messages)
             {
-                await _svcBusService.SendMessageToErrorQueueAsync(msg);
-                await _cosmosDbContext.DeleteQueueMessageAsync(msg);
+                await _sendMessageToErrorQueueCommand.Handle(new SendMessageToErrorQueueCommand()
+                    {
+                        Message = msg
+                    });
+
+                await _deleteQueueMessageCommand.Handle(new DeleteQueueMessageCommand()
+                    {
+                        Message = msg
+                    });
             }
 
             return RedirectToAction("Index", "Home");
@@ -85,26 +127,25 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> Data(string sort, string order, string search, int offset, int limit)
         {
-            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties
-                {
-                    Sort = sort, 
-                    Order = order, 
-                    Search = search, 
-                    Offset = offset, 
-                    Limit = limit
-                });
-            var cnt = await _cosmosDbContext.GetUserMessageCountAsync(UserService.GetUserId());
-            var queueMessages = messages.ToList();
-
-            DefaultContractResolver contractResolver = new DefaultContractResolver
+            var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
             {
-                NamingStrategy = new DefaultNamingStrategy()
-            };
+                UserId = _userService.GetUserId(),
+                SearchProperties = new SearchProperties
+                {
+                    Sort = sort,
+                    Order = order,
+                    Search = search,
+                    Offset = offset,
+                    Limit = limit
+                }
+            });
+
+            var queueMessages = response.Messages.ToList();
 
             return Json(new
             {
-                Total = cnt,
-                TotalNotFiltered = cnt,
+                Total = response.Count,
+                TotalNotFiltered = response.Count,
                 Rows = queueMessages.Select(msg => new
                 {
                     Id = msg.Id,
@@ -114,10 +155,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                     Exception = msg.Exception,
                     ExceptionType = msg.ExceptionType
                 })
-            }/*, new JsonSerializerOptions()
-            {
-                PropertyNamingPolicy = null
-            }*/);
+            });
         }
 
         private string GetQueueName(IEnumerable<QueueMessage> messages)

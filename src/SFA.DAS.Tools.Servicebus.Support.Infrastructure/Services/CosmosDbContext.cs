@@ -1,34 +1,33 @@
 ﻿using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SFA.DAS.Tools.Servicebus.Support.Core.Models;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 {
     public class CosmosDbContext : ICosmosDbContext
     {
         private readonly ILogger<CosmosDbContext> _logger;
-        private readonly IConfiguration _config;
-        private CosmosClient client;
-        private readonly string databaseName;
+        private readonly CosmosClient _client;
+        private readonly string _databaseName;
+        private readonly IUserService _userService;
 
-        public CosmosDbContext(CosmosClient cosmosClient, IConfiguration config, ILogger<CosmosDbContext> logger)
+        public CosmosDbContext(CosmosClient cosmosClient, IUserService userService, IConfiguration config, ILogger<CosmosDbContext> logger)
         {
-            _config = config;
+            _userService = userService;
             _logger = logger;
-            
-            client = cosmosClient;
-            databaseName = _config.GetValue<string>("CosmosDb:DatabaseName");            
+            _client = cosmosClient;
+            _databaseName = config.GetValue<string>("CosmosDb:DatabaseName");
         }        
-
 
         public async Task CreateQueueMessageAsync(QueueMessage msg)
         {            
-            Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
+            Database database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             Container container = await database.CreateContainerIfNotExistsAsync(
                 "Session",
                 "/userId",
@@ -38,13 +37,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         }
         public async Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages)
         {                                   
-            Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
+            Database database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             Container container = await database.CreateContainerIfNotExistsAsync(
                 "Session",
                 "/userId",
                 400);                       
 
-            TransactionalBatch batch = container.CreateTransactionalBatch(new PartitionKey(UserService.GetUserId()));
+            TransactionalBatch batch = container.CreateTransactionalBatch(new PartitionKey(_userService.GetUserId()));
             
             foreach (var msg in messsages)
             {
@@ -60,10 +59,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             }
         }
 
-
         public async Task DeleteQueueMessageAsync(QueueMessage msg)
         {
-            Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
+            Database database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             Container container = await database.CreateContainerIfNotExistsAsync(
                 "Session",
                 "/userId",
@@ -92,7 +90,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             return messages;                          
         }
-
         public async Task<int> GetUserMessageCountAsync(string userId)
         {
             var sqlQuery = $"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}'";
@@ -101,25 +98,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             return currentResults.First();
         }
-
-        private async Task<FeedIterator<T>> QuerySetup<T>(string sqlQuery)
-        {
-            Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
-            Container container = await database.CreateContainerIfNotExistsAsync(
-                "Session",
-                "/userId",
-                400);
-
-            QueryDefinition queryDefinition = new QueryDefinition(sqlQuery);
-            var queryFeedIterator = container.GetItemQueryIterator<T>(queryDefinition);
-            return queryFeedIterator;
-        }
-
+       
         public async Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId)
         {
             var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.id = '{messageId}'";
 
-            Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
+            Database database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             Container container = await database.CreateContainerIfNotExistsAsync(
                 "Session",
                 "/userId",
@@ -131,7 +115,19 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             return currentResults.FirstOrDefault();
         }
-
         public async Task<bool> HasUserAnExistingSession(string userId) => await GetUserMessageCountAsync(userId) > 0;
+
+        private async Task<FeedIterator<T>> QuerySetup<T>(string sqlQuery)
+        {
+            Database database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
+            Container container = await database.CreateContainerIfNotExistsAsync(
+                "Session",
+                "/userId",
+                400);
+
+            QueryDefinition queryDefinition = new QueryDefinition(sqlQuery);
+            var queryFeedIterator = container.GetItemQueryIterator<T>(queryDefinition);
+            return queryFeedIterator;
+        }
     }
 }

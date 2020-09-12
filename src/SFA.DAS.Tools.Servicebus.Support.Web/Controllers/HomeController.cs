@@ -2,24 +2,47 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Application;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessageToErrorQueue;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMessages;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly ISvcBusService _svcBusService;
-        private readonly ICosmosDbContext _cosmosDbContext;
+        private readonly IUserService _userService;
+        private readonly IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> _getUserSessionQuery;
+        private readonly IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse> _getQueuesQuery;
+        private readonly IQueryHandler<PeekQueueMessagesQuery, PeekQueueMessagesQueryResponse> _peekQueueMessagesQuery;
+        private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
+        private readonly ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> _bulkCreateMessagesCommand;
+        private readonly ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> _sendMessageToErrorQueueCommand;
 
-        public HomeController(ILogger<HomeController> logger, ISvcBusService svcBusService, ICosmosDbContext cosmosDbContext)
+        public HomeController(ILogger<HomeController> logger,
+            IUserService userService,
+            IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> getUserSessionQuery,
+            IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse> getQueuesQuery,
+            IQueryHandler<PeekQueueMessagesQuery, PeekQueueMessagesQueryResponse> peekQueueMessagesQuery,
+            ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> bulkCreateMessagesCommand,
+            ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> sendMessageToErrorQueueCommand,
+            IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery)
         {
             _logger = logger;
-            _svcBusService = svcBusService;
-            _cosmosDbContext = cosmosDbContext;
+            _userService = userService;
+            _getUserSessionQuery = getUserSessionQuery;
+            _getQueuesQuery = getQueuesQuery;
+            _peekQueueMessagesQuery = peekQueueMessagesQuery;
+            _getMessagesQuery = getMessagesQuery;
+            _bulkCreateMessagesCommand = bulkCreateMessagesCommand;
+            _sendMessageToErrorQueueCommand = sendMessageToErrorQueueCommand;
         }
 
         public async Task<IActionResult> Index()
@@ -28,45 +51,62 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 #if DEBUG
             Debugger.Break();
 #endif
+            var response = await _getUserSessionQuery.Handle(new GetUserSessionQuery()
+                {
+                    UserId = _userService.GetUserId()
+                });
 
-#if PEEKMESSAGESTOCOSMOS
-            var messages = await _svcBusService.PeekMessagesAsync("sfa.das.notifications.messagehandlers-errors", 250);
-            await _cosmosDbContext.BulkCreateQueueMessagesAsync(messages);
-
-            return View();
-#else
-            var userHasExistingSession = await _cosmosDbContext.HasUserAnExistingSession(UserService.GetUserId());
-
-            if (userHasExistingSession)
+            if (response.UserHasExistingSession)
             {
                 return RedirectToAction(actionName: "Index", controllerName: "MessageList");
             }
-            else
-            {
-                var searchVM = new QueueViewModel
-                {
-                    Queues = await _svcBusService.GetErrorMessageQueuesAsync(),
-                };
 
-                return View(searchVM);
+            var searchVM = new QueueViewModel
+            {
+                Queues = (await _getQueuesQuery.Handle(new GetQueuesQuery())).Queues
+            };
+
+            return View(searchVM);
+        }
+
+#if DEBUG
+        public async Task<IActionResult> ImportToCosmos(string queueName = null)
+        {
+            queueName ??= "sfa.das.notifications.messagehandlers-errors";
+
+            var response = await _peekQueueMessagesQuery.Handle(new PeekQueueMessagesQuery()
+                { 
+                    QueueName = queueName,
+                    Limit = 250
+                });
+
+            await _bulkCreateMessagesCommand.Handle(new BulkCreateQueueMessagesCommand()
+                { 
+                    Messages = response.Messages
+            });
+
+            return RedirectToAction(actionName: "Index", controllerName: "Home");
+        }
+
+        public async Task<IActionResult> ImportToQueue(string queueName = null)
+        {
+            var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
+                {
+                    UserId = "123456",
+                    SearchProperties = new SearchProperties()
+                });
+            
+            foreach (var msg in response.Messages)
+            {
+                await _sendMessageToErrorQueueCommand.Handle(new SendMessageToErrorQueueCommand()
+                    {
+                        Message = msg
+                    });
             }
 
-            //HttpContext.Session.Set<SearchViewModel>("searchVM", searchVM);
-
-
-
-            //var mdbMessages = await _cosmosDbContext.GetQueueMessagesAsync("123456");
-            //foreach (var msg in mdbMessages)
-            //{
-            //    await _svcBusService.SendMessageToErrorQueueAsync(msg);
-            //}
-
-
-            //var messages = await _svcBusService.ReceiveMessagesAsync("errors", 10);
-
-            return View();
-#endif
+            return RedirectToAction(actionName: "Index", controllerName: "Home");
         }
+#endif
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

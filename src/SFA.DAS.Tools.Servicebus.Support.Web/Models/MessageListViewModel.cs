@@ -1,6 +1,7 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Core.Models;
+﻿using SFA.DAS.Tools.Servicebus.Support.Domain;
 using System.Collections.Generic;
 using System.Threading;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Models
 {
