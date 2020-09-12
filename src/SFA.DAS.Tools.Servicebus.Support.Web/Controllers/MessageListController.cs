@@ -8,6 +8,7 @@ using SFA.DAS.Tools.Servicebus.Support.Web.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Transactions;
 
@@ -69,17 +70,24 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> EndSession()
+        public async Task<IActionResult> EndSession(string queue)
         {
             var allMessages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties());
-            var messageIds = allMessages.Select(x => x.Id).ToList();
+            var messageIds = allMessages.Select(x => x.Id).ToList();            
 
-            await AbortMessages(messageIds);
+            await AbortMessages(messageIds, queue);
 
             return RedirectToAction("Index", "Home");
         }
 
-        public async Task<IActionResult> AbortMessages(IEnumerable<string> messageIds)
+        public async Task<IActionResult> AbortMessages(IEnumerable<string> messageIds, string queue)
+        {            
+            await MoveFromCosmosDbToServiceBus(messageIds, queue);
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        private async Task MoveFromCosmosDbToServiceBus(IEnumerable<string> messageIds, string queueName)
         {
             foreach (var batchedIds in SplitList<string>(messageIds.ToList()))
             {
@@ -89,10 +97,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                     {
                         var messages = await _cosmosDbContext.GetQueueMessagesByIdAsync(UserService.GetUserId(), batchedIds);
                         if (messages.Count() > 0)
-                        {
-                            var errorQueueName = GetQueueName(messages);
-
-                            await _svcBusService.SendMessagesToErrorQueueAsync(messages, errorQueueName);
+                        {                            
+                            await _svcBusService.SendMessagesAsync(messages, queueName);
                             var ids = messages.Select(x => x.Id).ToList();
                             await _cosmosDbContext.DeleteQueueMessagesAsync(ids);
                         }
@@ -105,6 +111,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                     }
                 }
             }
+        }
+
+        public async Task<IActionResult> ReplayMessages(IEnumerable<string> messageIds, string queue)
+        {           
+            var processingQueueName = GetProcessingQueueName(queue);
+            await MoveFromCosmosDbToServiceBus(messageIds, processingQueueName);
 
             return RedirectToAction("Index", "Home");
         }
@@ -185,6 +197,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             }
 
             return name;
+        }
+
+        private string GetProcessingQueueName(string errorQueueName)
+        {
+            string pattern = @"[-,_]error[s]*$";
+            return Regex.Replace(errorQueueName, pattern, "");
         }
     }
 }
