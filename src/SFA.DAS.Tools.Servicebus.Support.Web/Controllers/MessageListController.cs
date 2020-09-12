@@ -70,7 +70,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         public async Task<IActionResult> EndSession()
-        {            
+        {
             var allMessages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties());
             var messageIds = allMessages.Select(x => x.Id).ToList();
 
@@ -80,7 +80,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         public async Task<IActionResult> AbortMessages(IEnumerable<string> messageIds)
-        {            
+        {
             foreach (var batchedIds in SplitList<string>(messageIds.ToList()))
             {
                 using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -93,7 +93,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                             var errorQueueName = GetQueueName(messages);
 
                             await _svcBusService.SendMessagesToErrorQueueAsync(messages, errorQueueName);
-                            await _cosmosDbContext.DeleteQueueMessagesAsync(messages);
+                            var ids = messages.Select(x => x.Id).ToList();
+                            await _cosmosDbContext.DeleteQueueMessagesAsync(ids);
                         }
                         ts.Complete();
                     }
@@ -102,6 +103,28 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                         _logger.LogError("Failed to abort messages", ex);
                         ts.Dispose();
                     }
+                }
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        public async Task<IActionResult> DeleteMessages(IEnumerable<string> messageIds)
+        {
+            //todo test only 
+            var allMessages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties());
+            messageIds = allMessages.Select(x => x.Id).ToList().Take(1);
+
+            foreach (var batchedIds in SplitList<string>(messageIds.ToList()))
+            {
+                try
+                {                    
+                    await _cosmosDbContext.DeleteQueueMessagesAsync(batchedIds);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Failed to delete messages", ex);
+
                 }
             }
 

@@ -61,7 +61,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         }
 
 
-        public async Task DeleteQueueMessagesAsync(IEnumerable<QueueMessage> messages)
+        public async Task DeleteQueueMessagesAsync(IEnumerable<string> ids)
         {
             Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
             Container container = await database.CreateContainerIfNotExistsAsync(
@@ -71,17 +71,17 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             TransactionalBatch batch = container.CreateTransactionalBatch(new PartitionKey(UserService.GetUserId()));
 
-            foreach (var msg in messages)
+            foreach (var id in ids)
             {
-                batch.DeleteItem(msg.Id);
+                batch.DeleteItem(id);
             }
 
             TransactionalBatchResponse batchResponse = await batch.ExecuteAsync();
 
             if (!batchResponse.IsSuccessStatusCode)
             {
-                _logger.LogError("Cosmos batch creation failed", batchResponse);
-                throw new Exception("Cosmos batch creation failed");
+                _logger.LogError("Cosmos batch deletion failed", batchResponse);
+                throw new Exception("Cosmos batch deletion failed");
             }
         }
 

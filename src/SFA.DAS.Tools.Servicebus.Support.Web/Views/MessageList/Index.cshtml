@@ -32,6 +32,7 @@
         <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()">Get More Messages</a> |
 
         <a asp-controller="MessageList" asp-action="AbortMessages" onclick="displayBusyIndicator()">Abort</a> |
+        <a asp-controller="MessageList" asp-action="DeleteMessages" onclick="displayBusyIndicator()">Delete</a> |
         <a asp-controller="MessageList" asp-action="EndSession" onclick="displayBusyIndicator()">End Session</a>
 
     </div>
