@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Transactions;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using SFA.DAS.Tools.Servicebus.Support.Core.Models;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Transactions;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
@@ -58,26 +56,32 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 {
                     response = await _svcBusService.ReceiveMessagesAsync(queue, 50);//todo custom qty 
                     await _cosmosDbContext.BulkCreateQueueMessagesAsync(response.Messages);
-                    
+
                     ts.Complete();
-                }catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     _logger.LogError("Failed to receive messages", ex);
                     ts.Dispose();
-                }                               
-            }                        
+                }
+            }
 
             return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> AbortMessages(IEnumerable<string> messageIds)
-        {
-
-            //test only 
+        public async Task<IActionResult> EndSession()
+        {            
             var allMessages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties());
-            messageIds = allMessages.Select(x => x.Id).ToList();
+            var messageIds = allMessages.Select(x => x.Id).ToList();
 
-            foreach( var batchedIds in SplitList<string>(messageIds.ToList()))
+            await AbortMessages(messageIds);
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        public async Task<IActionResult> AbortMessages(IEnumerable<string> messageIds)
+        {            
+            foreach (var batchedIds in SplitList<string>(messageIds.ToList()))
             {
                 using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
@@ -99,7 +103,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                         ts.Dispose();
                     }
                 }
-            }                          
+            }
 
             return RedirectToAction("Index", "Home");
         }
@@ -115,13 +119,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         public async Task<IActionResult> Data(string sort, string order, string search, int offset, int limit)
         {
             var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties
-                {
-                    Sort = sort, 
-                    Order = order, 
-                    Search = search, 
-                    Offset = offset, 
-                    Limit = limit
-                });
+            {
+                Sort = sort,
+                Order = order,
+                Search = search,
+                Offset = offset,
+                Limit = limit
+            });
             var cnt = await _cosmosDbContext.GetUserMessageCountAsync(UserService.GetUserId());
             var queueMessages = messages.ToList();
 
