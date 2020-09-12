@@ -20,7 +20,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
         Task<QueueInfo> GetQueueDetailsAsync(string name);
         Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty);
         Task<ReceiveMessagesResponse> ReceiveMessagesAsync(string queueName, int qty);
-        Task SendMessageToErrorQueueAsync(QueueMessage msg);
+        Task SendMessagesToErrorQueueAsync(IEnumerable<QueueMessage> messages, string queueName);
         Task SendMessageToProcessingQueueAsync(QueueMessage msg);
         Task Complete(MessageReceiver messageReceiver, IEnumerable<string> lockTokens);
         Task Complete(MessageReceiver messageReceiver, string lockToken);
@@ -188,15 +188,15 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             };
         }
 
-        public async Task SendMessageToErrorQueueAsync(QueueMessage msg)
+        public async Task SendMessagesToErrorQueueAsync(IEnumerable<QueueMessage> messages, string queueName)
         {
-            await SendMessageAsync(msg, msg.Queue);
+            await SendMessageAsync(messages, queueName);
         }
 
         public async Task SendMessageToProcessingQueueAsync(QueueMessage msg)
         {
-            var queueName = msg.OriginalMessage.UserProperties["NServiceBus.ProcessingEndpoint"].ToString();
-            await SendMessageAsync(msg, queueName);
+            //var queueName = msg.OriginalMessage.UserProperties["NServiceBus.ProcessingEndpoint"].ToString();
+            //await SendMessageAsync(msg, queueName);
         }
 
         private int CalculateMessageQtyToGet(int totalExpected, int received, int batchSize)
@@ -210,14 +210,14 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             return 0;
         }
 
-        private async Task SendMessageAsync(QueueMessage errorMessage, string queueName)
-        {
-
+        private async Task SendMessageAsync(IEnumerable<QueueMessage> messages, string queueName)
+        {            
             var messageSender = new MessageSender(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
 
-            if (!errorMessage.IsReadOnly)
+            if (messages.Count() > 0)
             {
-                await messageSender.SendAsync(errorMessage.OriginalMessage);
+                var orginalMessages = messages.Select(m => m.OriginalMessage).ToList();
+                await messageSender.SendAsync(orginalMessages);
             }
         }
 

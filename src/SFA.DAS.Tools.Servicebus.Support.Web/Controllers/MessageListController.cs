@@ -70,17 +70,46 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> AbortMessages()
+        public async Task<IActionResult> AbortMessages(IEnumerable<string> messageIds)
         {
-            var messages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties());
 
-            foreach (var msg in messages)
+            //test only 
+            var allMessages = await _cosmosDbContext.GetQueueMessagesAsync(UserService.GetUserId(), new SearchProperties());
+            messageIds = allMessages.Select(x => x.Id).ToList();
+
+            foreach( var batchedIds in SplitList<string>(messageIds.ToList()))
             {
-                await _svcBusService.SendMessageToErrorQueueAsync(msg);
-                await _cosmosDbContext.DeleteQueueMessageAsync(msg);
-            }
+                using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    try
+                    {
+                        var messages = await _cosmosDbContext.GetQueueMessagesByIdAsync(UserService.GetUserId(), batchedIds);
+                        if (messages.Count() > 0)
+                        {
+                            var errorQueueName = GetQueueName(messages);
+
+                            await _svcBusService.SendMessagesToErrorQueueAsync(messages, errorQueueName);
+                            await _cosmosDbContext.DeleteQueueMessagesAsync(messages);
+                        }
+                        ts.Complete();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError("Failed to abort messages", ex);
+                        ts.Dispose();
+                    }
+                }
+            }                          
 
             return RedirectToAction("Index", "Home");
+        }
+
+        public static IEnumerable<List<T>> SplitList<T>(List<T> items, int nSize = 25)
+        {
+            for (int i = 0; i < items.Count(); i += nSize)
+            {
+                yield return items.GetRange(i, Math.Min(nSize, items.Count - i));
+            }
         }
 
         public async Task<IActionResult> Data(string sort, string order, string search, int offset, int limit)

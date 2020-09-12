@@ -36,7 +36,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             ItemResponse<QueueMessage> response = await container.CreateItemAsync(msg);
 
         }
-        public async Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages)
+        public async Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messages)
         {                                   
             Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
             Container container = await database.CreateContainerIfNotExistsAsync(
@@ -46,7 +46,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             TransactionalBatch batch = container.CreateTransactionalBatch(new PartitionKey(UserService.GetUserId()));
             
-            foreach (var msg in messsages)
+            foreach (var msg in messages)
             {
                 batch.CreateItem<QueueMessage>(msg);                
             }
@@ -61,7 +61,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         }
 
 
-        public async Task DeleteQueueMessageAsync(QueueMessage msg)
+        public async Task DeleteQueueMessagesAsync(IEnumerable<QueueMessage> messages)
         {
             Database database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
             Container container = await database.CreateContainerIfNotExistsAsync(
@@ -69,7 +69,20 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
                 "/userId",
                 400);
 
-            await container.DeleteItemAsync<QueueMessage>(msg.Id.ToString(), new PartitionKey(msg.UserId));
+            TransactionalBatch batch = container.CreateTransactionalBatch(new PartitionKey(UserService.GetUserId()));
+
+            foreach (var msg in messages)
+            {
+                batch.DeleteItem(msg.Id);
+            }
+
+            TransactionalBatchResponse batchResponse = await batch.ExecuteAsync();
+
+            if (!batchResponse.IsSuccessStatusCode)
+            {
+                _logger.LogError("Cosmos batch creation failed", batchResponse);
+                throw new Exception("Cosmos batch creation failed");
+            }
         }
 
         public async Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId, SearchProperties searchProperties)
@@ -91,6 +104,26 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             }
 
             return messages;                          
+        }
+
+        public async Task<IEnumerable<QueueMessage>> GetQueueMessagesByIdAsync(string userId, IEnumerable<string> ids)
+        {
+            var idsList = "\"" + string.Join($"\",\"", ids.Select(x => x.ToString()).ToArray()) + "\"";
+            var sqlQuery = $"SELECT * FROM c WHERE c.userId ='{userId}' and c.id in ({idsList})";
+
+            var queryFeedIterator = await QuerySetup<QueueMessage>(sqlQuery);
+
+            List<QueueMessage> messages = new List<QueueMessage>();
+
+            while (queryFeedIterator.HasMoreResults)
+            {
+                FeedResponse<QueueMessage> currentResults = await queryFeedIterator.ReadNextAsync();
+
+                var newMessages = currentResults.ToList();
+                messages.AddRange(newMessages);               
+            }
+
+            return messages;
         }
 
         public async Task<int> GetUserMessageCountAsync(string userId)
