@@ -102,7 +102,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             return formattedMessages;
         }
 
-        public async Task<ReceiveMessagesResponse> ReceiveMessagesAsync(string queueName, int qty)
+        public async Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty)
         {
             var messageReceiver = new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
             var totalMessages = 0;
@@ -135,10 +135,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                 }
             }
 
-            return new ReceiveMessagesResponse()
-            {
-                Messages = formattedMessages
-            };
+            return formattedMessages;
         }
 
         public async Task SendMessageToErrorQueueAsync(QueueMessage msg) => await SendMessageAsync(msg, msg.Queue);
