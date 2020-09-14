@@ -5,6 +5,5 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMe
     public class PeekQueueMessagesQuery
     {
         public string QueueName { get; set; }
-        public int Limit { get; set; }
     }
 }

@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SFA.DAS.Tools.Servicebus.Su
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SFA.DAS.Tools.Servicebus.Support.Application.UnitTests", "SFA.DAS.Tools.Servicebus.Support.Application.UnitTests\SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.csproj", "{185221AF-000A-4930-BEC2-64D8FAF444DB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests", "SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests\SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests.csproj", "{C8A25A07-501B-4133-811B-A2FC77712BB8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{185221AF-000A-4930-BEC2-64D8FAF444DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{185221AF-000A-4930-BEC2-64D8FAF444DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{185221AF-000A-4930-BEC2-64D8FAF444DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8A25A07-501B-4133-811B-A2FC77712BB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8A25A07-501B-4133-811B-A2FC77712BB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8A25A07-501B-4133-811B-A2FC77712BB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8A25A07-501B-4133-811B-A2FC77712BB8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -76,8 +76,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             var response = await _peekQueueMessagesQuery.Handle(new PeekQueueMessagesQuery()
                 { 
-                    QueueName = queueName,
-                    Limit = 250
+                    QueueName = queueName
                 });
 
             await _bulkCreateMessagesCommand.Handle(new BulkCreateQueueMessagesCommand()

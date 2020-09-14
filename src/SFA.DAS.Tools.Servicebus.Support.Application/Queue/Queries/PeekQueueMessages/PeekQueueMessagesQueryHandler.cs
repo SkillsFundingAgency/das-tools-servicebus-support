@@ -14,7 +14,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMe
 
         public async Task<PeekQueueMessagesQueryResponse> Handle(PeekQueueMessagesQuery query)
         {
-            var messages = await _asbService.PeekMessagesAsync(query.QueueName, query.Limit);
+            var messages = await _asbService.PeekMessagesAsync(query.QueueName);
 
             return new PeekQueueMessagesQueryResponse()
             {

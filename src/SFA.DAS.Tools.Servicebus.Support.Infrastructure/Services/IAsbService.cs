@@ -8,8 +8,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
     {
         Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync();
         Task<QueueInfo> GetQueueDetailsAsync(string name);
-        Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty);
-        Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty);
+        Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName);
+        Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName);
         Task SendMessageToErrorQueueAsync(QueueMessage msg);
         Task SendMessageToProcessingQueueAsync(QueueMessage msg);
     }

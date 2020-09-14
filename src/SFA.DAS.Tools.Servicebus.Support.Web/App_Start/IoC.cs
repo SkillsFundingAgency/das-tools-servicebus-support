@@ -1,4 +1,8 @@
-﻿using Microsoft.Azure.Cosmos;
+﻿using System.Runtime.InteropServices.ComTypes;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.ServiceBus;
+using Microsoft.Azure.ServiceBus.Management;
+using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -22,7 +26,22 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddTransient<IAsbService, AsbService>(s => new AsbService(s.GetService<IUserService>(), configuration, s.GetRequiredService<ILogger<AsbService>>()));            
+            services.AddTransient<IAsbService, AsbService>(s =>
+            {
+                var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
+                var connectionBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
+                var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
+
+                return new AsbService(s.GetService<IUserService>(),
+                    configuration,
+                    s.GetRequiredService<ILogger<AsbService>>(),
+                    tokenProvider,
+                    connectionBuilder,
+                    new ManagementClient(connectionBuilder, tokenProvider),
+                    new BatchMessageStrategy()
+                );
+            });
+
             services.AddTransient<ICosmosDbContext, CosmosDbContext>(s => new CosmosDbContext(s.GetRequiredService<CosmosClient>(), s.GetService<IUserService>(), configuration, s.GetRequiredService<ILogger<CosmosDbContext>>()));
 
             services.AddSingleton(s =>

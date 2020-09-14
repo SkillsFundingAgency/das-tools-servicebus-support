@@ -78,9 +78,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 try
                 {
                     var response = await _receiveQueueMessagesQuery.Handle(new ReceiveQueueMessagesQuery()
-                        {
-                            QueueName = queue,
-                            Limit = 50 //todo custom qty
+                    {
+                        QueueName = queue
                     });
 
                     await _bulkCreateMessagesCommand.Handle(new BulkCreateQueueMessagesCommand()

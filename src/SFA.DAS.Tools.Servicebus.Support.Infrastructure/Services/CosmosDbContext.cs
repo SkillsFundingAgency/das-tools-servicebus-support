@@ -28,20 +28,14 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         public async Task CreateQueueMessageAsync(QueueMessage msg)
         {            
             Database database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
-            Container container = await database.CreateContainerIfNotExistsAsync(
-                "Session",
-                "/userId",
-                400);
-            ItemResponse<QueueMessage> response = await container.CreateItemAsync(msg);
-
+            var container = await CrateContainer(database);
+            await container.CreateItemAsync(msg);
         }
+
         public async Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages)
         {                                   
             Database database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
-            Container container = await database.CreateContainerIfNotExistsAsync(
-                "Session",
-                "/userId",
-                400);                       
+            var container = await CrateContainer(database);
 
             TransactionalBatch batch = container.CreateTransactionalBatch(new PartitionKey(_userService.GetUserId()));
             
@@ -62,10 +56,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         public async Task DeleteQueueMessageAsync(QueueMessage msg)
         {
             Database database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
-            Container container = await database.CreateContainerIfNotExistsAsync(
-                "Session",
-                "/userId",
-                400);
+            var container = await CrateContainer(database);
 
             await container.DeleteItemAsync<QueueMessage>(msg.Id.ToString(), new PartitionKey(msg.UserId));
         }
@@ -90,6 +81,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             return messages;                          
         }
+
         public async Task<int> GetUserMessageCountAsync(string userId)
         {
             var sqlQuery = $"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}'";
@@ -104,10 +96,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.id = '{messageId}'";
 
             Database database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
-            Container container = await database.CreateContainerIfNotExistsAsync(
-                "Session",
-                "/userId",
-                400);
+            var container = await CrateContainer(database);
 
             QueryDefinition queryDefinition = new QueryDefinition(sqlQuery);
             FeedIterator<QueueMessage> queryFeedIterator = container.GetItemQueryIterator<QueueMessage>(queryDefinition);
@@ -120,14 +109,21 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         private async Task<FeedIterator<T>> QuerySetup<T>(string sqlQuery)
         {
             Database database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
-            Container container = await database.CreateContainerIfNotExistsAsync(
-                "Session",
-                "/userId",
-                400);
+            var container = await CrateContainer(database);
 
             QueryDefinition queryDefinition = new QueryDefinition(sqlQuery);
             var queryFeedIterator = container.GetItemQueryIterator<T>(queryDefinition);
             return queryFeedIterator;
+        }
+
+        private static async Task<Container> CrateContainer(Database database)
+        {
+            Container container = await database.CreateContainerIfNotExistsAsync(
+                "Session",
+                "/userId",
+                400);
+            
+            return container;
         }
     }
 }
