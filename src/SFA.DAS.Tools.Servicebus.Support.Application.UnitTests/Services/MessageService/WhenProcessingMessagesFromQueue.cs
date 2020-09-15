@@ -39,7 +39,21 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
         {
             _bulkCreateQueueMessagesCommand.Setup(x => x.Handle(It.IsAny<BulkCreateQueueMessagesCommand>())).ReturnsAsync(new BulkCreateQueueMessagesCommandResponse());
             _getQueueMessageCountQuery.Setup(x => x.Handle(It.IsAny<GetQueueMessageCountQuery>())).ReturnsAsync(new GetQueueMessageCountQueryResponse() { Count = _qty });
-            _receiveQueueMessagesQuery.Setup(x => x.Handle(It.IsAny<ReceiveQueueMessagesQuery>())).ReturnsAsync(new ReceiveQueueMessagesQueryResponse());
+            _receiveQueueMessagesQuery.Setup(x => x.Handle(It.IsAny<ReceiveQueueMessagesQuery>())).ReturnsAsync(() =>
+            {
+                var messages = new List<QueueMessage>(_batchSize);
+                var i = 0;
+                while (i++ < _batchSize)
+                {
+                    messages.Add(new QueueMessage());
+                }
+
+                return new ReceiveQueueMessagesQueryResponse()
+                {
+                    Messages = messages
+
+                };
+            });
 
             IBatchMessageStrategy batchStaStrategy = new BatchMessageStrategy();
 
@@ -47,9 +61,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
 
            await sut.ProcessMessages(_queueName);
 
-           _bulkCreateQueueMessagesCommand.Verify(x => x.Handle(It.IsAny<BulkCreateQueueMessagesCommand>()), Times.Once);
+           _bulkCreateQueueMessagesCommand.Verify(x => x.Handle(It.IsAny<BulkCreateQueueMessagesCommand>()), Times.Exactly(3));
            _getQueueMessageCountQuery.Verify(x => x.Handle(It.IsAny<GetQueueMessageCountQuery>()), Times.Once);
-           _receiveQueueMessagesQuery.Verify(x => x.Handle(It.IsAny<ReceiveQueueMessagesQuery>()), Times.Once);
+           _receiveQueueMessagesQuery.Verify(x => x.Handle(It.IsAny<ReceiveQueueMessagesQuery>()), Times.Exactly(3));
         }
 
         private async Task<IList<QueueMessage>> GetMessages(int qty)
