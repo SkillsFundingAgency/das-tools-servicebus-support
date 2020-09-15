@@ -14,7 +14,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueu
 
         public async Task<ReceiveQueueMessagesQueryResponse> Handle(ReceiveQueueMessagesQuery query)
         {
-            var messages = await _asbService.ReceiveMessagesAsync(query.QueueName);
+            var messages = await _asbService.ReceiveMessagesAsync(query.QueueName, query.Quantity);
 
             return new ReceiveQueueMessagesQueryResponse()
             {

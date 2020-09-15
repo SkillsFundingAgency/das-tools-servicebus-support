@@ -12,35 +12,38 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.R
     public class WhenReceivingQueueMessages
     {
         private readonly string _queueName = "queue";
+        private readonly int _quantity = 42;
         private Mock<IAsbService> _asbService;
 
         [Test]
         public async Task ThenWillPeekQueueMessagesFromService()
         {
             _asbService = new Mock<IAsbService>(MockBehavior.Strict);
-            _asbService.Setup(x => x.ReceiveMessagesAsync(_queueName)).ReturnsAsync(new List<QueueMessage>());
+            _asbService.Setup(x => x.ReceiveMessagesAsync(_queueName, _quantity)).ReturnsAsync(new List<QueueMessage>());
 
             var sut = new ReceiveQueueMessagesQueryHandler(_asbService.Object);
 
             await sut.Handle(new ReceiveQueueMessagesQuery()
             {
-                QueueName = _queueName
+                QueueName = _queueName,
+                Quantity = _quantity
             });
 
-            _asbService.Verify(x => x.ReceiveMessagesAsync(_queueName), Times.Once);
+            _asbService.Verify(x => x.ReceiveMessagesAsync(_queueName, _quantity), Times.Once);
         }
 
         [Test]
         public async Task AndTheResponseWillBeValid()
         {
             _asbService = new Mock<IAsbService>(MockBehavior.Strict);
-            _asbService.Setup(x => x.ReceiveMessagesAsync(_queueName)).ReturnsAsync(new List<QueueMessage>());
+            _asbService.Setup(x => x.ReceiveMessagesAsync(_queueName, _quantity)).ReturnsAsync(new List<QueueMessage>());
 
             var sut = new ReceiveQueueMessagesQueryHandler(_asbService.Object);
 
             var response = await sut.Handle(new ReceiveQueueMessagesQuery()
             {
-                QueueName = _queueName
+                QueueName = _queueName,
+                Quantity = _quantity
             });
 
             response.Should().NotBeNull();

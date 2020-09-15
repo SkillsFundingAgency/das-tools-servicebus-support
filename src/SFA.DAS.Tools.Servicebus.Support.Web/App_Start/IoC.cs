@@ -13,10 +13,12 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessageToE
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessage;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
 
@@ -63,6 +65,20 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>, ReceiveQueueMessagesQueryHandler>();
             services.AddTransient<ICommandHandler<DeleteQueueMessageCommand, DeleteQueueMessageCommandResponse>, DeleteQueueMessageCommandHandler>();
             services.AddTransient<IQueryHandler<GetMessageQuery, GetMessageQueryResponse>, GetMessageQueryHandler>();
+            services.AddTransient<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>, GetQueueMessageCountQueryHandler>();
+
+
+            services.AddTransient<IBatchMessageStrategy, BatchMessageStrategy>();
+            services.AddTransient<IMessageService, MessageService>(s =>
+                 new MessageService(
+                    s.GetService<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>(),
+                    s.GetService<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>>(),
+                    s.GetService<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>>(),
+                    s.GetService<IBatchMessageStrategy>(),
+                    s.GetRequiredService<ILogger<MessageService>>(),
+                    configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize")
+                )
+            );
 
             return services;
         }

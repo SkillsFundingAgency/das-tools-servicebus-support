@@ -31,10 +31,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
                     peekedMessages.Add(formattedMsg);
                 }
 
-                if (read.Count < batchSize)
-                {
-                    break;
-                }
+                //if (read.Count < batchSize)
+                //{
+                //    break;
+                //}
             }
 
             return peekedMessages;

@@ -9,11 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Tools.Servicebus.Su
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Tools.Servicebus.Support.Domain", "SFA.DAS.Tools.Servicebus.Support.Core\SFA.DAS.Tools.Servicebus.Support.Domain.csproj", "{E799C061-CAB9-4387-BC5D-DB0FF78AAC6E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SFA.DAS.Tools.Servicebus.Support.Application", "SFA.DAS.Tools.Servicebus.Support.Application\SFA.DAS.Tools.Servicebus.Support.Application.csproj", "{33B5E8CD-A3A7-4475-8D99-871B9012F527}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Tools.Servicebus.Support.Application", "SFA.DAS.Tools.Servicebus.Support.Application\SFA.DAS.Tools.Servicebus.Support.Application.csproj", "{33B5E8CD-A3A7-4475-8D99-871B9012F527}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SFA.DAS.Tools.Servicebus.Support.Application.UnitTests", "SFA.DAS.Tools.Servicebus.Support.Application.UnitTests\SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.csproj", "{185221AF-000A-4930-BEC2-64D8FAF444DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Tools.Servicebus.Support.Application.UnitTests", "SFA.DAS.Tools.Servicebus.Support.Application.UnitTests\SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.csproj", "{185221AF-000A-4930-BEC2-64D8FAF444DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests", "SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests\SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests.csproj", "{C8A25A07-501B-4133-811B-A2FC77712BB8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests", "SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests\SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests.csproj", "{C8A25A07-501B-4133-811B-A2FC77712BB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

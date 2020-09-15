@@ -80,46 +80,41 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             return result;
         }
 
-        public async Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName)
+        public async Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty)
         {
-            var qty = await GetQueueMessageCount(queueName);
             var messageReceiver = CreateMessageReceiver(queueName);
-            
-            var messages = await _batchMessageStrategy.Execute(
-                queueName,
-                qty,
-                _batchSize,
-                async (messageQtyToGet) => await messageReceiver.PeekAsync(messageQtyToGet),
-                async msg => CreateQueueMessage(msg, queueName));
+            var messages = await messageReceiver.PeekAsync(qty);
+            var formattedMessages = new List<QueueMessage>(messages.Count);
 
+            foreach (var message in messages)
+            {
+                formattedMessages.Add(CreateQueueMessage(message, queueName));
+            }
             await messageReceiver.CloseAsync();
 
-            return messages;
+            return formattedMessages;
         }
 
-        public async Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName)
+        public async Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty)
         {
-            var qty = await GetQueueMessageCount(queueName);
             var messageReceiver = CreateMessageReceiver(queueName);
-            
-            var messages = await _batchMessageStrategy.Execute(
-                queueName,
-                qty,
-                _batchSize,
-                async (messageQtyToGet) => await messageReceiver.ReceiveAsync(messageQtyToGet),
-                async msg =>
-                {
-                    await messageReceiver.CompleteAsync(msg.SystemProperties.LockToken);
-                    return CreateQueueMessage(msg, queueName);
+            var messages = await messageReceiver.ReceiveAsync(qty);
+            var formattedMessages = new List<QueueMessage>(messages.Count);
 
-                });
+            foreach (var message in messages)
+            {
+                await messageReceiver.CompleteAsync(message.SystemProperties.LockToken);
+                formattedMessages.Add(CreateQueueMessage(message, queueName));
+            }
 
-            return messages;
+            return formattedMessages;
         }
 
         public async Task SendMessageToErrorQueueAsync(QueueMessage msg) => await SendMessageAsync(msg, msg.Queue);
 
         public async Task SendMessageToProcessingQueueAsync(QueueMessage msg) => await SendMessageAsync(msg, msg.ProcessingEndpoint);
+
+        public async Task<long> GetQueueMessageCountAsync(string queueName) => (await GetQueueDetailsAsync(queueName)).MessageCount;
 
         private async Task SendMessageAsync(QueueMessage errorMessage, string queueName)
         {
@@ -146,12 +141,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                 Exception = message.UserProperties["NServiceBus.ExceptionInfo.Message"].ToString(),
                 ExceptionType = message.UserProperties["NServiceBus.ExceptionInfo.ExceptionType"].ToString()
             };
-        }
-
-        private async Task<long> GetQueueMessageCount(string queueName)
-        {
-            var queueInfo = await GetQueueDetailsAsync(queueName);
-            return queueInfo.MessageCount;
         }
 
         private IMessageReceiver CreateMessageReceiver(string queueName)

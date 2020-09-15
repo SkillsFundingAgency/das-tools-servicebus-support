@@ -1,20 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
-using SFA.DAS.Tools.Servicebus.Support.Web.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Transactions;
 using SFA.DAS.Tools.Servicebus.Support.Application;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessageToErrorQueue;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Web.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
@@ -22,10 +19,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
     {
         private readonly ILogger<MessageListController> _logger;
         private readonly IUserService _userService;
+        private readonly IMessageService _messageService;
         private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
         private readonly IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> _getQueueDetailsQuery;
-        private readonly ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> _bulkCreateMessagesCommand;
-        private readonly IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse> _receiveQueueMessagesQuery;
         private readonly ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> _sendMessageToErrorQueueCommand;
         private readonly ICommandHandler<DeleteQueueMessageCommand, DeleteQueueMessageCommandResponse> _deleteQueueMessageCommand;
 
@@ -33,8 +29,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IUserService userService,
             IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery,
             IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> getQueueDetailsQuery,
-            ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> bulkCreateMessagesCommand,
-            IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse> receiveQueueMessagesQuery,
+            IMessageService messageService,
             ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> sendMessageToErrorQueueCommand,
             ICommandHandler<DeleteQueueMessageCommand, DeleteQueueMessageCommandResponse> deleteQueueMessageCommand,
             ILogger<MessageListController> logger)
@@ -42,8 +37,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _userService = userService;
             _getMessagesQuery = getMessagesQuery;
             _getQueueDetailsQuery = getQueueDetailsQuery;
-            _bulkCreateMessagesCommand = bulkCreateMessagesCommand;
-            _receiveQueueMessagesQuery = receiveQueueMessagesQuery;
+            _messageService = messageService;
             _sendMessageToErrorQueueCommand = sendMessageToErrorQueueCommand;
             _deleteQueueMessageCommand = deleteQueueMessageCommand;
             _logger = logger;
@@ -73,28 +67,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> ReceiveMessages(string queue)
         {
-            using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-            {
-                try
-                {
-                    var response = await _receiveQueueMessagesQuery.Handle(new ReceiveQueueMessagesQuery()
-                    {
-                        QueueName = queue
-                    });
-
-                    await _bulkCreateMessagesCommand.Handle(new BulkCreateQueueMessagesCommand()
-                        {
-                            Messages = response.Messages
-
-                        });
-                    
-                    ts.Complete();
-                }
-                catch(Exception ex)
-                {
-                    _logger.LogError("Failed to receive messages", ex);
-                }                               
-            }                        
+            await _messageService.ProcessMessages(queue);
 
             return RedirectToAction("Index");
         }

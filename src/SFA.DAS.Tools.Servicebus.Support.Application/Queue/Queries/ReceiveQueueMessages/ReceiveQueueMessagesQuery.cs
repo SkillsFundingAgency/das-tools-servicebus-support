@@ -5,5 +5,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueu
     public class ReceiveQueueMessagesQuery
     {
         public string QueueName { get; set; }
+        public int Quantity { get; set; }
     }
 }
