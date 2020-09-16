@@ -9,9 +9,10 @@ using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessageToErrorQueue;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessage;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
@@ -60,13 +61,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse>, GetQueuesQueryHandler>();
             services.AddTransient<IQueryHandler<PeekQueueMessagesQuery, PeekQueueMessagesQueryResponse>, PeekQueueMessagesQueryHandler>();
             services.AddTransient<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>, BulkCreateQueueMessagesCommandHandler>();
-            services.AddTransient<ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse>, SendMessageToErrorQueueCommandHandler>();
+            services.AddTransient<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>, SendMessagesCommandHandler>();
             services.AddTransient<IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse>, GetQueueDetailsQueryHandler>();
             services.AddTransient<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>, ReceiveQueueMessagesQueryHandler>();
-            services.AddTransient<ICommandHandler<DeleteQueueMessageCommand, DeleteQueueMessageCommandResponse>, DeleteQueueMessageCommandHandler>();
+            services.AddTransient<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>, DeleteQueueMessagesCommandHandler>();
             services.AddTransient<IQueryHandler<GetMessageQuery, GetMessageQueryResponse>, GetMessageQueryHandler>();
             services.AddTransient<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>, GetQueueMessageCountQueryHandler>();
-
+            services.AddTransient<IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse>, GetMessagesByIdQueryHandler>();
 
             services.AddTransient<IBatchMessageStrategy, BatchMessageStrategy>();
             services.AddTransient<IMessageService, MessageService>(s =>
@@ -76,7 +77,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                     s.GetService<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>>(),
                     s.GetService<IBatchMessageStrategy>(),
                     s.GetRequiredService<ILogger<MessageService>>(),
-                    configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize")
+                    configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
+                    s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
+                    s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()
                 )
             );
 

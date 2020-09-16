@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessageToErrorQueue;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
@@ -24,7 +24,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly IQueryHandler<PeekQueueMessagesQuery, PeekQueueMessagesQueryResponse> _peekQueueMessagesQuery;
         private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
         private readonly ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> _bulkCreateMessagesCommand;
-        private readonly ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> _sendMessageToErrorQueueCommand;
+        private readonly ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> _sendMessagesCommand;
 
         public HomeController(ILogger<HomeController> logger,
             IUserService userService,
@@ -32,7 +32,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse> getQueuesQuery,
             IQueryHandler<PeekQueueMessagesQuery, PeekQueueMessagesQueryResponse> peekQueueMessagesQuery,
             ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> bulkCreateMessagesCommand,
-            ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> sendMessageToErrorQueueCommand,
+            ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
             IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery)
         {
             _logger = logger;
@@ -42,7 +42,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _peekQueueMessagesQuery = peekQueueMessagesQuery;
             _getMessagesQuery = getMessagesQuery;
             _bulkCreateMessagesCommand = bulkCreateMessagesCommand;
-            _sendMessageToErrorQueueCommand = sendMessageToErrorQueueCommand;
+            _sendMessagesCommand = sendMessagesCommand;
         }
 
         public async Task<IActionResult> Index()
@@ -52,9 +52,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             Debugger.Break();
 #endif
             var response = await _getUserSessionQuery.Handle(new GetUserSessionQuery()
-                {
-                    UserId = _userService.GetUserId()
-                });
+            {
+                UserId = _userService.GetUserId()
+            });
 
             if (response.UserHasExistingSession)
             {
@@ -75,13 +75,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             queueName ??= "sfa.das.notifications.messagehandlers-errors";
 
             var response = await _peekQueueMessagesQuery.Handle(new PeekQueueMessagesQuery()
-                { 
-                    QueueName = queueName
-                });
+            {
+                QueueName = queueName
+            });
 
             await _bulkCreateMessagesCommand.Handle(new BulkCreateQueueMessagesCommand()
-                { 
-                    Messages = response.Messages
+            {
+                Messages = response.Messages
             });
 
             return RedirectToAction(actionName: "Index", controllerName: "Home");
@@ -90,18 +90,15 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         public async Task<IActionResult> ImportToQueue(string queueName = null)
         {
             var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
-                {
-                    UserId = "123456",
-                    SearchProperties = new SearchProperties()
-                });
-            
-            foreach (var msg in response.Messages)
             {
-                await _sendMessageToErrorQueueCommand.Handle(new SendMessageToErrorQueueCommand()
-                    {
-                        Message = msg
-                    });
-            }
+                UserId = "123456",
+                SearchProperties = new SearchProperties()
+            });
+
+            await _sendMessagesCommand.Handle(new SendMessagesCommand()
+            {
+                Messages = response.Messages
+            });
 
             return RedirectToAction(actionName: "Index", controllerName: "Home");
         }

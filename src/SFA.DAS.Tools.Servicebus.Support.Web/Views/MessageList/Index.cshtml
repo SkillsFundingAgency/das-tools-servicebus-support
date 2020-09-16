@@ -30,7 +30,11 @@
 
     <div>
         <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()">Get More Messages</a> |
-        <a asp-controller="MessageList" asp-action="AbortMessages" onclick="displayBusyIndicator()">Abort All</a>
+
+        <a asp-controller="MessageList" asp-action="ReplayMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()">Replay</a> |
+        <a asp-controller="MessageList" asp-action="AbortMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()">Abort</a> |
+        <a asp-controller="MessageList" asp-action="DeleteMessages" onclick="displayBusyIndicator()">Delete</a> |
+        <a asp-controller="MessageList" asp-action="EndSession" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()">End Session</a>
     </div>
     
     <table
