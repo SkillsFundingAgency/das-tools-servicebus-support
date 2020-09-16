@@ -35,6 +35,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
         {
             services.AddControllersWithViews();
             services.AddServices(_configuration);
+            services.AddSession();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -56,6 +57,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
             app.UseRouting();
 
             app.UseAuthorization();
+            app.UseSession();
 
             app.UseEndpoints(endpoints =>
             {
