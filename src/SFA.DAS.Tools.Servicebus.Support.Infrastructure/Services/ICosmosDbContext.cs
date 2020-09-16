@@ -13,7 +13,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         Task DeleteQueueMessageAsync(QueueMessage msg);
         Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId, SearchProperties searchProperties);
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
-        Task<int> GetUserMessageCountAsync(string userId);
+        Task<int> GetMessageCountAsync(string userId, SearchProperties searchProperties = null);
         Task<bool> HasUserAnExistingSession(string userId);
     }
 }

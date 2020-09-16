@@ -18,12 +18,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
     {
         private readonly IConfiguration _config;
         private readonly ILogger _logger;
-        private readonly int _batchSize;
         private readonly TokenProvider _tokenProvider;
         private readonly ServiceBusConnectionStringBuilder _sbConnectionStringBuilder;
         private readonly ManagementClient _managementClient;
         private readonly IUserService _userService;
-        private readonly IBatchMessageStrategy _batchMessageStrategy;
 
         public AsbService(IUserService userService,
             IConfiguration config,
@@ -37,12 +35,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             _config = config ?? throw new Exception("config is null");
             _logger = logger ?? throw new Exception("logger is null");
             
-            _batchSize = _config.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize");
             _tokenProvider = tokenProvider;
             _sbConnectionStringBuilder = serviceBusConnectionStringBuilder;
             _managementClient = managementClient;
             _userService = userService;
-            _batchMessageStrategy = batchMessageStrategy;
         }
 
         public async Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync()
@@ -116,6 +112,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public async Task<long> GetQueueMessageCountAsync(string queueName) => (await GetQueueDetailsAsync(queueName)).MessageCount;
 
+        private IMessageReceiver CreateMessageReceiver(string queueName) => new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
+
         private async Task SendMessageAsync(QueueMessage errorMessage, string queueName)
         {
             var messageSender = new MessageSender(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
@@ -143,10 +141,5 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             };
         }
 
-        private IMessageReceiver CreateMessageReceiver(string queueName)
-        {
-            var messageReceiver = new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
-            return messageReceiver;
-        }
     }
 }
