@@ -118,18 +118,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        public async Task<IActionResult> DeleteMessages(IEnumerable<string> messageIds)
+        [HttpPost]
+        public async Task<IActionResult> DeleteMessages([FromBody] string messageIds)
+        //public async Task<IActionResult> DeleteMessages(string messageIds)
         {
-            //todo test only 
-            var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
-            {
-                UserId = _userService.GetUserId(),
-                SearchProperties = new SearchProperties()
-            });
-            messageIds = response.Messages.Select(x => x.Id).ToList().Take(1);
-            //test only 
-
-            await _messageService.DeleteMessages(messageIds);            
+             
+            //await _messageService.DeleteMessages(messageIds);            
 
             return RedirectToAction("Index", "Home");
         }
