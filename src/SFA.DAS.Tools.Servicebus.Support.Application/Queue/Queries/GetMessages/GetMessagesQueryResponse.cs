@@ -9,5 +9,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages
     {
         public IEnumerable<QueueMessage> Messages { get; set; }
         public int Count { get; set; }
+
+        public int UnfilteredCount { get; set; }
     }
 }
