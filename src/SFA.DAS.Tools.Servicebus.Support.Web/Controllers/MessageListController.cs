@@ -7,6 +7,7 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
@@ -77,15 +78,16 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> AbortMessages(IEnumerable<string> messageIds, string queue)
+        [HttpPost]
+        public async Task<IActionResult> AbortMessages([FromBody] SelectedMessages selectedMessages)
         {
             var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
                 {
                     UserId = _userService.GetUserId(),
-                    Ids = messageIds
+                    Ids = selectedMessages.Ids
                 });
 
-            await _messageService.AbortMessages(response.Messages, queue);            
+            await _messageService.AbortMessages(response.Messages, selectedMessages.Queue);            
 
             return RedirectToAction("Index", "Home");
         }
@@ -103,27 +105,25 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        
-        public async Task<IActionResult> ReplayMessages(IEnumerable<string> messageIds, string queue)
+        [HttpPost]
+        public async Task<IActionResult> ReplayMessages([FromBody] SelectedMessages selectedMessages)
         {
             var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
             {
                 UserId = _userService.GetUserId(),
-                Ids = messageIds
+                Ids = selectedMessages.Ids
             });
 
-            var processingQueueName = GetProcessingQueueName(queue);
+            var processingQueueName = GetProcessingQueueName(selectedMessages.Queue);
             await _messageService.ReplayMessages(response.Messages, processingQueueName);
 
             return RedirectToAction("Index", "Home");
-        }
+        }        
 
         [HttpPost]
-        public async Task<IActionResult> DeleteMessages([FromBody] string messageIds)
-        //public async Task<IActionResult> DeleteMessages(string messageIds)
-        {
-             
-            //await _messageService.DeleteMessages(messageIds);            
+        public async Task<IActionResult> DeleteMessages([FromBody]SelectedMessages selectedMessages)        
+        {             
+            await _messageService.DeleteMessages(selectedMessages.Ids);            
 
             return RedirectToAction("Index", "Home");
         }
