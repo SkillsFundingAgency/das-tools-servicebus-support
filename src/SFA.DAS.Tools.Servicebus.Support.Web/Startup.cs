@@ -8,6 +8,7 @@ using SFA.DAS.Tools.Servicebus.Support.Web.App_Start;
 using System.IO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 
@@ -33,8 +34,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
             _configuration = builder;
         }
 
-        public IConfiguration Configuration { get; }
-
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -46,7 +45,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
             });
             services.AddAuthentication(_configuration);
             services.AddHealthChecks();
-            services.AddRouting();
+            services.AddRouting(options => options.LowercaseUrls = true);
 
             services.AddControllersWithViews(options =>
             {
@@ -64,6 +63,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
             });
 
             //services.AddApplicationInsightsTelemetry(_configuration["APPINSIGHTS_INSTRUMENTATIONKEY"]);
+            services.AddDistributedCache(_configuration, _env);
 
             services.AddSession(options =>
             {
@@ -83,23 +83,57 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
             }
             else
             {
-                app.UseExceptionHandler("/Home/Error");
+                app.UseExceptionHandler("/Servicebus/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedProto
+            });
+
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                context.Response.Headers.Add("X-Xss-Protection", "1");
+                await next();
+            });
+
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
+            app.Use(async (context, next) =>
+            {
+                if (context.Response.Headers.ContainsKey("X-Frame-Options"))
+                {
+                    context.Response.Headers.Remove("X-Frame-Options");
+                }
+
+                context.Response.Headers.Add("X-Frame-Options", "SAMEORIGIN");
+
+                await next();
+
+                if (context.Response.StatusCode == 404 && !context.Response.HasStarted)
+                {
+                    //Re-execute the request so the user gets the error page
+                    var originalPath = context.Request.Path.Value;
+                    context.Items["originalPath"] = originalPath;
+                    context.Request.Path = "/error/404";
+                    await next();
+                }
+            });
+
             app.UseRouting();
 
-            app.UseAuthorization();
-            app.UseSession();
+            app.UseAuthentication();
+            app.UseHealthChecks("/health");
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
+                    pattern: "servicebus/{controller=Servicebus}/{action=Index}/{id?}");
             });
         }
     }
