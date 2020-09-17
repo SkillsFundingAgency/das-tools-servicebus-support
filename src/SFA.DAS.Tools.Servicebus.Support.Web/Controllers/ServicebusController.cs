@@ -15,9 +15,9 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMessag
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
-    public class HomeController : Controller
+    public class ServicebusController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ILogger<ServicebusController> _logger;
         private readonly IUserService _userService;
         private readonly IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> _getUserSessionQuery;
         private readonly IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse> _getQueuesQuery;
@@ -26,7 +26,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> _bulkCreateMessagesCommand;
         private readonly ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> _sendMessageToErrorQueueCommand;
 
-        public HomeController(ILogger<HomeController> logger,
+        public ServicebusController(ILogger<ServicebusController> logger,
             IUserService userService,
             IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> getUserSessionQuery,
             IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse> getQueuesQuery,

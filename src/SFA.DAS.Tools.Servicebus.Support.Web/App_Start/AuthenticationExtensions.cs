@@ -30,7 +30,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
                     {
                         OnRedirectToLogin = (context) =>
                         {
+#if DEBUG
+                            context.HttpContext.Response.Redirect($"https://{configuration["BaseUrl"]}/Account/login?returnUrl=https://localhost:5011/servicebus");
+#else
                             context.HttpContext.Response.Redirect($"https://{configuration["BaseUrl"]}/Account/login?returnUrl=/servicebus");
+#endif
                             return Task.CompletedTask;
                         }
                     };
