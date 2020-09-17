@@ -18,14 +18,19 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages
         public async Task<GetMessagesQueryResponse> Handle(GetMessagesQuery query)
         {
             var messages = _cosmosDbContext.GetQueueMessagesAsync(query.UserId, query.SearchProperties);
-            var cnt = _cosmosDbContext.GetUserMessageCountAsync(query.UserId);
+            var unfilteredCnt = _cosmosDbContext.GetMessageCountAsync(query.UserId);
+            var cnt = _cosmosDbContext.GetMessageCountAsync(query.UserId, new SearchProperties()
+            {
+                Search = query.SearchProperties.Search
+            });
 
-            await Task.WhenAll(messages, cnt);
+            await Task.WhenAll(messages, cnt, unfilteredCnt);
 
             return new GetMessagesQueryResponse()
             {
                 Messages = await messages,
-                Count = await cnt
+                Count = await cnt,
+                UnfilteredCount = await unfilteredCnt
             };
         }
     }

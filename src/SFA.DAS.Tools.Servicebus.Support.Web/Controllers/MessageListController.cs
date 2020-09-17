@@ -148,7 +148,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return Json(new
             {
                 Total = response.Count,
-                TotalNotFiltered = response.Count,
+                TotalNotFiltered = response.UnfilteredCount,
                 Rows = queueMessages.Select(msg => new
                 {
                     Id = msg.Id,
