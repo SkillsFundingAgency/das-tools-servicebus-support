@@ -21,7 +21,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.G
         {
             _cosmosDbContext = new Mock<ICosmosDbContext>(MockBehavior.Strict);
             _cosmosDbContext.Setup(x => x.GetQueueMessagesAsync(_userId, _searchProperties)).ReturnsAsync(new List<QueueMessage>());
-            _cosmosDbContext.Setup(x => x.GetMessageCountAsync(_userId, _searchProperties)).ReturnsAsync(1);
+            _cosmosDbContext.Setup(x => x.GetMessageCountAsync(_userId, It.IsAny<SearchProperties>())).ReturnsAsync(1);
 
             var sut = new GetMessagesQueryHandler(_cosmosDbContext.Object);
 
@@ -32,7 +32,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.G
             });
 
             _cosmosDbContext.Verify(x => x.GetQueueMessagesAsync(_userId, _searchProperties), Times.Once);
-            _cosmosDbContext.Verify(x => x.GetMessageCountAsync(_userId, _searchProperties), Times.Once);
+            _cosmosDbContext.Verify(x => x.GetMessageCountAsync(_userId, It.IsAny<SearchProperties>()), Times.Exactly(2));
         }
 
         [Test]
@@ -40,7 +40,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.G
         {
             _cosmosDbContext = new Mock<ICosmosDbContext>(MockBehavior.Strict);
             _cosmosDbContext.Setup(x => x.GetQueueMessagesAsync(_userId, _searchProperties)).ReturnsAsync(new List<QueueMessage>());
-            _cosmosDbContext.Setup(x => x.GetMessageCountAsync(_userId, _searchProperties)).ReturnsAsync(1);
+            _cosmosDbContext.Setup(x => x.GetMessageCountAsync(_userId, It.IsAny<SearchProperties>())).ReturnsAsync(1);
 
             var sut = new GetMessagesQueryHandler(_cosmosDbContext.Object);
 

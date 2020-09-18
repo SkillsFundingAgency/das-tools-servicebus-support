@@ -15,9 +15,9 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMessag
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
-    public class HomeController : Controller
+    public class ServicebusController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ILogger<ServicebusController> _logger;
         private readonly IUserService _userService;
         private readonly IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> _getUserSessionQuery;
         private readonly IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse> _getQueuesQuery;
@@ -26,7 +26,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> _bulkCreateMessagesCommand;
         private readonly ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> _sendMessagesCommand;
 
-        public HomeController(ILogger<HomeController> logger,
+        public ServicebusController(ILogger<ServicebusController> logger,
             IUserService userService,
             IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> getUserSessionQuery,
             IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse> getQueuesQuery,
@@ -52,9 +52,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             Debugger.Break();
 #endif
             var response = await _getUserSessionQuery.Handle(new GetUserSessionQuery()
-            {
-                UserId = _userService.GetUserId()
-            });
+                {
+                    UserId = _userService.GetUserId()
+                });
 
             if (response.UserHasExistingSession)
             {
@@ -75,29 +75,30 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             queueName ??= "sfa.das.notifications.messagehandlers-errors";
 
             var response = await _peekQueueMessagesQuery.Handle(new PeekQueueMessagesQuery()
-            {
-                QueueName = queueName
-            });
+                { 
+                    QueueName = queueName
+                });
 
             await _bulkCreateMessagesCommand.Handle(new BulkCreateQueueMessagesCommand()
-            {
-                Messages = response.Messages
+                { 
+                    Messages = response.Messages
             });
 
             return RedirectToAction(actionName: "Index", controllerName: "Home");
         }
 
-        public async Task<IActionResult> ImportToQueue(string queueName = null)
+        public async Task<IActionResult> ImportToQueue(string queueName)
         {
             var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
-            {
-                UserId = "123456",
-                SearchProperties = new SearchProperties()
-            });
+                {
+                    UserId = "123456",
+                    SearchProperties = new SearchProperties()
+                });
 
             await _sendMessagesCommand.Handle(new SendMessagesCommand()
             {
-                Messages = response.Messages
+                Messages = response.Messages,
+                QueueName = queueName
             });
 
             return RedirectToAction(actionName: "Index", controllerName: "Home");

@@ -36,10 +36,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
             _iLogger =
                 new Mock<ILogger<Service.MessageService>>();
 
-        private readonly Mock<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>> 
+        private readonly Mock<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>
             _sendMessagesCommand = new Mock<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>();
 
-        private readonly Mock<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>> 
+        private readonly Mock<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>
             _deleteMessagesCommand = new Mock<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>();
 
         [Test]
