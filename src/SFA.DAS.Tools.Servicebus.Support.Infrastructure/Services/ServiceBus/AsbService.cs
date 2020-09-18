@@ -104,23 +104,19 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             }
 
             return formattedMessages;
-        }
-
-        public async Task SendMessageToErrorQueueAsync(QueueMessage msg) => await SendMessageAsync(msg, msg.Queue);
-
-        public async Task SendMessageToProcessingQueueAsync(QueueMessage msg) => await SendMessageAsync(msg, msg.ProcessingEndpoint);
+        }        
 
         public async Task<long> GetQueueMessageCountAsync(string queueName) => (await GetQueueDetailsAsync(queueName)).MessageCount;
 
         private IMessageReceiver CreateMessageReceiver(string queueName) => new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
-
-        private async Task SendMessageAsync(QueueMessage errorMessage, string queueName)
+        public async Task SendMessagesAsync(IEnumerable<QueueMessage> messages, string queueName)
         {
             var messageSender = new MessageSender(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
 
-            if (!errorMessage.IsReadOnly)
+            if (messages.Count() > 0)
             {
-                await messageSender.SendAsync(errorMessage.OriginalMessage);
+                var orginalMessages = messages.Select(m => m.OriginalMessage).ToList();
+                await messageSender.SendAsync(orginalMessages);
             }
         }
 
