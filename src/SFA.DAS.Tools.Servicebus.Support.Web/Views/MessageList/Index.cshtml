@@ -1,6 +1,11 @@
 ﻿@using Microsoft.AspNetCore.Http
 @model MessageListViewModel
 
+@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "__AjaxAntiForgeryForm" }))
+{
+    @Html.AntiForgeryToken()
+}
+
 @section Scripts
 {
     <script src="~/lib/bootstrap-table/bootstrap-table.min.js"></script>
@@ -80,14 +85,19 @@
         function sendRequest(url, data) {
             displayBusyIndicator();
 
+            var form = $('#__AjaxAntiForgeryForm');
+            var token = $('input[name="__RequestVerificationToken"]', form).val();
+            
             $.ajax({
-                type: "POST",
-                headers: { 'Content-Type': 'application/json' },
+                type: "POST",                
                 url: url,
-                dataType: 'json',
-                data: JSON.stringify(data),
+                dataType: 'json',                
+                data: {
+                    '__RequestVerificationToken': token,
+                    "data" : JSON.stringify(data)
+                },
                 success: function (response) {
-
+                    console.log(response.responseText);
                 },
                 failure: function (response) {
                     console.log(response.responseText);
