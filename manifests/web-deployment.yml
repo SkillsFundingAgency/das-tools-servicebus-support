@@ -5,7 +5,7 @@ metadata:
   labels:
     app: das-tools-servicebus-support
     service: das-tool-service
-  name: das-tools-support
+  name: das-tools-servicebus-support
   namespace: {{Namespace}}
 spec:
   ports:
@@ -13,7 +13,7 @@ spec:
     protocol: TCP
     targetPort: 80
   selector:
-    app: das-tools-support
+    app: das-tools-servicebus-support
   type: ClusterIP
 
 ---
