@@ -61,7 +61,7 @@
                         "value": "[variables('cosmosAccountName')]"
                     },
                     "cosmosDbType": {
-                        "value": "MongoDB"
+                        "value": "GlobalDocumentDB"
                     },
                     "defaultConsistencyLevel": {
                         "value": "Strong"
