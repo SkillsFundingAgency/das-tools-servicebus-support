@@ -79,8 +79,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [HttpPost]
-        [IgnoreAntiforgeryToken]
+        [HttpPost]        
         public async Task<IActionResult> AbortMessages(string data)
         {
             var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
