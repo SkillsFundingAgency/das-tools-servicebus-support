@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessageToErrorQueue;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
@@ -24,7 +24,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly IQueryHandler<PeekQueueMessagesQuery, PeekQueueMessagesQueryResponse> _peekQueueMessagesQuery;
         private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
         private readonly ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> _bulkCreateMessagesCommand;
-        private readonly ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> _sendMessageToErrorQueueCommand;
+        private readonly ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> _sendMessagesCommand;
 
         public ServicebusController(ILogger<ServicebusController> logger,
             IUserService userService,
@@ -32,7 +32,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse> getQueuesQuery,
             IQueryHandler<PeekQueueMessagesQuery, PeekQueueMessagesQueryResponse> peekQueueMessagesQuery,
             ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> bulkCreateMessagesCommand,
-            ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> sendMessageToErrorQueueCommand,
+            ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
             IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery)
         {
             _logger = logger;
@@ -42,7 +42,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _peekQueueMessagesQuery = peekQueueMessagesQuery;
             _getMessagesQuery = getMessagesQuery;
             _bulkCreateMessagesCommand = bulkCreateMessagesCommand;
-            _sendMessageToErrorQueueCommand = sendMessageToErrorQueueCommand;
+            _sendMessagesCommand = sendMessagesCommand;
         }
 
         public async Task<IActionResult> Index()
@@ -87,21 +87,19 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return RedirectToAction(actionName: "Index", controllerName: "Home");
         }
 
-        public async Task<IActionResult> ImportToQueue(string queueName = null)
+        public async Task<IActionResult> ImportToQueue(string queueName)
         {
             var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
                 {
                     UserId = "123456",
                     SearchProperties = new SearchProperties()
                 });
-            
-            foreach (var msg in response.Messages)
+
+            await _sendMessagesCommand.Handle(new SendMessagesCommand()
             {
-                await _sendMessageToErrorQueueCommand.Handle(new SendMessageToErrorQueueCommand()
-                    {
-                        Message = msg
-                    });
-            }
+                Messages = response.Messages,
+                QueueName = queueName
+            });
 
             return RedirectToAction(actionName: "Index", controllerName: "Home");
         }

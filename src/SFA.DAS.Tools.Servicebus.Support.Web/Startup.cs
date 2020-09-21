@@ -128,6 +128,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
 
             app.UseAuthentication();
             app.UseHealthChecks("/health");
+            app.UseSession();
 
             app.UseEndpoints(endpoints =>
             {

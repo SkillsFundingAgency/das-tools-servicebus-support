@@ -1,16 +1,20 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessageToErrorQueue;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
@@ -21,24 +25,27 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly IUserService _userService;
         private readonly IMessageService _messageService;
         private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
+        private readonly IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse> _getMessagesByIdQuery;
         private readonly IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> _getQueueDetailsQuery;
-        private readonly ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> _sendMessageToErrorQueueCommand;
-        private readonly ICommandHandler<DeleteQueueMessageCommand, DeleteQueueMessageCommandResponse> _deleteQueueMessageCommand;
+        private readonly ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> _sendMessagesCommand;
+        private readonly ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> _deleteQueueMessageCommand;
 
         public MessageListController(
             IUserService userService,
             IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery,
+            IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse> getMessagesByIdQuery,
             IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> getQueueDetailsQuery,
             IMessageService messageService,
-            ICommandHandler<SendMessageToErrorQueueCommand, SendMessageToErrorQueueCommandResponse> sendMessageToErrorQueueCommand,
-            ICommandHandler<DeleteQueueMessageCommand, DeleteQueueMessageCommandResponse> deleteQueueMessageCommand,
+            ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
+            ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
             ILogger<MessageListController> logger)
         {
             _userService = userService;
             _getMessagesQuery = getMessagesQuery;
+            _getMessagesByIdQuery = getMessagesByIdQuery;
             _getQueueDetailsQuery = getQueueDetailsQuery;
             _messageService = messageService;
-            _sendMessageToErrorQueueCommand = sendMessageToErrorQueueCommand;
+            _sendMessagesCommand = sendMessagesCommand;
             _deleteQueueMessageCommand = deleteQueueMessageCommand;
             _logger = logger;
         }
@@ -72,29 +79,57 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> AbortMessages()
+        [HttpPost]        
+        public async Task<IActionResult> AbortMessages(string data)
         {
-            var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
+            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
+            var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
                 {
                     UserId = _userService.GetUserId(),
-                    SearchProperties = new SearchProperties()
-
+                    Ids = selectedMessages.Ids
                 });
 
-            foreach (var msg in response.Messages)
+            await _messageService.AbortMessages(response.Messages, selectedMessages.Queue);            
+
+            return RedirectToAction("Index", "Servicebus");
+        }
+
+        public async Task<IActionResult> EndSession(string queue)
+        {
+            var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
             {
-                await _sendMessageToErrorQueueCommand.Handle(new SendMessageToErrorQueueCommand()
-                    {
-                        Message = msg
-                    });
+                UserId = _userService.GetUserId(),
+                SearchProperties = new SearchProperties()
+            });
 
-                await _deleteQueueMessageCommand.Handle(new DeleteQueueMessageCommand()
-                    {
-                        Message = msg
-                    });
-            }
+            await _messageService.AbortMessages(response.Messages, queue);
 
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Servicebus");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ReplayMessages(string data)
+        {
+            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
+            var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
+            {
+                UserId = _userService.GetUserId(),
+                Ids = selectedMessages.Ids
+            });
+
+            var processingQueueName = GetProcessingQueueName(selectedMessages.Queue);
+            await _messageService.ReplayMessages(response.Messages, processingQueueName);
+
+            return RedirectToAction("Index", "Servicebus");
+        }        
+
+        [HttpPost]        
+        public async Task<IActionResult> DeleteMessages(string data)            
+        {
+            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
+            await _messageService.DeleteMessages(selectedMessages.Ids);            
+
+            return RedirectToAction("Index", "Servicebus");
         }
 
         public async Task<IActionResult> Data(string sort, string order, string search, int offset, int limit)
@@ -139,6 +174,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             }
 
             return name;
+        }
+
+        private string GetProcessingQueueName(string errorQueueName)
+        {
+            string pattern = @"[-,_]error[s]*$";
+            return Regex.Replace(errorQueueName, pattern, "");
         }
     }
 }

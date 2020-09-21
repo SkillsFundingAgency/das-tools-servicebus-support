@@ -4,8 +4,8 @@ using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage
 {
-    public class DeleteQueueMessageCommand
+    public class DeleteQueueMessagesCommand
     {
-        public QueueMessage Message { get; set; }
+        public IEnumerable<string> Ids { get; set; }
     }
 }
