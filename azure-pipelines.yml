@@ -20,6 +20,7 @@ stages:
     displayName: Build Image
     pool:
       name: "DAS - Continuous Integration"
+      demands: Agent.OS -equals Linux
     steps:
       - task: UseGitVersion@5
         inputs:

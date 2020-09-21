@@ -79,7 +79,7 @@
             "value": "[variables('cosmosAccountName')]"
         },
         "CosmosPrimaryKey": {
-            "type": "securestring",
+            "type": "string",
             "value": "[reference(variables('cosmosAccountName')).outputs.PrimaryMasterKey.value]"
         }
     }
