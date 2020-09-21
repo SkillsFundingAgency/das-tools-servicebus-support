@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
@@ -79,8 +80,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AbortMessages([FromBody] SelectedMessages selectedMessages)
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> AbortMessages(string data)
         {
+            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
             var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
                 {
                     UserId = _userService.GetUserId(),
@@ -106,8 +109,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ReplayMessages([FromBody] SelectedMessages selectedMessages)
+        public async Task<IActionResult> ReplayMessages(string data)
         {
+            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
             var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
             {
                 UserId = _userService.GetUserId(),
@@ -120,9 +124,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return RedirectToAction("Index", "Servicebus");
         }        
 
-        [HttpPost]
-        public async Task<IActionResult> DeleteMessages([FromBody]SelectedMessages selectedMessages)        
-        {             
+        [HttpPost]        
+        public async Task<IActionResult> DeleteMessages(string data)            
+        {
+            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
             await _messageService.DeleteMessages(selectedMessages.Ids);            
 
             return RedirectToAction("Index", "Servicebus");
