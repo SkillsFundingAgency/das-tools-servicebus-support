@@ -89,7 +89,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             await _messageService.AbortMessages(response.Messages, selectedMessages.Queue);            
 
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Servicebus");
         }
 
         public async Task<IActionResult> EndSession(string queue)
@@ -102,7 +102,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             await _messageService.AbortMessages(response.Messages, queue);
 
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Servicebus");
         }
 
         [HttpPost]
@@ -117,7 +117,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             var processingQueueName = GetProcessingQueueName(selectedMessages.Queue);
             await _messageService.ReplayMessages(response.Messages, processingQueueName);
 
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Servicebus");
         }        
 
         [HttpPost]
@@ -125,7 +125,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         {             
             await _messageService.DeleteMessages(selectedMessages.Ids);            
 
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Servicebus");
         }
 
         public async Task<IActionResult> Data(string sort, string order, string search, int offset, int limit)

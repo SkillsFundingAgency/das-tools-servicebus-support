@@ -55,7 +55,7 @@
             var data = { "ids": selections }
 
             if (selections.length > 0) {
-                sendRequest("/MessageList/DeleteMessages", data);
+                sendRequest("/servicebus/MessageList/DeleteMessages", data);
             }
         });
 
@@ -64,7 +64,7 @@
             var data = { "ids": selections , "queue": "@Model.QueueInfo.Name" }
 
             if (selections.length > 0) {
-                sendRequest("/MessageList/AbortMessages", data);
+                sendRequest("/servicebus/MessageList/AbortMessages", data);
             }
         });
 
@@ -73,7 +73,7 @@
             var data = { "ids": selections , "queue": "@Model.QueueInfo.Name" }
 
             if (selections.length > 0) {
-                sendRequest("/MessageList/ReplayMessages", data);
+                sendRequest("/servicebus/MessageList/ReplayMessages", data);
             }
         });
 
