@@ -13,7 +13,7 @@ spec:
       middlewares:
         - name: secured
       services:
-        - name: das-tools-servicebus-support-web
+        - name: das-tools-servicebus-support
           port: 80
           healthCheck:
             path: /servicebus/health
