@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
@@ -34,6 +36,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
             _iLogger =
                 new Mock<ILogger<Service.MessageService>>();
 
+        private readonly Mock<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>
+            _sendMessagesCommand = new Mock<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>();
+
+        private readonly Mock<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>
+            _deleteMessagesCommand = new Mock<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>();
+
         [Test]
         public async Task ThenTheMessagesAreRequestedFromTheQueueAndSentToTheDatabase()
         {
@@ -57,7 +65,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
 
             IBatchMessageStrategy batchStaStrategy = new BatchMessageStrategy();
 
-            var sut = new Service.MessageService(_bulkCreateQueueMessagesCommand.Object, _receiveQueueMessagesQuery.Object, _getQueueMessageCountQuery.Object, batchStaStrategy, _iLogger.Object, _batchSize);
+            var sut = new Service.MessageService(_bulkCreateQueueMessagesCommand.Object, _receiveQueueMessagesQuery.Object, _getQueueMessageCountQuery.Object, batchStaStrategy, _iLogger.Object, _batchSize, _sendMessagesCommand.Object, _deleteMessagesCommand.Object);
 
            await sut.ProcessMessages(_queueName);
 

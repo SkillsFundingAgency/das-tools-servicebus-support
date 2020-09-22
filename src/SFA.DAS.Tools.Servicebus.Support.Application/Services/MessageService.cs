@@ -7,6 +7,8 @@ using System.Transactions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
@@ -29,6 +31,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
         private readonly IBatchMessageStrategy _batchMessageStrategy;
         private readonly IDictionary<Transactional, Func<string, int, Task<IList<QueueMessage>>>> _processor = new ConcurrentDictionary<Transactional, Func<string, int, Task<IList<QueueMessage>>>>();
         private readonly int _batchSize;
+        private readonly ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> _sendMessagesCommand;
+        private readonly ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> _deleteQueueMessageCommand;
 
         public MessageService(
             ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> bulkCreateMessagesCommand,
@@ -36,7 +40,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse> getQueueMessageCountQuery,
             IBatchMessageStrategy batchMessageStrategy,
             ILogger<MessageService> logger,
-            int batchSize)
+            int batchSize,
+            ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
+            ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> deleteQueueMessageCommand
+            )
         {
             _bulkCreateMessagesCommand = bulkCreateMessagesCommand;
             _receiveQueueMessagesQuery = receiveQueueMessagesQuery;
@@ -44,6 +51,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _getQueueMessageCountQuery = getQueueMessageCountQuery;
             _logger = logger;
             _batchSize = batchSize;
+            _sendMessagesCommand = sendMessagesCommand;
+            _deleteQueueMessageCommand = deleteQueueMessageCommand;
 
             _processor.Add(Transactional.Yes, ProcessMessagesInTransaction);
             _processor.Add(Transactional.No, ProcessMessages);
@@ -123,6 +132,78 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             {
                 Messages = messages
             });
+        }
+
+        public async Task AbortMessages(IEnumerable<QueueMessage> messages, string queue)
+        {
+            await SendMessageAndDeleteFromDb(messages, queue);
+        }
+
+        private async Task SendMessageAndDeleteFromDb(IEnumerable<QueueMessage> messages, string queue)
+        {
+            foreach (var batchedMessages in SplitList<QueueMessage>(messages.ToList()))
+            {
+                using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    try
+                    {
+                        await _sendMessagesCommand.Handle(new SendMessagesCommand()
+                        {
+                            Messages = batchedMessages,
+                            QueueName = queue
+                        });
+
+                        await _deleteQueueMessageCommand.Handle(new DeleteQueueMessagesCommand()
+                        {
+                            Ids = batchedMessages.Select(x => x.Id).ToList()
+                        });
+
+                        ts.Complete();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError("Failed to send messages", ex);
+                        ts.Dispose();
+                    }
+                }
+            }
+        }
+
+        private IEnumerable<List<T>> SplitList<T>(List<T> items, int size = 25)
+        {
+            for (int i = 0; i < items.Count(); i += size)
+            {
+                yield return items.GetRange(i, Math.Min(size, items.Count - i));
+            }
+        }
+
+        public async Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue)
+        {
+            await SendMessageAndDeleteFromDb(messages, queue);
+        }
+
+        public async Task DeleteMessages(IEnumerable<string> ids)
+        {
+            foreach (var batchedIds in SplitList(ids.ToList()))
+            {
+                using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    try
+                    {                       
+                        await _deleteQueueMessageCommand.Handle(new DeleteQueueMessagesCommand()
+                        {
+                            Ids = batchedIds
+                        });
+
+                        ts.Complete();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError("Failed to delete messages", ex);
+                        ts.Dispose();
+                    }
+                }
+            }
         }
     }
 }

@@ -104,24 +104,44 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             }
 
             return formattedMessages;
-        }
-
-        public async Task SendMessageToErrorQueueAsync(QueueMessage msg) => await SendMessageAsync(msg, msg.Queue);
-
-        public async Task SendMessageToProcessingQueueAsync(QueueMessage msg) => await SendMessageAsync(msg, msg.ProcessingEndpoint);
+        }        
 
         public async Task<long> GetQueueMessageCountAsync(string queueName) => (await GetQueueDetailsAsync(queueName)).MessageCount;
 
-        private IMessageReceiver CreateMessageReceiver(string queueName) => new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
-
-        private async Task SendMessageAsync(QueueMessage errorMessage, string queueName)
+        private IMessageReceiver CreateMessageReceiver(string queueName)
         {
-            var messageSender = new MessageSender(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
-
-            if (!errorMessage.IsReadOnly)
+            if ( _sbConnectionStringBuilder.SasKey?.Length > 0)
             {
-                await messageSender.SendAsync(errorMessage.OriginalMessage);
+                return new MessageReceiver(new ServiceBusConnection(_sbConnectionStringBuilder),queueName);
             }
+            else
+            {
+                return new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
+            }                                  
+        }
+
+        public async Task SendMessagesAsync(IEnumerable<QueueMessage> messages, string queueName)
+        {
+            MessageSender messageSender = GetMessageSender(queueName);
+
+            if (messages.Count() > 0)
+            {
+                var orginalMessages = messages.Select(m => m.OriginalMessage).ToList();
+                await messageSender.SendAsync(orginalMessages);
+            }
+        }
+
+        private MessageSender GetMessageSender(string queueName)
+        {
+            if (_sbConnectionStringBuilder.SasKey?.Length > 0)
+            {
+                return new MessageSender(new ServiceBusConnection(_sbConnectionStringBuilder), queueName);
+            }
+            else
+            {
+                return new MessageSender(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
+            }
+            
         }
 
         private QueueMessage CreateQueueMessage(Message message, string queueName)
