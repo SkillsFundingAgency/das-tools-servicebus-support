@@ -10,94 +10,42 @@
 {
     <script src="~/lib/bootstrap-table/bootstrap-table.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
-    <script>
 
-        let baseUrl = "@(Url.Action("Index", "MessageDetails"))";
+    <script type="text/javascript">
 
-        function operateFormatter(value, row, index) {
-            return '<a class="detail" href=' + (baseUrl + "/?id=" + row.id) +' title ="Detail">Detail</a>';
-        };
-
-
-        //maintain selected items
-        var $table = $('#table')
-        var selections = []
-
-        function responseHandler(res) {
-            $.each(res.rows, function (i, row) {
-                row.state = $.inArray(row.id, selections) !== -1
-            })
-            return res
+        function displayBusyIndicator() {
+            document.getElementById("loading").style.display = "block";
         }
 
-        $(function () {
-            $table.on('check.bs.table check-all.bs.table uncheck.bs.table uncheck-all.bs.table',
-                function (e, rowsAfter, rowsBefore) {
-                    var rows = rowsAfter
+        function operateFormatter(value, row, index) {
+            return '<a class="detail" href=' + ($('#baseUrl').val() + "/?id=" + row.id) + ' title ="Detail">Detail</a>';
+        };
 
-                    if (e.type === 'uncheck-all') {
-                        rows = rowsBefore
-                    }
+        var $table = $("#table");
+        var selections = [];
 
-                    var ids = $.map(!$.isArray(rows) ? [rows] : rows, function (row) {
-                        return row.id
-                    })
+        function responseHandler(res) {
+            $.each(res.rows,
+                function (i, row) {
+                    row.state = $.inArray(row.id, selections) !== -1;
+                });
 
-                    var func = $.inArray(e.type, ['check', 'check-all']) > -1 ? 'union' : 'difference'
-                    selections = window._[func](selections, ids)
-                })
-
-            $table.on('search.bs.table',
-                function () {
-                    selections = []
-                    console.log("selection cleared")
-                })
-        })
-
-
-        $("#btnDeleteMessages").click(function () {
-
-            var data = { "ids": selections }
-
-            if (selections.length > 0) {
-                sendRequest("/servicebus/MessageList/DeleteMessages", data);
-            }
-        });
-
-        $("#btnAbortMessages").click(function () {
-
-            var data = { "ids": selections , "queue": "@Model.QueueInfo.Name" }
-
-            if (selections.length > 0) {
-                sendRequest("/servicebus/MessageList/AbortMessages", data);
-            }
-        });
-
-        $("#btnReplayMessages").click(function () {
-
-            var data = { "ids": selections , "queue": "@Model.QueueInfo.Name" }
-
-            if (selections.length > 0) {
-                sendRequest("/servicebus/MessageList/ReplayMessages", data);
-            }
-        });
+            return res;
+        }
 
         function sendRequest(url, data) {
             displayBusyIndicator();
 
             var form = $('#__AjaxAntiForgeryForm');
             var token = $('input[name="__RequestVerificationToken"]', form).val();
-            
+
             $.ajax({
-                type: "POST",                
+                type: "POST",
                 url: url,
-                dataType: 'json',                
+                dataType: 'json',
                 data: {
                     '__RequestVerificationToken': token,
-                    "data" : JSON.stringify(data)
-                },
-                success: function (response) {
-                    
+                    "data": JSON.stringify(data)
                 },
                 failure: function (response) {
                     console.log(response.responseText);
@@ -105,8 +53,64 @@
                 error: function (response) {
                     console.log(response.responseText);
                 }
-            });
+            })
+                .then(function () {
+                    location.reload();
+                });
         }
+
+        $(function () {
+            $table.on('check.bs.table check-all.bs.table uncheck.bs.table uncheck-all.bs.table',
+                function (e, rowsAfter, rowsBefore) {
+                    var rows = rowsAfter;
+
+                    if (e.type === 'uncheck-all') {
+                        rows = rowsBefore;
+                    }
+
+                    var ids = $.map(!$.isArray(rows) ? [rows] : rows,
+                        function (row) {
+                            return row.id;
+                        });
+
+                    var func = $.inArray(e.type, ['check', 'check-all']) > -1 ? 'union' : 'difference';
+                    selections = window._[func](selections, ids);
+                });
+
+            $table.on('search.bs.table',
+                function () {
+                    selections = [];
+                    console.log("selection cleared");
+                });
+        });
+
+        $("#btnDeleteMessages").click(function () {
+
+            var data = { "ids": selections }
+
+            if (selections.length > 0) {
+                sendRequest($('#deleteUrl').val(), data);
+            }
+        });
+
+        $("#btnAbortMessages").click(function () {
+
+            var data = { "ids": selections, "queue": $("#queueName").val() }
+
+            if (selections.length > 0) {
+                sendRequest($('#abortUrl').val(), data);
+            }
+        });
+
+        $("#btnReplayMessages").click(function () {
+
+            var data = { "ids": selections, "queue": $("#queueName").val() }
+
+            if (selections.length > 0) {
+                sendRequest($('#replayUrl').val(), data);
+            }
+        });
+
     </script>
 }
 
@@ -116,18 +120,28 @@
 }
 
 <div>
-    <h3 class="display-5"> @Model.QueueInfo.Name</h3>
+
+    <input id="baseUrl" type="hidden" value="@(Url.Action("Index", "MessageDetails"))" />
+    <input id="deleteUrl" type="hidden" value="@(Url.Action("DeleteMessages", "MessageList"))" />
+    <input id="replayUrl" type="hidden" value="@(Url.Action("ReplayMessages", "MessageList"))" />
+    <input id="abortUrl" type="hidden" value="@(Url.Action("AbortMessages", "MessageList"))" />
+    <input id="queueName" type="hidden" value="@Model.QueueInfo.Name" />
+
+    <h3 class="display-5">Queue - @Model.QueueInfo.Name</h3>
     <div>
         <div>Investigating: @Model.Count </div>
-        <div>On the queue: @Model.QueueInfo.MessageCount </div>
+        <div>On the queue: @Model.QueueInfo.MessageCount</div>
     </div>
 
     <div>
-        <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()">Get More Messages</a> |
-        <a id="btnReplayMessages" href="">Replay</a> |
-        <a id="btnAbortMessages" href="">Abort</a> |
-        <a id="btnDeleteMessages" href="" onclick="displayBusyIndicator()">Delete</a> |
-        <a asp-controller="MessageList" asp-action="EndSession" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()">End Session</a>
+        <fieldset>
+            <legend>Message Actions</legend>
+            <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Get any further messages that may be on the queue">Get More</a> |
+            <a id="btnReplayMessages" href="#" title="Move selected messages back to the processing queue">Move Selected to Processing Queue</a> |
+            <a id="btnDeleteMessages" href="#" onclick="displayBusyIndicator()" title="Delete the selected messages permanently">Delete Selected</a> |
+            <a id="btnAbortMessages" href="#" title="Release selected messages back to the ServiceBus Queue they came from">Release Selected</a> |
+            <a asp-controller="MessageList" asp-action="ReleaseMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the ServiceBus Queue they came from">Release All</a>
+        </fieldset>
     </div>
 
     <table id="table"
