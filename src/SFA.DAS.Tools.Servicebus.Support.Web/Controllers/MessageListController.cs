@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
@@ -16,12 +15,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
     public class MessageListController : Controller
     {
-        private readonly ILogger<MessageListController> _logger;
         private readonly IUserService _userService;
         private readonly IMessageService _messageService;
         private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
@@ -29,6 +28,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> _getQueueDetailsQuery;
         private readonly ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> _sendMessagesCommand;
         private readonly ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> _deleteQueueMessageCommand;
+        private readonly string _errorQueueRegex;
 
         public MessageListController(
             IUserService userService,
@@ -38,7 +38,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IMessageService messageService,
             ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
             ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
-            ILogger<MessageListController> logger)
+            IConfiguration config)
         {
             _userService = userService;
             _getMessagesQuery = getMessagesQuery;
@@ -47,7 +47,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _messageService = messageService;
             _sendMessagesCommand = sendMessagesCommand;
             _deleteQueueMessageCommand = deleteQueueMessageCommand;
-            _logger = logger;
+            _errorQueueRegex = config["ErrorQueueRegex"];
         }
 
         public async Task<IActionResult> Index()
@@ -89,12 +89,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                     Ids = selectedMessages.Ids
                 });
 
-            await _messageService.AbortMessages(response.Messages, selectedMessages.Queue);            
+            await _messageService.AbortMessages(response.Messages, selectedMessages.Queue);
 
-            return RedirectToAction("Index", "Servicebus");
+            return Json(string.Empty);
         }
 
-        public async Task<IActionResult> EndSession(string queue)
+        public async Task<IActionResult> ReleaseMessages(string queue)
         {
             var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
             {
@@ -120,16 +120,16 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             var processingQueueName = GetProcessingQueueName(selectedMessages.Queue);
             await _messageService.ReplayMessages(response.Messages, processingQueueName);
 
-            return RedirectToAction("Index", "Servicebus");
-        }        
+            return Json(string.Empty);
+        }
 
         [HttpPost]        
         public async Task<IActionResult> DeleteMessages(string data)            
         {
             var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
-            await _messageService.DeleteMessages(selectedMessages.Ids);            
+            await _messageService.DeleteMessages(selectedMessages.Ids);
 
-            return RedirectToAction("Index", "Servicebus");
+            return Json(string.Empty);
         }
 
         public async Task<IActionResult> Data(string sort, string order, string search, int offset, int limit)
@@ -178,8 +178,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         private string GetProcessingQueueName(string errorQueueName)
         {
-            string pattern = @"[-,_]error[s]*$";
-            return Regex.Replace(errorQueueName, pattern, "");
+            return Regex.Replace(errorQueueName, _errorQueueRegex, "");
         }
     }
 }
