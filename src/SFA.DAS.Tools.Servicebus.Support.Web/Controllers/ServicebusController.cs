@@ -47,10 +47,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-
-#if DEBUG
-            Debugger.Break();
-#endif
             var response = await _getUserSessionQuery.Handle(new GetUserSessionQuery()
                 {
                     UserId = _userService.GetUserId()
