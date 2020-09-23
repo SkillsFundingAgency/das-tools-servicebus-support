@@ -25,7 +25,7 @@
                     <td> @queue.Name</td>
                     <td> @queue.MessageCount </td>
                     <td>
-                        <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@queue.Name" onclick="displayBusyIndicator()" >Investigate</a>
+                        <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@queue.Name" onclick="displayBusyIndicator()" title="Retrieve messages from ServiceBus queue, this will give you sole possession" >Retrieve Messages</a>
                     </td>
                 </tr>
             }
