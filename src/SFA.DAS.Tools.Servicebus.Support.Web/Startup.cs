@@ -56,7 +56,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
                 options.Filters.Add(new AuthorizeFilter(policy));
                 options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
             });
-
+            services.AddHttpContextAccessor();
             services.AddRazorPages(options =>
             {
                 options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
