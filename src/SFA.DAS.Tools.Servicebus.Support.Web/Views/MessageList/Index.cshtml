@@ -8,15 +8,11 @@
 
 @section Scripts
 {
-    <script src="~/lib/bootstrap-table/bootstrap-table.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.18.0/bootstrap-table.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
 
     <script type="text/javascript">
-
-        function displayBusyIndicator() {
-            document.getElementById("loading").style.display = "block";
-        }
-
+        
         function operateFormatter(value, row, index) {
             return '<a class="detail" href=' + ($('#baseUrl').val() + "/?id=" + row.id) + ' title ="Detail">Detail</a>';
         };
@@ -116,7 +112,7 @@
 
 @section Styles
 {
-    <link rel="stylesheet" href="lib/bootstrap-table/bootstrap-table.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.18.0/bootstrap-table.min.css" />
 }
 
 <div>
