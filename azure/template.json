@@ -77,10 +77,6 @@
         "CosmosAccountName": {
             "type": "string",
             "value": "[variables('cosmosAccountName')]"
-        },
-        "CosmosPrimaryKey": {
-            "type": "string",
-            "value": "[reference(variables('cosmosAccountName')).outputs.PrimaryMasterKey.value]"
         }
     }
 }
