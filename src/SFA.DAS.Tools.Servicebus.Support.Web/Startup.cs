@@ -62,7 +62,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
                 options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
             });
 
-            //services.AddApplicationInsightsTelemetry(_configuration["APPINSIGHTS_INSTRUMENTATIONKEY"]);
+            services.AddApplicationInsightsTelemetry(_configuration["APPINSIGHTS_INSTRUMENTATIONKEY"]);
             services.AddDistributedCache(_configuration, _env);
 
             services.AddSession(options =>
