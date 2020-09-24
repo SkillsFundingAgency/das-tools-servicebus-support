@@ -123,24 +123,40 @@
     <input id="abortUrl" type="hidden" value="@(Url.Action("AbortMessages", "MessageList"))" />
     <input id="queueName" type="hidden" value="@Model.QueueInfo.Name" />
 
-    <h3 class="display-5">Queue - @Model.QueueInfo.Name</h3>
-    <div>
-        <div>Investigating: @Model.Count </div>
-        <div>On the queue: @Model.QueueInfo.MessageCount</div>
-    </div>
+    <h3 class="govuk-heading-l">Queue - @Model.QueueInfo.Name</h3>
+    
+    <dl class="govuk-summary-list">
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">
+                Investingating
+            </dt>
+            <dd class="govuk-summary-list__value">
+                @Model.Count
+            </dd>
+        </div>
+        <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">
+                On the queue
+            </dt>
+            <dd class="govuk-summary-list__value">
+                @Model.QueueInfo.MessageCount
+            </dd>
+        </div>
+    </dl>
 
     <div>
         <fieldset>
             <legend>Message Actions</legend>
-            <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Get any further messages that may be on the queue">Get More</a> |
-            <a id="btnReplayMessages" href="#" title="Move selected messages back to the processing queue">Move Selected to Processing Queue</a> |
-            <a id="btnDeleteMessages" href="#" onclick="displayBusyIndicator()" title="Delete the selected messages permanently">Delete Selected</a> |
-            <a id="btnAbortMessages" href="#" title="Release selected messages back to the ServiceBus Queue they came from">Release Selected</a> |
-            <a asp-controller="MessageList" asp-action="ReleaseMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the ServiceBus Queue they came from">Release All</a>
+            <a class="govuk-link" asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Get any further messages that may be on the queue">Get More</a> |
+            <a class="govuk-link" id="btnReplayMessages" href="#" title="Move selected messages back to the processing queue">Move Selected to Processing Queue</a> |
+            <a class="govuk-link" id="btnDeleteMessages" href="#" onclick="displayBusyIndicator()" title="Delete the selected messages permanently">Delete Selected</a> |
+            <a class="govuk-link" id="btnAbortMessages" href="#" title="Release selected messages back to the ServiceBus Queue they came from">Release Selected</a> |
+            <a class="govuk-link" asp-controller="MessageList" asp-action="ReleaseMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the ServiceBus Queue they came from">Release All</a>
         </fieldset>
     </div>
 
     <table id="table"
+           class="govuk-table"
            data-toggle="table"
            data-pagination="true"
            data-search="true"
@@ -150,8 +166,8 @@
            data-url="@Url.Action("data", "MessageList")"
            style="table-layout: fixed"
            data-response-handler="responseHandler">
-        <thead>
-            <tr>
+        <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
                 <th scope="col"
                     class="col-wrap"
                     data-field="id"
