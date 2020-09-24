@@ -3,32 +3,29 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Message queues</h1>
-        
-    <table class="table">
-        <thead>
-            <tr>
-                <th>
-                    Queue
-                </th>
-                <th>
-                    Message Count
-                </th>
-                <th></th>
-            </tr>
+<div class="govuk-width-container">
+    <h1 class="govuk-heading-xl">Message queues</h1>
+   
+    <table class="govuk-table">
+        <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header">Queue</th>
+            <th scope="col" class="govuk-table__header">Message Count</th>
+            <th scope="col" class="govuk-table__header"></th>
+        </tr>
         </thead>
-        <tbody>
-            @foreach (var queue in Model.Queues)
-            {
-                <tr>
-                    <td> @queue.Name</td>
-                    <td> @queue.MessageCount </td>
-                    <td>
-                        <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@queue.Name" onclick="displayBusyIndicator()" title="Retrieve messages from ServiceBus queue, this will give you sole possession" >Retrieve Messages</a>
-                    </td>
-                </tr>
-            }
+        <tbody class="govuk-table__body">
+        @foreach (var queue in Model.Queues)
+        {
+            <tr class="govuk-table__row">
+                <th scope="row" class="govuk-table__header">@queue.Name</th>
+                <td class="govuk-table__cell">@queue.MessageCount </td>
+                <td class="govuk-table__cell">
+                    <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@queue.Name" onclick="displayBusyIndicator()" title="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve Messages</a>
+                </td>
+            </tr>
+        }
         </tbody>
     </table>
+
 </div>

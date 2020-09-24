@@ -5,13 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - SFA.DAS.Tools.Servicebus.Support.Web</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
-
-    <script type="text/javascript">
-        function displayBusyIndicator() {
-            document.getElementById("loading").style.display = "block";
-        }
-    </script>
-
+    <link href="https://das-test-frnt-end.azureedge.net/css/main.css" media="screen" rel="stylesheet" />
+    
     @* Below content is from site.css but due to uncertainty around how DevOps require us to serve static content we will add it directly here for now *@
 
     @*<link rel="stylesheet" href="~/css/site.css" />*@
@@ -95,37 +90,33 @@
     @RenderSection("Styles", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ASB Error Profiler</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Servicebus" asp-action="Index">Home</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container-fluid">
-        <main role="main" class="pb-3">
-            <partial name="_LoadingPartial"/>
-            @RenderBody()
-        </main>
+<header class="govuk-header " role="banner" data-module="govuk-header">
+    <div class="govuk-header__container govuk-width-container">
+        <div class="govuk-header__logo">
+            <a class="govuk-header__link govuk-header__link--homepage" asp-area="" asp-controller="Servicebus" asp-action="Index">ServiceBus Error Management</a>
+        </div>
     </div>
+</header>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<div class="container-fluid">
+    <main role="main" class="govuk-main-wrapper">
+        <partial name="_LoadingPartial"/>
+        @RenderBody()
+    </main>
+</div>
 
-    @* Due to uncertainty around how DevOps require us to serve static content we will add it directly in the pages for now *@
-    @*<script src="~/js/site.js" asp-append-version="true"></script>*@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
-    @RenderSection("Scripts", required: false)
-    </body>
+<script type="text/javascript">
+    function displayBusyIndicator() {
+        document.getElementById("loading").style.display = "block";
+    }
+</script>
+
+@* Due to uncertainty around how DevOps require us to serve static content we will add it directly in the pages for now *@
+@*<script src="~/js/site.js" asp-append-version="true"></script>*@
+
+@RenderSection("Scripts", required: false)
+</body>
 </html>
