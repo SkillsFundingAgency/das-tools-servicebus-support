@@ -1,0 +1,83 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: das-tools-servicebus-support
+    service: das-tool-service
+  name: das-tools-servicebus-support
+  namespace: {{Namespace}}
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: das-tools-servicebus-support
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: das-tools-servicebus-support
+    service: das-tool-service
+  name: das-tools-servicebus-support
+  namespace: {{Namespace}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: das-tools-servicebus-support
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: das-tools-servicebus-support
+        service: das-tool-service
+    spec:
+      containers:
+      - env:
+        - name: RequiredRole
+          value: {{RequiredRole}}
+        - name: CosmosDb__Url
+          value: {{CosmosUrl}}
+        - name: CosmosDb__AuthKey
+          value: {{CosmosAuthKey}}
+        - name: CosmosDb__DatabaseName
+          value: {{CosmosDatabaseName}}
+        - name: CosmosDb__CollectionName
+          value: {{CosmosCollectionName}}
+        - name: ServiceBusRepoSettings__ServiceBusConnectionString
+          value: {{ServiceBusConnectionString}}
+        - name: ServiceBusRepoSettings__QueueSelectionRegex
+          value: {{ServiceBusQueueSelectionRegex}}
+        - name: ServiceBusRepoSettings__EnvName
+          value: {{EnvironmentName}}
+        - name: ServiceBusRepoSettings__PeekMessageBatchSize
+          value: {{ServiceBusPeekMessageBatchSize}}
+        - name: ServiceBusRepoSettings__NotifyUIBatchSize
+          value: {{ServiceBusNotifyUIBatchSize}}
+        image: {{WebImage}}
+        imagePullPolicy: IfNotPresent
+        name: das-tools-servicebus-support
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 25m
+            memory: 512Mi
+        envFrom:
+          - configMapRef:
+              name: das-tool-service-shared-config
+      volumes:
+        - name: shared-app-settings
+          configMap:
+            name: das-tool-service-shared-config

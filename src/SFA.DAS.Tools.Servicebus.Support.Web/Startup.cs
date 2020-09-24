@@ -56,13 +56,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
                 options.Filters.Add(new AuthorizeFilter(policy));
                 options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
             });
-
+            services.AddHttpContextAccessor();
             services.AddRazorPages(options =>
             {
                 options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
             });
 
-            //services.AddApplicationInsightsTelemetry(_configuration["APPINSIGHTS_INSTRUMENTATIONKEY"]);
+            services.AddApplicationInsightsTelemetry(_configuration["APPINSIGHTS_INSTRUMENTATIONKEY"]);
             services.AddDistributedCache(_configuration, _env);
 
             services.AddSession(options =>

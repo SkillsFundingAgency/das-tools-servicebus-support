@@ -40,7 +40,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                     s.GetRequiredService<ILogger<AsbService>>(),
                     tokenProvider,
                     connectionBuilder,
-                    new ManagementClient(connectionBuilder, tokenProvider),
+                    CreateManagementClient(connectionBuilder, tokenProvider),
                     new BatchMessageStrategy()
                 );
             });
@@ -84,6 +84,18 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             );
 
             return services;
+        }
+
+        private static ManagementClient CreateManagementClient(ServiceBusConnectionStringBuilder connectionBuilder, TokenProvider tokenProvider)
+        {
+            if (connectionBuilder.SasKey?.Length > 0)
+            {
+                return new ManagementClient(connectionBuilder);
+            }
+            else
+            {
+                return new ManagementClient(connectionBuilder, tokenProvider);
+            }            
         }
     }
 }
