@@ -2,120 +2,126 @@
 
     <div class="container-fluid">
         <div class="row mb-4">
-            <input type="button" class="btn btn-primary" onclick="history.go(-1)" value="Return to message list" />
+            <input type="button" class="govuk-button" onclick="history.go(-1)" value="Return to message list" />
         </div>
         <div class="row">
             <div class="col-sm-5">
-
+                
                 <div class="row">
                     <div class="col-sm-12">
-                        <div class="card shadow mb-4">
+                        <div class="card mb-4">
                             <div class="card-body">
-                                <h5 class="card-title">Message</h5>
-                                <form>
-                                    <div class="form-group mt-3">
-                                        <label for="queue">Queue</label>
-                                        <span id="queue" class="form-control">@Model.Queue</span>
+                                <h5 class="card-title govuk-heading-l">Message</h5>
+                                <dl class="govuk-summary-list">
+                                    <div class="govuk-summary-list__row">
+                                        <dt class="govuk-summary-list__key">
+                                            Queue
+                                        </dt>
+                                        <dd class="govuk-summary-list__value">
+                                            @Model.Queue
+                                        </dd>
                                     </div>
-                                    <div class="form-group mt-3">
-                                        <label for="body">Body</label>
-                                        <textarea id="body" name="body" rows="8" class="form-control" readonly="readonly">@Model.Body</textarea>
+                                    <div class="govuk-summary-list__row">
+                                        <dt class="govuk-summary-list__key">
+                                            Body
+                                        </dt>
+                                        <dd class="govuk-summary-list__value">
+                                            @Model.Body
+                                        </dd>
                                     </div>
-                                </form>
+                                </dl>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="card shadow mb-4">
+                <div class="card mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Message Properties</h5>
-                        <div class="table-responsive">
-                            <table class="table-sm table-striped">
-                                <thead>
-                                <tr>
-                                    <th scope="col">Key</th>
-                                    <th scope="col">Value</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr>
-                                    <th>ContentType</th>
-                                    <td>@Model.OriginalMessage.ContentType</td>
-                                </tr>
-                                <tr>
-                                    <th>CorrelationId</th>
-                                    <td>@Model.OriginalMessage.CorrelationId</td>
-                                </tr>
-                                <tr>
-                                    <th>Label</th>
-                                    <td>@Model.OriginalMessage.Label</td>
-                                </tr>
-                                <tr>
-                                    <th>MessageId</th>
-                                    <td>@Model.OriginalMessage.MessageId</td>
-                                </tr>
-                                <tr>
-                                    <th>PartitionKey</th>
-                                    <td>@Model.OriginalMessage.PartitionKey</td>
-                                </tr>
-                                <tr>
-                                    <th>ReplyTo</th>
-                                    <td>@Model.OriginalMessage.ReplyTo</td>
-                                </tr>
-                                <tr>
-                                    <th>ReplyToSessionId</th>
-                                    <td>@Model.OriginalMessage.ReplyToSessionId</td>
-                                </tr>
-                                <tr>
-                                    <th>ScheduledEnqueueTimeUtc</th>
-                                    <td>@Model.OriginalMessage.ScheduledEnqueueTimeUtc</td>
-                                </tr>
-                                <tr>
-                                    <th>SessionId</th>
-                                    <td>@Model.OriginalMessage.SessionId</td>
-                                </tr>
-                                <tr>
-                                    <th>Size</th>
-                                    <td>@Model.OriginalMessage.Size</td>
-                                </tr>
-                                <tr>
-                                    <th>TimeToLive</th>
-                                    <td>@Model.OriginalMessage.TimeToLive</td>
-                                </tr>
-                                <tr>
-                                    <th>To</th>
-                                    <td>@Model.OriginalMessage.To</td>
-                                </tr>
-                                <tr>
-                                    <th>ViaPartitionKey</th>
-                                    <td>@Model.OriginalMessage.ViaPartitionKey</td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        <h5 class="card-title govuk-heading-l">Properties</h5>
+                        <table class="govuk-table">
+                            <thead class="govuk-table__head">
+                            <tr class="govuk-table__row">
+                                <th scope="col" class="govuk-table__header">Key</th>
+                                <th scope="col" class="govuk-table__header">Value</th>
+                            </tr>
+                            </thead>
+                            <tbody class="govuk-table__body">
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">ContentType</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.ContentType</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">CorrelationId</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.CorrelationId</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">Label</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.Label</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">MessageId</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.MessageId</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">PartitionKey</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.PartitionKey</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">ReplyTo</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.ReplyTo</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">ReplyToSessionId</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.ReplyToSessionId</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">ScheduledEnqueueTimeUtc</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.ScheduledEnqueueTimeUtc</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">SessionId</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.SessionId</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">Size</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.Size</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">TimeToLive</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.TimeToLive</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">To</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.To</td>
+                            </tr>
+                            <tr class="govuk-table__row">
+                                <th class="govuk-table__header">ViaPartitionKey</th>
+                                <td class="govuk-table__cell">@Model.OriginalMessage.ViaPartitionKey</td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
             <div class="col-sm-7">
-                <div class="card shadow mb-4">
+                <div class="card mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Message Custom Properties</h5>
+                        <h5 class="card-title govuk-heading-l">Custom Properties</h5>
                         <div class="table-responsive">
-                            <table class="table-sm table-striped">
-                                <thead>
-                                <tr>
-                                    <th scope="col">Key</th>
-                                    <th scope="col">Value</th>
+                            <table class="govuk-table">
+                                <thead class="govuk-table__head">
+                                <tr class="govuk-table__row">
+                                    <th scope="col" class="govuk-table__header">Key</th>
+                                    <th scope="col" class="govuk-table__header">Value</th>
                                 </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="govuk-table__body">
                                 @foreach (var kvp in Model.UserProperties)
                                 {
-                                    <tr>
-                                        <th scope="row"><span style="word-wrap: break-word;">@kvp.Key</span></th>
-                                        <td><span style="word-wrap: break-word;">@kvp.Value</span></td>
+                                    <tr class="govuk-table__row">
+                                        <th scope="row" class="govuk-table__header"><span style="word-wrap: break-word;">@kvp.Key</span></th>
+                                        <td class="govuk-table__cell"><span style="word-wrap: break-word;">@kvp.Value</span></td>
                                     </tr>
                                 }
                                 </tbody>
