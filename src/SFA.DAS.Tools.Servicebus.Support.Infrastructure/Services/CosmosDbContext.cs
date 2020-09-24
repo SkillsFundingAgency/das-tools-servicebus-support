@@ -188,7 +188,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             }
 
             var searchFields = new[] { "body", "processingEndpoint", "originatingEndpoint", "exception", "exceptionType" };
-            var sb = new StringBuilder($"{sqlQuery} AND");
+            var sb = new StringBuilder($"{sqlQuery} AND (");
 
             foreach (var field in searchFields)
             {
@@ -197,6 +197,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             }
 
             sb.Remove(sb.Length - 3, 3);
+            sb.Append(")");
 
             return sb.ToString();
         }
