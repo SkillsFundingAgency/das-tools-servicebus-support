@@ -4,9 +4,7 @@ using System.Text;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 {
-    public interface IUserService
+    public class SessionService : ISessionService
     {
-        string GetUserId();
-        string GetName();
     }
 }

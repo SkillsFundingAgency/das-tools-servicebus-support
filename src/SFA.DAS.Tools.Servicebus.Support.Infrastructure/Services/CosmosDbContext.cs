@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos.Linq;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 {
@@ -78,7 +79,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
         public async Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId, SearchProperties searchProperties)
         {
-            var sqlQuery = $"SELECT * FROM c WHERE c.userId ='{userId}'";
+            var sqlQuery = $"SELECT * FROM c WHERE c.userId ='{userId}' and c.type='message'";
 
             sqlQuery = AddSearch(sqlQuery, searchProperties);
             sqlQuery = AddOrderBy(sqlQuery, searchProperties);
@@ -123,7 +124,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         
         public async Task<int> GetMessageCountAsync(string userId, SearchProperties searchProperties = null)
         {
-            var sqlQuery = $"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}'";
+            var sqlQuery = $"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}' and c.type='message'";
             sqlQuery = AddSearch(sqlQuery, searchProperties ?? new SearchProperties());
 
             var queryFeedIterator = await QuerySetup<int>(sqlQuery);
@@ -134,7 +135,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
        
         public async Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId)
         {
-            var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.id = '{messageId}'";
+            var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.id = '{messageId}' and c.type='message'";
 
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             var container = await CreateContainer(database);
@@ -213,6 +214,35 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             sb.Append($" {(searchProperties.Offset == null ? "" : "OFFSET " + searchProperties.Offset)} {(searchProperties.Limit == null ? "" : "LIMIT " + searchProperties.Limit)}");
 
             return sb.ToString();
+        }
+
+        public async Task<UserSession> CreateUserSessionAsync(UserSession userSession)
+        {
+            var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
+            var container = await CreateContainer(database);
+            return await container.CreateItemAsync(userSession);
+        }
+
+        public async Task<UserSession> GetUserSessionAsync(string userId)
+        {
+            var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.type = 'session'";
+
+            var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
+            var container = await CreateContainer(database);
+
+            var queryDefinition = new QueryDefinition(sqlQuery);
+            var queryFeedIterator = container.GetItemQueryIterator<UserSession>(queryDefinition);
+            var currentResults = await queryFeedIterator.ReadNextAsync();
+
+            return currentResults.FirstOrDefault();
+        }
+
+        public async Task DeleteUserSessionAsync(string id, string userId)
+        {
+            Database database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
+            var container = await CreateContainer(database);
+
+            await container.DeleteItemAsync<UserSession>(id, new PartitionKey(userId));
         }
     }
 }

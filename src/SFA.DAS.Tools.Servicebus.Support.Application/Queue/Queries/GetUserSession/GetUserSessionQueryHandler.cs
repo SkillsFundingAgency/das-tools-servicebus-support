@@ -17,11 +17,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSess
 
         public async Task<GetUserSessionQueryResponse> Handle(GetUserSessionQuery query)
         {
-            var userHasExistingSession = await _cosmosDbContext.HasUserAnExistingSession(query.UserId);
+            var userSession = await _cosmosDbContext.GetUserSessionAsync(query.UserId);
 
             return new GetUserSessionQueryResponse()
-            {
-                UserHasExistingSession = userHasExistingSession
+            {                
+                UserSession = userSession
             };
         }
     }

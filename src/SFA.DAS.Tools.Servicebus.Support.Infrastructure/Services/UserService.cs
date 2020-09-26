@@ -15,5 +15,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         {
             return _httpContextAccessor.HttpContext.User.Claims.Where(x => x.Type.Contains("nameidentifier")).Select(x => x.Value).FirstOrDefault();
         }
+
+        public string GetName()
+        {
+            return _httpContextAccessor.HttpContext.User.Claims.Where(x => x.Type == "name").Select(x => x.Value).FirstOrDefault();
+        }
     }
 }

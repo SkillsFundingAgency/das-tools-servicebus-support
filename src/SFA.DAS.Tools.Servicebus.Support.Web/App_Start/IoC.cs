@@ -8,7 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.CreateUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessage;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
@@ -68,8 +70,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<IQueryHandler<GetMessageQuery, GetMessageQueryResponse>, GetMessageQueryHandler>();
             services.AddTransient<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>, GetQueueMessageCountQueryHandler>();
             services.AddTransient<IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse>, GetMessagesByIdQueryHandler>();
-
+            services.AddTransient<ICommandHandler<CreateUserSessionCommand, CreateUserSessionCommandResponse>, CreateUserSessionCommandHandler>();
+            services.AddTransient<ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>, DeleteUserSessionCommandHandler>();
             services.AddTransient<IBatchMessageStrategy, BatchMessageStrategy>();
+            services.AddSingleton<IUserSessionService, UserSessionService>();
             services.AddTransient<IMessageService, MessageService>(s =>
                  new MessageService(
                     s.GetService<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>(),

@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using SFA.DAS.Tools.Servicebus.Support.Application;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
@@ -25,9 +23,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly IMessageService _messageService;
         private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
         private readonly IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse> _getMessagesByIdQuery;
-        private readonly IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> _getQueueDetailsQuery;
-        private readonly ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> _sendMessagesCommand;
-        private readonly ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> _deleteQueueMessageCommand;
+        private readonly IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> _getQueueDetailsQuery;        
+        private readonly IUserSessionService _userSessionService;
         private readonly string _errorQueueRegex;
 
         public MessageListController(
@@ -35,19 +32,18 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery,
             IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse> getMessagesByIdQuery,
             IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> getQueueDetailsQuery,
-            IMessageService messageService,
-            ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
-            ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
-            IConfiguration config)
+            IMessageService messageService,            
+            IConfiguration config,             
+            IUserSessionService userSessionService)
         {
             _userService = userService;
             _getMessagesQuery = getMessagesQuery;
             _getMessagesByIdQuery = getMessagesByIdQuery;
             _getQueueDetailsQuery = getQueueDetailsQuery;
-            _messageService = messageService;
-            _sendMessagesCommand = sendMessagesCommand;
-            _deleteQueueMessageCommand = deleteQueueMessageCommand;
+            _messageService = messageService;                       
+            _userSessionService = userSessionService;
             _errorQueueRegex = config["ErrorQueueRegex"];
+
         }
 
         public async Task<IActionResult> Index()
@@ -61,6 +57,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                     Limit = 1
                 }
             });
+
+            if ( response?.Count == 0 )
+            {
+                await DeleteUserSession();
+                return RedirectToAction("Index", "Servicebus");
+            }            
             
             return View(new MessageListViewModel()
             {
@@ -68,12 +70,15 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 QueueInfo = (await _getQueueDetailsQuery.Handle(new GetQueueDetailsQuery()
                 {
                     QueueName = GetQueueName(response.Messages)
-                })).QueueInfo
-            });
+                })).QueueInfo,
+                UserSession = await _userSessionService.GetUserSession()
+
+        });
         }
 
         public async Task<IActionResult> ReceiveMessages(string queue)
         {
+            await CreateUserSession();
             await _messageService.ProcessMessages(queue);
 
             return RedirectToAction("Index");
@@ -179,6 +184,23 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private string GetProcessingQueueName(string errorQueueName)
         {
             return Regex.Replace(errorQueueName, _errorQueueRegex, "");
+        }
+
+        private async Task<UserSession> CreateUserSession()
+        {
+            var userSession = await _userSessionService.GetUserSession();
+
+            if (userSession == null)
+            {
+                return await _userSessionService.CreateUserSession();
+            }            
+
+            return userSession;
+        }
+
+        private async Task DeleteUserSession()
+        {
+            await _userSessionService.DeleteUserSession();
         }
     }
 }

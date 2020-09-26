@@ -28,6 +28,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Domain.Queue
         [JsonProperty("exceptionType")]
         public string ExceptionType { get; set; }
         public IEnumerable<KeyValuePair<string, object>> UserProperties => OriginalMessage.UserProperties.OrderBy((x => x.Key));
-
+        [JsonProperty("type")]
+        public string Type { get; set; } = "message";
     }
 }
