@@ -1,4 +1,5 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.CreateUserSession;
+﻿using Microsoft.Extensions.Configuration;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.CreateUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
@@ -14,17 +15,20 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
         private readonly IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> _getUserSessionQuery;
         private readonly ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> _deleteUserSessionCommand;
         private readonly IUserService _userService;
+        private readonly IConfiguration _config;
 
         public UserSessionService(ICommandHandler<CreateUserSessionCommand, CreateUserSessionCommandResponse> createUserSessionCommand,
             IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> getUserSessionQuery,
             ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> deleteUserSessionCommand,
-            IUserService userService
+            IUserService userService,
+            IConfiguration config
             )
         {
             _createUserSessionCommand = createUserSessionCommand;
             _getUserSessionQuery = getUserSessionQuery;
             _deleteUserSessionCommand = deleteUserSessionCommand;
             _userService = userService;
+            _config = config;
         }
 
         public async Task<UserSession> CreateUserSession()
@@ -35,7 +39,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                 {
                     Id = Guid.NewGuid().ToString(),
                     UserId = _userService.GetUserId(),
-                    UserName = _userService.GetName()
+                    UserName = _userService.GetName(),
+                    ExpiryDateUtc = DateTime.UtcNow.AddHours(_config.GetValue<int>("UserSessionExpirtyHours"))
                 }
             });
 

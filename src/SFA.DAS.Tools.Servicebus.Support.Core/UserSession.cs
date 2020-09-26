@@ -15,5 +15,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Domain
         public string UserName { get; set; }
         [JsonProperty("type")]
         public string Type { get; set; } = "session";
+        public DateTime ExpiryDateUtc { get; set; }
     }
 }
