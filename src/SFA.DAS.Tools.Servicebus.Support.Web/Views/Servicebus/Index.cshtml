@@ -21,7 +21,7 @@
                 <th scope="row" class="govuk-table__header">@queue.Name</th>
                 <td class="govuk-table__cell">@queue.MessageCount </td>
                 <td class="govuk-table__cell">
-                    <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@queue.Name" onclick="displayBusyIndicator()" title="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve Messages</a>
+                    <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@queue.Name" onclick="displayBusyIndicator()" title="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>
                 </td>
             </tr>
         }
