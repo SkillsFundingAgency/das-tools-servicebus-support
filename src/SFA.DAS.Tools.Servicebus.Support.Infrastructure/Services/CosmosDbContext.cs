@@ -4,11 +4,9 @@ using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using System;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos.Linq;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
@@ -19,6 +17,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         private readonly CosmosClient _client;
         private readonly string _databaseName;
         private readonly IUserService _userService;
+        private readonly int _throughput;
 
         public CosmosDbContext(CosmosClient cosmosClient, IUserService userService, IConfiguration config, ILogger<CosmosDbContext> logger)
         {
@@ -26,6 +25,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             _logger = logger;
             _client = cosmosClient;
             _databaseName = config.GetValue<string>("CosmosDb:DatabaseName");
+            _throughput = config.GetValue<int>("CosmosDb:Throughput");
         }        
 
         public async Task CreateQueueMessageAsync(QueueMessage msg)
@@ -158,14 +158,25 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             return queryFeedIterator;
         }
 
-        private static async Task<Container> CreateContainer(Database database)
+        private async Task<Container> CreateContainer(Database database)
         {
-            Container container = await database.CreateContainerIfNotExistsAsync(
-                "Session",
-                "/userId",
-                400);
-            
-            return container;
+            var container = await database.DefineContainer("Session", "/userId")
+                .WithIndexingPolicy()
+                .WithIncludedPaths()
+                    .Path("/originatingEndpoint/?")
+                    .Path("/processingEndpoint/?")
+                    .Path("/body/?")
+                    .Path("/exception/?")
+                    .Path("/exceptionType/?")
+                    .Attach()
+                .WithExcludedPaths()
+                    .Path("/*")
+                    .Attach()
+                .Attach()
+                .CreateIfNotExistsAsync(_throughput)
+            ;
+
+            return container.Container;
         }
         private string AddOrderBy(string sqlQuery, SearchProperties searchProperties)
         {
