@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices.ComTypes;
-using Microsoft.Azure.Cosmos;
+﻿using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Azure.ServiceBus.Primitives;
@@ -22,6 +21,7 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMes
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
+using System.Linq;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {
@@ -82,6 +82,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                     s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()
                 )
             );
+
+            services.AddSingleton<IMessageDetailRedactor, MessageDetailRedactor>(s => new MessageDetailRedactor(configuration.GetSection("RedactPatterns").GetChildren().AsEnumerable().Select(a => a.Value)));
 
             return services;
         }
