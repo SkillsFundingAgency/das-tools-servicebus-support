@@ -1,43 +1,44 @@
-﻿@model SFA.DAS.Tools.Servicebus.Support.Domain.Queue.QueueMessage
+﻿@model MessageDetailViewModel
 
-    <div class="container-fluid">
-        <div class="row mb-4">
-            <input type="button" class="govuk-button" onclick="history.go(-1)" value="Return to message list" />
-        </div>
-        <div class="row">
-            <div class="col-sm-5">
-                
-                <div class="row">
-                    <div class="col-sm-12">
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <h5 class="card-title govuk-heading-l">Message</h5>
-                                <dl class="govuk-summary-list">
-                                    <div class="govuk-summary-list__row">
-                                        <dt class="govuk-summary-list__key">
-                                            Queue
-                                        </dt>
-                                        <dd class="govuk-summary-list__value">
-                                            @Model.Queue
-                                        </dd>
-                                    </div>
-                                    <div class="govuk-summary-list__row">
-                                        <dt class="govuk-summary-list__key">
-                                            Body
-                                        </dt>
-                                        <dd class="govuk-summary-list__value">
-                                            @Model.Body
-                                        </dd>
-                                    </div>
-                                </dl>
-                            </div>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <input type="button" class="govuk-button" onclick="history.go(-1)" value="Return to message list" />
+    </div>
+    <div class="row">
+        <div class="col-sm-5">
+
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title govuk-heading-l">Message</h5>
+                            <dl class="govuk-summary-list">
+                                <div class="govuk-summary-list__row">
+                                    <dt class="govuk-summary-list__key">
+                                        Queue
+                                    </dt>
+                                    <dd class="govuk-summary-list__value">
+                                        @Model.Queue
+                                    </dd>
+                                </div>
+                                <div class="govuk-summary-list__row">
+                                    <dt class="govuk-summary-list__key">
+                                        Body
+                                    </dt>
+                                    <dd class="govuk-summary-list__value">
+                                        @Model.Body
+                                    </dd>
+                                </div>
+                            </dl>
                         </div>
                     </div>
                 </div>
-                
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title govuk-heading-l">Properties</h5>
+            </div>
+               
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title govuk-heading-l">Properties</h5>
+                    <div class="table-responsive">
                         <table class="govuk-table">
                             <thead class="govuk-table__head">
                             <tr class="govuk-table__row">
@@ -46,89 +47,45 @@
                             </tr>
                             </thead>
                             <tbody class="govuk-table__body">
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">ContentType</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.ContentType</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">CorrelationId</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.CorrelationId</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">Label</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.Label</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">MessageId</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.MessageId</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">PartitionKey</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.PartitionKey</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">ReplyTo</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.ReplyTo</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">ReplyToSessionId</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.ReplyToSessionId</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">ScheduledEnqueueTimeUtc</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.ScheduledEnqueueTimeUtc</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">SessionId</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.SessionId</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">Size</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.Size</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">TimeToLive</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.TimeToLive</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">To</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.To</td>
-                            </tr>
-                            <tr class="govuk-table__row">
-                                <th class="govuk-table__header">ViaPartitionKey</th>
-                                <td class="govuk-table__cell">@Model.OriginalMessage.ViaPartitionKey</td>
-                            </tr>
+                            @foreach (var kvp in Model.Properties)
+                            {
+                                <tr class="govuk-table__row">
+                                    <th scope="row" class="govuk-table__header"><span style="word-wrap: break-word;">@kvp.Key</span></th>
+                                    <td class="govuk-table__cell"><span style="word-wrap: break-word;">@kvp.Value</span></td>
+                                </tr>
+                            }
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="col-sm-7">
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title govuk-heading-l">Custom Properties</h5>
-                        <div class="table-responsive">
-                            <table class="govuk-table">
-                                <thead class="govuk-table__head">
+        <div class="col-sm-7">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title govuk-heading-l">Custom Properties</h5>
+                    <div class="table-responsive">
+                        <table class="govuk-table">
+                            <thead class="govuk-table__head">
+                            <tr class="govuk-table__row">
+                                <th scope="col" class="govuk-table__header">Key</th>
+                                <th scope="col" class="govuk-table__header">Value</th>
+                            </tr>
+                            </thead>
+                            <tbody class="govuk-table__body">
+                            @foreach (var kvp in Model.UserProperties)
+                            {
                                 <tr class="govuk-table__row">
-                                    <th scope="col" class="govuk-table__header">Key</th>
-                                    <th scope="col" class="govuk-table__header">Value</th>
+                                    <th scope="row" class="govuk-table__header"><span style="word-wrap: break-word;">@kvp.Key</span></th>
+                                    <td class="govuk-table__cell"><span style="word-wrap: break-word;">@kvp.Value</span></td>
                                 </tr>
-                                </thead>
-                                <tbody class="govuk-table__body">
-                                @foreach (var kvp in Model.UserProperties)
-                                {
-                                    <tr class="govuk-table__row">
-                                        <th scope="row" class="govuk-table__header"><span style="word-wrap: break-word;">@kvp.Key</span></th>
-                                        <td class="govuk-table__cell"><span style="word-wrap: break-word;">@kvp.Value</span></td>
-                                    </tr>
-                                }
-                                </tbody>
-                            </table>
-                        </div>
+                            }
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
