@@ -126,8 +126,20 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
             if (messages.Count() > 0)
             {
-                var orginalMessages = messages.Select(m => m.OriginalMessage).ToList();
-                await messageSender.SendAsync(orginalMessages);
+                var orginalMessages = new List<Message>();
+                try
+                {
+                    orginalMessages = messages.Select(m => m.OriginalMessage).ToList();
+                    await messageSender.SendAsync(orginalMessages);
+                }catch(MessageSizeExceededException)
+                {
+                    _logger.LogDebug("SendMessagesAsync MessageSizeExceededException");
+                    foreach(var msg in orginalMessages)
+                    {
+                        await messageSender.SendAsync(msg);
+                    }                                                                
+                }
+                
             }
         }
 
