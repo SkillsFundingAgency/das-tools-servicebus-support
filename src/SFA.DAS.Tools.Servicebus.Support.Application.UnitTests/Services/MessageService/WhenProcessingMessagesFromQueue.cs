@@ -12,6 +12,7 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessage
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using Service = SFA.DAS.Tools.Servicebus.Support.Application.Services;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.MessageService
@@ -63,9 +64,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
                 };
             });
 
-            IBatchMessageStrategy batchStaStrategy = new BatchMessageStrategy();
-
-            var sut = new Service.MessageService(_bulkCreateQueueMessagesCommand.Object, _receiveQueueMessagesQuery.Object, _getQueueMessageCountQuery.Object, batchStaStrategy, _iLogger.Object, _batchSize, _sendMessagesCommand.Object, _deleteMessagesCommand.Object);
+            var sut = new Service.MessageService(_bulkCreateQueueMessagesCommand.Object, _receiveQueueMessagesQuery.Object, _getQueueMessageCountQuery.Object, new BatchGetMessageStrategy(), new BatchSendMessageStrategy(), _iLogger.Object, _batchSize, _sendMessagesCommand.Object, _deleteMessagesCommand.Object);
 
            await sut.ProcessMessages(_queueName);
 

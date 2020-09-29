@@ -1,13 +1,10 @@
-﻿using Microsoft.Azure.ServiceBus;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
+namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching
 {
-    public class BatchMessageStrategy : IBatchMessageStrategy
+    public class BatchGetMessageStrategy : IBatchGetMessageStrategy
     {
         public async Task<IList<TOut>> Execute<TIn, TOut>(string queueName, long qty, int batchSize, Func<int, Task<IList<TIn>>> getMessages, Func<TIn, Task<TOut>> processMessage)
         {
@@ -30,11 +27,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
                     var formattedMsg = await processMessage(msg);
                     peekedMessages.Add(formattedMsg);
                 }
-
-                //if (read.Count < batchSize)
-                //{
-                //    break;
-                //}
             }
 
             return peekedMessages;

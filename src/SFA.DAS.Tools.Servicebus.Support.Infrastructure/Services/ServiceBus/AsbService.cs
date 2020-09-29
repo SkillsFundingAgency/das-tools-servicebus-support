@@ -10,7 +10,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
+using Polly;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 {
@@ -28,8 +30,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             ILogger<AsbService> logger,
             TokenProvider tokenProvider,
             ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder,
-            ManagementClient managementClient,
-            IBatchMessageStrategy batchMessageStrategy
+            ManagementClient managementClient
         )
         {
             _config = config ?? throw new Exception("config is null");
@@ -122,13 +123,22 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public async Task SendMessagesAsync(IEnumerable<QueueMessage> messages, string queueName)
         {
-            MessageSender messageSender = GetMessageSender(queueName);
-
-            if (messages.Count() > 0)
+            if (!messages.Any())
             {
-                var orginalMessages = messages.Select(m => m.OriginalMessage).ToList();
-                await messageSender.SendAsync(orginalMessages);
+                return;
             }
+
+            var messageSender = GetMessageSender(queueName);
+            var policy = Policy.Handle<Exception>().WaitAndRetryAsync(3, attempt => TimeSpan.FromMilliseconds(200), (ex, t, ctx) =>
+            {
+                _logger.LogError(ex, $"Failed to Send messages to queue: {ex.ToString()}");
+            });
+
+            await policy.ExecuteAsync(async token =>
+            {
+                var originalMessages = messages.Select(m => m.OriginalMessage).ToList();
+                await messageSender.SendAsync(originalMessages);
+            }, new CancellationToken());
         }
 
         private MessageSender GetMessageSender(string queueName)

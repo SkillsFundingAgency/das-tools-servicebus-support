@@ -6,6 +6,7 @@ using FluentAssertions;
 using Microsoft.Azure.ServiceBus;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests.Services.ServiceBus
 {
@@ -20,7 +21,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests.Services.Ser
         [Test]
         public async Task ThenMessagesAreRetrievedInCorrectBatchSizes()
         {
-            var strategy = new BatchMessageStrategy();
+            var strategy = new BatchGetMessageStrategy();
             var counter = 0;
 
             var messages = await strategy.Execute<Message, Message>(_queueName, expected, batchSize, async (x) =>

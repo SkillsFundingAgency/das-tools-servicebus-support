@@ -25,6 +25,7 @@ using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
 using System.Linq;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {
@@ -44,8 +45,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                     s.GetRequiredService<ILogger<AsbService>>(),
                     tokenProvider,
                     connectionBuilder,
-                    CreateManagementClient(connectionBuilder, tokenProvider),
-                    new BatchMessageStrategy()
+                    CreateManagementClient(connectionBuilder, tokenProvider)
                 );
             });
 
@@ -74,16 +74,17 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<IQueryHandler<GetMessageQuery, GetMessageQueryResponse>, GetMessageQueryHandler>();
             services.AddTransient<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>, GetQueueMessageCountQueryHandler>();
             services.AddTransient<IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse>, GetMessagesByIdQueryHandler>();
-            services.AddTransient<ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse>, UpsertUserSessionCommandHandler>();
-            services.AddTransient<ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>, DeleteUserSessionCommandHandler>();
-            services.AddTransient<IBatchMessageStrategy, BatchMessageStrategy>();
-            services.AddTransient<IUserSessionService, UserSessionService>();
+
+            services.AddTransient<IBatchGetMessageStrategy, BatchGetMessageStrategy>();
+            services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
+            
             services.AddTransient<IMessageService, MessageService>(s =>
                  new MessageService(
                     s.GetService<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>(),
                     s.GetService<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>>(),
                     s.GetService<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>>(),
-                    s.GetService<IBatchMessageStrategy>(),
+                    s.GetService<IBatchGetMessageStrategy>(),
+                    s.GetService<IBatchSendMessageStrategy>(),
                     s.GetRequiredService<ILogger<MessageService>>(),
                     configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
                     s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
