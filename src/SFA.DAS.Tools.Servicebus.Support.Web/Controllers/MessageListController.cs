@@ -78,7 +78,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> ReceiveMessages(string queue)
         {
-            await CreateUserSession();
+            await CreateUserSession(queue);
             await _messageService.ProcessMessages(queue);
 
             return RedirectToAction("Index");
@@ -94,7 +94,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                     Ids = selectedMessages.Ids
                 });
 
-            await _messageService.AbortMessages(response.Messages, selectedMessages.Queue);
+            await _messageService.AbortMessages(response.Messages, selectedMessages.Queue, _userService.GetUserId());
 
             return Json(string.Empty);
         }
@@ -107,7 +107,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 SearchProperties = new SearchProperties()
             });
 
-            await _messageService.AbortMessages(response.Messages, queue);
+            await _messageService.AbortMessages(response.Messages, queue, _userService.GetUserId());
 
             return RedirectToAction("Index", "Servicebus");
         }
@@ -123,7 +123,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             });
 
             var processingQueueName = GetProcessingQueueName(selectedMessages.Queue);
-            await _messageService.ReplayMessages(response.Messages, processingQueueName);
+            await _messageService.ReplayMessages(response.Messages, processingQueueName, _userService.GetUserId());
 
             return Json(string.Empty);
         }
@@ -132,7 +132,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         public async Task<IActionResult> DeleteMessages(string data)            
         {
             var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
-            await _messageService.DeleteMessages(selectedMessages.Ids);
+            await _messageService.DeleteMessages(selectedMessages.Ids, _userService.GetUserId());
 
             return Json(string.Empty);
         }
@@ -186,13 +186,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             return Regex.Replace(errorQueueName, _errorQueueRegex, "");
         }
 
-        private async Task<UserSession> CreateUserSession()
+        private async Task<UserSession> CreateUserSession(string queue)
         {
             var userSession = await _userSessionService.GetUserSession();
 
             if (userSession == null)
             {
-                return await _userSessionService.CreateUserSession();
+                return await _userSessionService.CreateUserSession(queue);
             }            
 
             return userSession;

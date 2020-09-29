@@ -31,7 +31,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _config = config;
         }
 
-        public async Task<UserSession> CreateUserSession()
+        public async Task<UserSession> CreateUserSession(string queue)
         {
             var result = await _createUserSessionCommand.Handle(new CreateUserSessionCommand()
             {
@@ -40,7 +40,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                     Id = Guid.NewGuid().ToString(),
                     UserId = _userService.GetUserId(),
                     UserName = _userService.GetName(),
-                    ExpiryDateUtc = DateTime.UtcNow.AddHours(_config.GetValue<int>("UserSessionExpirtyHours"))
+                    ExpiryDateUtc = DateTime.UtcNow.AddHours(_config.GetValue<int>("UserSessionExpirtyHours")), 
+                    Queue = queue
                 }
             });
 

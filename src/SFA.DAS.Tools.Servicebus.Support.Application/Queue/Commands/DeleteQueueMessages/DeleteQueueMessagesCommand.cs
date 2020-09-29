@@ -7,5 +7,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueu
     public class DeleteQueueMessagesCommand
     {
         public IEnumerable<string> Ids { get; set; }
+        public string UserId { get; set; }
     }
 }

@@ -8,8 +8,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
     public interface IMessageService
     {
         Task ProcessMessages(string queue, Transactional transaction = Transactional.Yes);
-        Task AbortMessages(IEnumerable<QueueMessage> messages, string queue);
-        Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue);
-        Task DeleteMessages(IEnumerable<string> ids);
+        Task AbortMessages(IEnumerable<QueueMessage> messages, string queue, string userId);
+        Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue, string userId);
+        Task DeleteMessages(IEnumerable<string> ids, string userId);
     }
 }

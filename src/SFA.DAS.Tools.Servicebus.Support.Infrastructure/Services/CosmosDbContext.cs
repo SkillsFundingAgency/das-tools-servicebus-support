@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
+using Microsoft.Azure.Cosmos.Linq;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 {
@@ -56,12 +57,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             }
         }
 
-        public async Task DeleteQueueMessagesAsync(IEnumerable<string> ids)
+        public async Task DeleteQueueMessagesAsync(IEnumerable<string> ids, string userId)
         {
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             var container = await CreateContainer(database);
 
-            var batch = container.CreateTransactionalBatch(new PartitionKey(_userService.GetUserId()));
+            var batch = container.CreateTransactionalBatch(new PartitionKey(userId));
 
             foreach (var id in ids)
             {
@@ -255,6 +256,26 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             var container = await CreateContainer(database);
 
             await container.DeleteItemAsync<UserSession>(id, new PartitionKey(userId));
+        }
+
+        public async Task<IEnumerable<UserSession>> GetExpiredUserSessions()
+        {            
+            var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
+            var container = await CreateContainer(database);
+
+            var queryFeedIterator = container.GetItemLinqQueryable<UserSession>().Where(s => s.ExpiryDateUtc < DateTime.UtcNow).ToFeedIterator();            
+
+            var userSessions = new List<UserSession>();
+
+            while (queryFeedIterator.HasMoreResults)
+            {
+                var currentResults = await queryFeedIterator.ReadNextAsync();
+
+                var newSessions = currentResults.ToList();
+                userSessions.AddRange(newSessions);
+            }
+
+            return userSessions;            
         }
     }
 }

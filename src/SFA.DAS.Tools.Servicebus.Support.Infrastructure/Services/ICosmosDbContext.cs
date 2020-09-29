@@ -10,7 +10,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
     {
         Task CreateQueueMessageAsync(QueueMessage msg);
         Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messages);
-        Task DeleteQueueMessagesAsync(IEnumerable<string> ids);
+        Task DeleteQueueMessagesAsync(IEnumerable<string> ids, string userId);
         Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId, SearchProperties searchProperties);
         Task<IEnumerable<QueueMessage>> GetQueueMessagesByIdAsync(string userId, IEnumerable<string> ids);
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
@@ -19,5 +19,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         Task<UserSession> CreateUserSessionAsync(UserSession userSession);
         Task<UserSession> GetUserSessionAsync(string userId);
         Task DeleteUserSessionAsync(string id, string userId);
+        Task<IEnumerable<UserSession>> GetExpiredUserSessions();
     }
 }

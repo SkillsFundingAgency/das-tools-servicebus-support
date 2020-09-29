@@ -32,7 +32,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
         private readonly IDictionary<Transactional, Func<string, int, Task<IList<QueueMessage>>>> _processor = new ConcurrentDictionary<Transactional, Func<string, int, Task<IList<QueueMessage>>>>();
         private readonly int _batchSize;
         private readonly ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> _sendMessagesCommand;
-        private readonly ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> _deleteQueueMessageCommand;
+        private readonly ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> _deleteQueueMessageCommand;        
 
         public MessageService(
             ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> bulkCreateMessagesCommand,
@@ -42,7 +42,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             ILogger<MessageService> logger,
             int batchSize,
             ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
-            ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> deleteQueueMessageCommand
+            ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> deleteQueueMessageCommand            
             )
         {
             _bulkCreateMessagesCommand = bulkCreateMessagesCommand;
@@ -52,8 +52,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _logger = logger;
             _batchSize = batchSize;
             _sendMessagesCommand = sendMessagesCommand;
-            _deleteQueueMessageCommand = deleteQueueMessageCommand;
-
+            _deleteQueueMessageCommand = deleteQueueMessageCommand;            
             _processor.Add(Transactional.Yes, ProcessMessagesInTransaction);
             _processor.Add(Transactional.No, ProcessMessages);
         }
@@ -134,12 +133,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             });
         }
 
-        public async Task AbortMessages(IEnumerable<QueueMessage> messages, string queue)
+        public async Task AbortMessages(IEnumerable<QueueMessage> messages, string queue, string userId)
         {
-            await SendMessageAndDeleteFromDb(messages, queue);
+            await SendMessageAndDeleteFromDb(messages, queue, userId);
         }
 
-        private async Task SendMessageAndDeleteFromDb(IEnumerable<QueueMessage> messages, string queue)
+        private async Task SendMessageAndDeleteFromDb(IEnumerable<QueueMessage> messages, string queue, string userId)
         {
             foreach (var batchedMessages in SplitList<QueueMessage>(messages.ToList()))
             {
@@ -155,7 +154,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
 
                         await _deleteQueueMessageCommand.Handle(new DeleteQueueMessagesCommand()
                         {
-                            Ids = batchedMessages.Select(x => x.Id).ToList()
+                            Ids = batchedMessages.Select(x => x.Id).ToList(),
+                            UserId = userId
                         });
 
                         ts.Complete();
@@ -177,12 +177,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             }
         }
 
-        public async Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue)
+        public async Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue, string userId)
         {
-            await SendMessageAndDeleteFromDb(messages, queue);
+            await SendMessageAndDeleteFromDb(messages, queue, userId);
         }
 
-        public async Task DeleteMessages(IEnumerable<string> ids)
+        public async Task DeleteMessages(IEnumerable<string> ids, string userId)
         {
             foreach (var batchedIds in SplitList(ids.ToList()))
             {
@@ -192,7 +192,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                     {                       
                         await _deleteQueueMessageCommand.Handle(new DeleteQueueMessagesCommand()
                         {
-                            Ids = batchedIds
+                            Ids = batchedIds,
+                            UserId = userId
                         });
 
                         ts.Complete();
