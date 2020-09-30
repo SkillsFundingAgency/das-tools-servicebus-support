@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Service = SFA.DAS.Tools.Servicebus.Support.Application.Services;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.MessageService
@@ -60,24 +57,16 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
                 return new ReceiveQueueMessagesQueryResponse()
                 {
                     Messages = messages
-
                 };
             });
 
             var sut = new Service.MessageService(_bulkCreateQueueMessagesCommand.Object, _receiveQueueMessagesQuery.Object, _getQueueMessageCountQuery.Object, new BatchGetMessageStrategy(), new BatchSendMessageStrategy(), _iLogger.Object, _batchSize, _sendMessagesCommand.Object, _deleteMessagesCommand.Object);
 
-           await sut.ProcessMessages(_queueName);
+           await sut.GetMessages(_queueName);
 
            _bulkCreateQueueMessagesCommand.Verify(x => x.Handle(It.IsAny<BulkCreateQueueMessagesCommand>()), Times.Exactly(3));
            _getQueueMessageCountQuery.Verify(x => x.Handle(It.IsAny<GetQueueMessageCountQuery>()), Times.Once);
            _receiveQueueMessagesQuery.Verify(x => x.Handle(It.IsAny<ReceiveQueueMessagesQuery>()), Times.Exactly(3));
         }
-
-        private async Task<IList<QueueMessage>> GetMessages(int qty)
-        {
-            return new List<QueueMessage>();
-        }
-
-        private async Task<QueueMessage> Processmessage(QueueMessage msg) => msg;
     }
 }

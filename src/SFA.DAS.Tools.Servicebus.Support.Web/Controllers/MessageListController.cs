@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using SFA.DAS.Tools.Servicebus.Support.Application;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDeleteQueueMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
@@ -27,6 +29,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
         private readonly IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse> _getMessagesByIdQuery;
         private readonly IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> _getQueueDetailsQuery;
+        private readonly ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse> _deleteQueueMessageCommand;
         private readonly IUserSessionService _userSessionService;
         private readonly string _errorQueueRegex;
 
@@ -37,6 +40,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> getQueueDetailsQuery,
             IMessageService messageService,
             IConfiguration config,
+            ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
+            ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
             IUserSessionService userSessionService)
         {
             _userService = userService;
@@ -45,6 +50,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _getQueueDetailsQuery = getQueueDetailsQuery;
             _messageService = messageService;
             _userSessionService = userSessionService;
+            _deleteQueueMessageCommand = deleteQueueMessageCommand;
             _errorQueueRegex = config["ErrorQueueRegex"];
 
         }
@@ -84,7 +90,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> ReceiveMessages(string queue)
         {            
-            await _messageService.ProcessMessages(queue);
+            await _messageService.GetMessages(queue);
 
             return RedirectToAction("Index");
         }
@@ -137,42 +143,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         public async Task<IActionResult> DeleteMessages(string data)
         {
             var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
-            await _messageService.DeleteMessages(selectedMessages.Ids);
+            await _deleteQueueMessageCommand.Handle(new BatchDeleteQueueMessagesCommand()
+            {
+                Ids = selectedMessages.Ids
+            });
 
             return Json(string.Empty);
-        }
-
-        public async Task<IActionResult> Data(string sort, string order, string search, int offset, int limit)
-        {
-            var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
-            {
-                UserId = _userService.GetUserId(),
-                SearchProperties = new SearchProperties
-                {
-                    Sort = sort,
-                    Order = order,
-                    Search = search,
-                    Offset = offset,
-                    Limit = limit
-                }
-            });
-
-            var queueMessages = response.Messages.ToList();
-
-            return Json(new
-            {
-                Total = response.Count,
-                TotalNotFiltered = response.UnfilteredCount,
-                Rows = queueMessages.Select(msg => new
-                {
-                    Id = msg.Id,
-                    OriginatingEndpoint = msg.OriginatingEndpoint,
-                    ProcessingEndpoint = msg.ProcessingEndpoint,
-                    Body = msg.Body,
-                    Exception = msg.Exception,
-                    ExceptionType = msg.ExceptionType
-                })
-            });
         }
 
         private string GetQueueName(IEnumerable<QueueMessage> messages)

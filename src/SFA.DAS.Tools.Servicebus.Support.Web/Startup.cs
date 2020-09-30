@@ -38,6 +38,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddOptions();
+            services.AddCommands(_configuration);
+            services.AddQueries();
             services.AddServices(_configuration);
             services.AddAntiforgery(options =>
             {

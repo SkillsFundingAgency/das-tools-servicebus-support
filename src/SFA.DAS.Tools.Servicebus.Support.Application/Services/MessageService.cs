@@ -1,11 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using System;
 using System.Collections.Concurrent;
@@ -74,7 +73,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _processor.Add(Transactional.No, ProcessMessages);
         }
 
-        public async Task ProcessMessages(string queue, Transactional transaction = Transactional.Yes)
+        public async Task GetMessages(string queue, Transactional transaction = Transactional.Yes)
         {
             var count = await GetMessageCount(queue);
 
@@ -82,72 +81,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                 async (qty) => await _processor[transaction](queue, qty), async (message) => message);
         }
 
-        private async Task<long> GetMessageCount(string queue)
+        public async Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue)
         {
-            return (await _getQueueMessageCountQuery.Handle(new GetQueueMessageCountQuery()
-            {
-                QueueName = queue
-            })).Count;
-        }
-
-        private async Task<IList<QueueMessage>> ProcessMessagesInTransaction(string queue, int quantity)
-        {
-            IEnumerable<QueueMessage> messages = new List<QueueMessage>();
-
-            using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-            {
-                try
-                {
-                    messages = await GetMessages(queue, quantity);
-                    await AddMessagesToDatabase(messages);
-
-                    ts.Complete();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to receive messages");
-                }
-            }
-
-            return messages.ToList();
-        }
-
-        private async Task<IList<QueueMessage>> ProcessMessages(string queue, int quantity)
-        {
-            IEnumerable<QueueMessage> messages = new List<QueueMessage>();
-
-            try
-            {
-                messages = await GetMessages(queue, quantity);
-                await AddMessagesToDatabase(messages);
-
-                return messages.ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to receive messages");
-            }
-
-            return messages.ToList();
-        }
-
-        private async Task<IEnumerable<QueueMessage>> GetMessages(string queue, int messageQtyToGet)
-        {
-            var response = await _receiveQueueMessagesQuery.Handle(new ReceiveQueueMessagesQuery()
-            {
-                QueueName = queue,
-                Quantity = messageQtyToGet
-            });
-
-            return response.Messages;
-        }
-
-        private async Task AddMessagesToDatabase(IEnumerable<QueueMessage> messages)
-        {
-            await _bulkCreateMessagesCommand.Handle(new BulkCreateQueueMessagesCommand()
-            {
-                Messages = messages
-            });
+            await SendMessageAndDeleteFromDb(messages, queue);
         }
 
         public async Task AbortMessages(IEnumerable<QueueMessage> messages, string queue)
@@ -183,31 +119,68 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                 });
         }
 
-        public async Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue)
+        private async Task<IEnumerable<QueueMessage>> GetMessages(string queue, int messageQtyToGet)
         {
-            await SendMessageAndDeleteFromDb(messages, queue);
+            var response = await _receiveQueueMessagesQuery.Handle(new ReceiveQueueMessagesQuery()
+            {
+                QueueName = queue,
+                Quantity = messageQtyToGet
+            });
+
+            return response.Messages;
         }
 
-        public async Task DeleteMessages(IEnumerable<string> ids)
+        private async Task AddMessagesToDatabase(IEnumerable<QueueMessage> messages)
         {
-            await _batchSendMessageStrategy.Execute(ids, _batchSize,
-                async (messages) =>
-                {
-                    using var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-                    try
-                    {
-                        await _deleteQueueMessageCommand.Handle(new DeleteQueueMessagesCommand()
-                        {
-                            Ids = ids
-                        });
+            await _bulkCreateMessagesCommand.Handle(new BulkCreateQueueMessagesCommand()
+            {
+                Messages = messages
+            });
+        }
 
-                        ts.Complete();
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to delete messages");
-                    }
-                });
+        private async Task<IList<QueueMessage>> ProcessMessages(string queue, int quantity)
+        {
+            try
+            {
+                var messages = await GetMessages(queue, quantity);
+                await AddMessagesToDatabase(messages);
+
+                return messages.ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to receive messages");
+            }
+
+            return new List<QueueMessage>();
+        }
+
+        private async Task<IList<QueueMessage>> ProcessMessagesInTransaction(string queue, int quantity)
+        {
+            using var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            try
+            {
+                var messages = await GetMessages(queue, quantity);
+                await AddMessagesToDatabase(messages);
+
+                ts.Complete();
+
+                return messages.ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to receive messages");
+            }
+
+            return new List<QueueMessage>();
+        }
+
+        private async Task<long> GetMessageCount(string queue)
+        {
+            return (await _getQueueMessageCountQuery.Handle(new GetQueueMessageCountQuery()
+            {
+                QueueName = queue
+            })).Count;
         }
     }
 }

@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetExpiredUserSessions;
@@ -16,6 +16,7 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessage
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
 
@@ -37,8 +38,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
                     s.GetRequiredService<ILogger<AsbService>>(),
                     tokenProvider,
                     connectionBuilder,
-                    CreateManagementClient(connectionBuilder, tokenProvider),
-                    new BatchMessageStrategy()
+                    CreateManagementClient(connectionBuilder, tokenProvider)
                 );
             });
 
@@ -66,7 +66,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
                     s.GetService<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>(),
                     s.GetService<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>>(),
                     s.GetService<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>>(),
-                    s.GetService<IBatchMessageStrategy>(),
+                    s.GetService<IBatchGetMessageStrategy>(),
+                    s.GetService<IBatchSendMessageStrategy>(),
                     s.GetRequiredService<ILogger<MessageService>>(),
                     configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
                     s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
