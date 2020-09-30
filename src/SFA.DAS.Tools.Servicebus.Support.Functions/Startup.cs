@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NLog.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
@@ -84,6 +85,21 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
                     s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()                    
                 )
             );
+
+            var nLogConfiguration = new NLogConfiguration();
+            builder.Services.AddLogging((options) =>
+            {
+                options.SetMinimumLevel(LogLevel.Trace);
+                options.SetMinimumLevel(LogLevel.Trace);
+                options.AddNLog(new NLogProviderOptions
+                {
+                    CaptureMessageTemplates = true,
+                    CaptureMessageProperties = true
+                });
+                options.AddConsole();
+
+                nLogConfiguration.ConfigureNLog(configurationService);
+            });
         }
 
         private IConfiguration LoadConfiguration(string appDirectory, IConfiguration configurationService)
