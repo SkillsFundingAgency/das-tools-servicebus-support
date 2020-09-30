@@ -32,7 +32,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
         }
 
         [FunctionName("CleanExpiredUserSessionsFunction")]
-        public async Task Run([TimerTrigger("0 */5 * * * *")] TimerInfo myTimer, ILogger log)
+        public async Task Run([TimerTrigger("%CleanExpiredUserSessionsFunctionTimer%")] TimerInfo myTimer, ILogger log)
         {
             try
             {
