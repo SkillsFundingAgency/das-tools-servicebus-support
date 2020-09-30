@@ -10,7 +10,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
     {
         Task CreateQueueMessageAsync(QueueMessage msg);
         Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messages);
-        Task DeleteQueueMessagesAsync(IEnumerable<string> ids, string userId);
+        Task DeleteQueueMessagesAsync(IEnumerable<string> ids);
         Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId, SearchProperties searchProperties);
         Task<IEnumerable<QueueMessage>> GetQueueMessagesByIdAsync(string userId, IEnumerable<string> ids);
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);

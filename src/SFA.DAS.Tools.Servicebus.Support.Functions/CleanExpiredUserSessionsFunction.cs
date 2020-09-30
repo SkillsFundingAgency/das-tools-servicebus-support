@@ -17,18 +17,21 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
         private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
         private readonly IMessageService _messageService;
         private readonly ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> _deleteUserSessionCommand;
+        private readonly IUserService _userService;
 
         public CleanExpiredUserSessionsFunction(
             IQueryHandler<GetExpiredUserSessionsQuery, GetExpiredUserSessionsQueryResponse> expiredUserSessionQuery,
             IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery,
             IMessageService messageService, 
-            ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> deleteUserSessionCommand
+            ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> deleteUserSessionCommand, 
+            IUserService userService
             )
         {
             _expiredUserSessionQuery = expiredUserSessionQuery;
             _getMessagesQuery = getMessagesQuery;
             _messageService = messageService;
             _deleteUserSessionCommand = deleteUserSessionCommand;
+            _userService = userService;
         }
 
         [FunctionName("CleanExpiredUserSessionsFunction")]
@@ -40,7 +43,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
 
                 foreach (var session in queryResult.ExpiredUserSessions)
                 {
-
+                    _userService.Configure(session.UserId, "CleanExpiredUserSessionsFunction");
                     while (true)
                     {
                         var getMessagesResponse = await _getMessagesQuery.Handle(new GetMessagesQuery()
@@ -48,14 +51,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
                             UserId = session.UserId,
                             SearchProperties = new SearchProperties
                             {
-                                Offset = 0,
-                                //Limit = 1
+                                Offset = 0                             
                             }
                         });
 
                         if (getMessagesResponse?.Count > 0)
                         {
-                            await _messageService.AbortMessages(getMessagesResponse.Messages, session.Queue, session.UserId);
+                            await _messageService.AbortMessages(getMessagesResponse.Messages, session.Queue);
                         }
                         else
                         {

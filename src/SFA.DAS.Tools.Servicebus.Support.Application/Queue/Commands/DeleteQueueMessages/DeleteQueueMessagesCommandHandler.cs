@@ -14,7 +14,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueu
 
         public async Task<DeleteQueueMessagesCommandResponse> Handle(DeleteQueueMessagesCommand query)
         {
-            await _cosmosDbContext.DeleteQueueMessagesAsync(query.Ids, query.UserId);
+            await _cosmosDbContext.DeleteQueueMessagesAsync(query.Ids);
 
             return new DeleteQueueMessagesCommandResponse();
         }

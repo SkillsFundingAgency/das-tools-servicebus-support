@@ -94,7 +94,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                     Ids = selectedMessages.Ids
                 });
 
-            await _messageService.AbortMessages(response.Messages, selectedMessages.Queue, _userService.GetUserId());
+            await _messageService.AbortMessages(response.Messages, selectedMessages.Queue);
 
             return Json(string.Empty);
         }
@@ -107,7 +107,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 SearchProperties = new SearchProperties()
             });
 
-            await _messageService.AbortMessages(response.Messages, queue, _userService.GetUserId());
+            await _messageService.AbortMessages(response.Messages, queue);
 
             return RedirectToAction("Index", "Servicebus");
         }
@@ -123,7 +123,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             });
 
             var processingQueueName = GetProcessingQueueName(selectedMessages.Queue);
-            await _messageService.ReplayMessages(response.Messages, processingQueueName, _userService.GetUserId());
+            await _messageService.ReplayMessages(response.Messages, processingQueueName);
 
             return Json(string.Empty);
         }
@@ -132,7 +132,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         public async Task<IActionResult> DeleteMessages(string data)            
         {
             var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
-            await _messageService.DeleteMessages(selectedMessages.Ids, _userService.GetUserId());
+            await _messageService.DeleteMessages(selectedMessages.Ids);
 
             return Json(string.Empty);
         }

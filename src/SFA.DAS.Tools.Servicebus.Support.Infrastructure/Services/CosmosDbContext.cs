@@ -57,12 +57,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             }
         }
 
-        public async Task DeleteQueueMessagesAsync(IEnumerable<string> ids, string userId)
+        public async Task DeleteQueueMessagesAsync(IEnumerable<string> ids)
         {
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             var container = await CreateContainer(database);
 
-            var batch = container.CreateTransactionalBatch(new PartitionKey(userId));
+            var batch = container.CreateTransactionalBatch(new PartitionKey(_userService.GetUserId()));
 
             foreach (var id in ids)
             {
