@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Linq;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -10,13 +11,10 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
-using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Web.App_Start;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
@@ -29,7 +27,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
         private readonly IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse> _getMessagesByIdQuery;
         private readonly IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> _getQueueDetailsQuery;
-        private readonly ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse> _deleteQueueMessageCommand;
+
+        private readonly ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse>
+            _deleteQueueMessageCommand;
+
         private readonly IUserSessionService _userSessionService;
         private readonly string _errorQueueRegex;
 
@@ -41,7 +42,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IMessageService messageService,
             IConfiguration config,
             ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
-            ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
+            ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse>
+                deleteQueueMessageCommand,
             IUserSessionService userSessionService)
         {
             _userService = userService;
@@ -73,8 +75,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 return RedirectToAction("Index", "Servicebus");
             }
 
-            var queueName = GetQueueName(response.Messages);
-            HttpContext.Session.SetString("queueName", queueName);            
+            var queueName = response.Messages.GetQueueName();
+            HttpContext.Session.SetString("queueName", queueName);
 
             return View(new MessageListViewModel()
             {
@@ -89,7 +91,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         public async Task<IActionResult> ReceiveMessages(string queue)
-        {            
+        {
             await _messageService.GetMessages(queue);
 
             return RedirectToAction("Index");
@@ -133,7 +135,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 Ids = selectedMessages.Ids
             });
 
-            var processingQueueName = GetProcessingQueueName(selectedMessages.Queue);
+            var processingQueueName = selectedMessages.GetProcessingQueueName(_errorQueueRegex);
             await _messageService.ReplayMessages(response.Messages, processingQueueName);
 
             return Json(string.Empty);
@@ -149,22 +151,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             });
 
             return Json(string.Empty);
-        }
-
-        private string GetQueueName(IEnumerable<QueueMessage> messages)
-        {
-            var name = "";
-            if (messages?.Count() > 0)
-            {
-                name = messages.First().Queue;
-            }
-
-            return name;
-        }
-
-        private string GetProcessingQueueName(string errorQueueName)
-        {
-            return Regex.Replace(errorQueueName, _errorQueueRegex, "");
         }
 
         private async Task DeleteUserSession()
