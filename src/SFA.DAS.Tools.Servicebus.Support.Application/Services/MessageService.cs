@@ -88,7 +88,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("Failed to receive messages", ex);
+                    _logger.LogError(ex, "Failed to receive messages");
                 }
             }
 
@@ -108,7 +108,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError("Failed to receive messages", ex);
+                _logger.LogError(ex, "Failed to receive messages");
             }
 
             return messages.ToList();
@@ -161,7 +161,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError("Failed to send messages", ex);
+                        _logger.LogError(ex, "Failed to send messages");
                         ts.Dispose();
                     }
                 }
@@ -198,7 +198,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError("Failed to delete messages", ex);
+                        _logger.LogError(ex, "Failed to delete messages");
                         ts.Dispose();
                     }
                 }

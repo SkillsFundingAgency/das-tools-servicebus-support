@@ -52,7 +52,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             if (!batchResponse.IsSuccessStatusCode)
             {
-                _logger.LogError("Cosmos batch creation failed", batchResponse);
+                _logger.LogError($"Cosmos batch creation failed: {batchResponse.ErrorMessage}");
                 throw new Exception("Cosmos batch creation failed");
             }
         }
@@ -73,7 +73,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             if (!batchResponse.IsSuccessStatusCode)
             {
-                _logger.LogError("Cosmos batch deletion failed", batchResponse);
+                _logger.LogError($"Cosmos batch deletion failed: {batchResponse.ErrorMessage}");
                 throw new Exception("Cosmos batch deletion failed");
             }
         }
