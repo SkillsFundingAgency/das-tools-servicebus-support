@@ -20,7 +20,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSess
             var userSession = await _cosmosDbContext.GetUserSessionAsync(query.UserId);
 
             return new GetUserSessionQueryResponse()
-            {                
+            {
                 UserSession = userSession
             };
         }
