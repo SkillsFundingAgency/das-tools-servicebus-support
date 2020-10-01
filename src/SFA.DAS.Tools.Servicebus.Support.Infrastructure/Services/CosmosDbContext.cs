@@ -229,11 +229,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
             return sb.ToString();
         }
 
-        public async Task<UserSession> CreateUserSessionAsync(UserSession userSession)
+        public async Task<UserSession> UpsertUserSessionAsync(UserSession userSession)
         {
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             var container = await CreateContainer(database);
-            return await container.CreateItemAsync(userSession);
+            return await container.UpsertItemAsync(userSession);
         }
 
         public async Task<UserSession> GetUserSessionAsync(string userId)

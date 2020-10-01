@@ -16,7 +16,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
         Task<int> GetMessageCountAsync(string userId, SearchProperties searchProperties = null);
         Task<bool> HasUserAnExistingSession(string userId);
-        Task<UserSession> CreateUserSessionAsync(UserSession userSession);
+        Task<UserSession> UpsertUserSessionAsync(UserSession userSession);
         Task<UserSession> GetUserSessionAsync(string userId);
         Task DeleteUserSessionAsync(string id, string userId);
         Task<IEnumerable<UserSession>> GetExpiredUserSessions();
