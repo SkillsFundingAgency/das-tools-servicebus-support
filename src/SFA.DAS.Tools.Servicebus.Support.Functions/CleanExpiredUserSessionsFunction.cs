@@ -22,8 +22,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
         public CleanExpiredUserSessionsFunction(
             IQueryHandler<GetExpiredUserSessionsQuery, GetExpiredUserSessionsQueryResponse> expiredUserSessionQuery,
             IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery,
-            IMessageService messageService, 
-            ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> deleteUserSessionCommand, 
+            IMessageService messageService,
+            ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> deleteUserSessionCommand,
             IUserService userService
             )
         {
@@ -44,36 +44,44 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
                 foreach (var session in queryResult.ExpiredUserSessions)
                 {
                     _userService.Configure(session.UserId, "CleanExpiredUserSessionsFunction");
-                    while (true)
-                    {
-                        var getMessagesResponse = await _getMessagesQuery.Handle(new GetMessagesQuery()
-                        {
-                            UserId = session.UserId,
-                            SearchProperties = new SearchProperties
-                            {
-                                Offset = 0                             
-                            }
-                        });
 
-                        if (getMessagesResponse?.Count > 0)
-                        {
-                            await _messageService.AbortMessages(getMessagesResponse.Messages, session.Queue);
-                        }
-                        else
-                        {
-                            await _deleteUserSessionCommand.Handle(new DeleteUserSessionCommand()
-                            {
-                                Id = session.Id,
-                                UserId = session.UserId
-                            });
-                            break;
-                        }
+                    var getMessagesResponse = await GetMessages(session.UserId);
+
+                    while (getMessagesResponse?.Count > 0)
+                    {
+                        await _messageService.AbortMessages(getMessagesResponse.Messages, session.Queue);
+                        getMessagesResponse = await GetMessages(session.UserId);
                     }
+
+                    if (getMessagesResponse?.Count == 0)
+                    {
+                        await _deleteUserSessionCommand.Handle(new DeleteUserSessionCommand()
+                        {
+                            Id = session.Id,
+                            UserId = session.UserId
+                        });
+                        break;
+                    }
+
                 }
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 log.LogError(ex, "CleanExpiredUserSessionsFunction");
             }
+        }
+
+        private async Task<GetMessagesQueryResponse> GetMessages(string userId)
+        {
+            return await _getMessagesQuery.Handle(new GetMessagesQuery()
+            {
+                UserId = userId,
+                SearchProperties = new SearchProperties
+                {
+                    Offset = 0,
+                    Limit = 100
+                }
+            });
         }
     }
 }
