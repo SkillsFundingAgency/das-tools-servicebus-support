@@ -154,7 +154,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
 
                         await _deleteQueueMessageCommand.Handle(new DeleteQueueMessagesCommand()
                         {
-                            Ids = batchedMessages.Select(x => x.Id).ToList(),
+                            Ids = batchedMessages.Select(x => x.Id).ToList()
                         });
 
                         ts.Complete();
