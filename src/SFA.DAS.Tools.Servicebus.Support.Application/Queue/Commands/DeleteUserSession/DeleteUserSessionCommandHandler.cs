@@ -1,13 +1,13 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession
 {
     public class DeleteUserSessionCommandHandler : ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>
     {
-        private readonly ICosmosDbContext _cosmosDbContext;
+        private readonly ICosmosUserSessionDbContext _cosmosDbContext;
 
-        public DeleteUserSessionCommandHandler(ICosmosDbContext cosmosDbContext)
+        public DeleteUserSessionCommandHandler(ICosmosUserSessionDbContext cosmosDbContext)
         {
             _cosmosDbContext = cosmosDbContext;
         }

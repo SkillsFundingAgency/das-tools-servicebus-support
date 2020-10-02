@@ -1,13 +1,13 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession
 {
     public class UpsertUserSessionCommandHandler : ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse>
     {
-        private readonly ICosmosDbContext _cosmosDbContext;
+        private readonly ICosmosUserSessionDbContext _cosmosDbContext;
 
-        public UpsertUserSessionCommandHandler(ICosmosDbContext cosmosDbContext)
+        public UpsertUserSessionCommandHandler(ICosmosUserSessionDbContext cosmosDbContext)
         {
             _cosmosDbContext = cosmosDbContext;
         }

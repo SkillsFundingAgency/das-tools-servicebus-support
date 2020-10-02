@@ -7,10 +7,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessage;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById;
@@ -22,6 +22,7 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMessag
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
 using System.Linq;
 
@@ -31,6 +32,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>();
             services.AddTransient<IAsbService, AsbService>(s =>
             {
                 var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
@@ -47,17 +49,18 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 );
             });
 
-            services.AddTransient<ICosmosDbContext, CosmosDbContext>(s => new CosmosDbContext(s.GetRequiredService<CosmosClient>(), s.GetService<IUserService>(), configuration, s.GetRequiredService<ILogger<CosmosDbContext>>()));
+            services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>(s => new CosmosMessageDbContext(s.GetRequiredService<CosmosClient>(), s.GetService<IUserService>(), configuration, s.GetRequiredService<ILogger<CosmosMessageDbContext>>(), s.GetRequiredService<ICosmosInfrastructureService>()));
+            services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>(s => new CosmosUserSessionDbContext(s.GetRequiredService<CosmosClient>(), s.GetRequiredService<ICosmosInfrastructureService>(), configuration));
 
             services.AddSingleton(s =>
             {
                 var cosmosEndpointUrl = configuration.GetValue<string>("CosmosDb:Url");
                 var cosmosAuthenticationKey = configuration.GetValue<string>("CosmosDb:AuthKey");
-                
+
                 return new CosmosClient(cosmosEndpointUrl, cosmosAuthenticationKey, new CosmosClientOptions() { AllowBulkExecution = true });
             });
 
-            services.AddSingleton<IUserService, UserService>();
+            services.AddSingleton<IUserService, UserService>();            
             services.AddTransient<IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse>, GetMessagesQueryHandler>();
             services.AddTransient<IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse>, GetUserSessionQueryHandler>();
             services.AddTransient<IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse>, GetQueuesQueryHandler>();
@@ -101,7 +104,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             else
             {
                 return new ManagementClient(connectionBuilder, tokenProvider);
-            }            
+            }
         }
     }
 }

@@ -1,12 +1,10 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Domain;
+﻿using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
-using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
+namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 {
-    public interface ICosmosDbContext
+    public interface ICosmosMessageDbContext
     {
         Task CreateQueueMessageAsync(QueueMessage msg);
         Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messages);
@@ -15,10 +13,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         Task<IEnumerable<QueueMessage>> GetQueueMessagesByIdAsync(string userId, IEnumerable<string> ids);
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
         Task<int> GetMessageCountAsync(string userId, SearchProperties searchProperties = null);
-        Task<bool> HasUserAnExistingSession(string userId);
-        Task<UserSession> UpsertUserSessionAsync(UserSession userSession);
-        Task<UserSession> GetUserSessionAsync(string userId);
-        Task DeleteUserSessionAsync(string id, string userId);
-        Task<IEnumerable<UserSession>> GetExpiredUserSessions();
+        Task<bool> HasUserAnExistingSession(string userId);        
     }
 }

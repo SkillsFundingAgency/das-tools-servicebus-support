@@ -1,13 +1,13 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetExpiredUserSessions
 {
     public class GetExpiredUserSessionsQueryHandler : IQueryHandler<GetExpiredUserSessionsQuery, GetExpiredUserSessionsQueryResponse>
     {
-        private readonly ICosmosDbContext _cosmosDbContext;
+        private readonly ICosmosUserSessionDbContext _cosmosDbContext;
 
-        public GetExpiredUserSessionsQueryHandler(ICosmosDbContext cosmosDbContext)
+        public GetExpiredUserSessionsQueryHandler(ICosmosUserSessionDbContext cosmosDbContext)
         {
             _cosmosDbContext = cosmosDbContext;
         }
@@ -18,7 +18,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetExpiredU
 
             return new GetExpiredUserSessionsQueryResponse
             {
-                ExpiredUserSessions = expiredUserSessions    
+                ExpiredUserSessions = expiredUserSessions
             };
         }
     }
