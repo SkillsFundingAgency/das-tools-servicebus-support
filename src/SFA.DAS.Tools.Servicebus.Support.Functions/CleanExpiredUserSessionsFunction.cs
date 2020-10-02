@@ -7,6 +7,7 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Functions
@@ -47,13 +48,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
 
                     var getMessagesResponse = await GetMessages(session.UserId);
 
-                    while (getMessagesResponse?.Count > 0)
+                    while (getMessagesResponse.Messages.Any())
                     {
                         await _messageService.AbortMessages(getMessagesResponse.Messages, session.Queue);
                         getMessagesResponse = await GetMessages(session.UserId);
                     }
 
-                    if (getMessagesResponse?.Count == 0)
+                    if (!getMessagesResponse.Messages.Any())
                     {
                         await _deleteUserSessionCommand.Handle(new DeleteUserSessionCommand()
                         {
