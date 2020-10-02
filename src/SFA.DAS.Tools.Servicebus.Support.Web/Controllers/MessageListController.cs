@@ -58,7 +58,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 }
             });
 
-            if (response?.Count == 0)
+            if (!response.Messages.Any())
             {
                 await DeleteUserSession();
                 return RedirectToAction("Index", "Servicebus");
