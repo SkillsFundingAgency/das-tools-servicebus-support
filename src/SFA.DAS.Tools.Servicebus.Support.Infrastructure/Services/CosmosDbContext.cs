@@ -169,6 +169,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
                     .Path("/body/?")
                     .Path("/exception/?")
                     .Path("/exceptionType/?")
+                    .Path("/type/?")
                     .Attach()
                 .WithExcludedPaths()
                     .Path("/*")
