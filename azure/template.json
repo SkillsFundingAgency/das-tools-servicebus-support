@@ -24,13 +24,20 @@
         },
         "resourceGroupLocation": {
             "type": "string"
+        },
+        "sharedEnvResourceGroup": {
+            "type": "string"
+        },
+        "sharedServiceBusName": {
+            "type": "string"
         }
     },
     "variables": {
         "deploymentUrlBase": "https://raw.githubusercontent.com/SkillsFundingAgency/das-platform-building-blocks/master/templates/",
         "resourceNamePrefix": "[toLower(concat('das-', parameters('resourceEnvironmentName'),'-', parameters('serviceName')))]",
         "resourceGroupName": "[concat(variables('resourceNamePrefix'), '-rg')]",
-        "cosmosAccountName": "[concat(variables('resourceNamePrefix'), '-cdb')]"
+        "cosmosAccountName": "[concat(variables('resourceNamePrefix'), '-cdb')]",
+        "userManagedIdentityName": "[concat(variables('resourceNamePrefix'), '-umi')]"
     },
     "resources": [
         {
@@ -71,12 +78,69 @@
                     }
                 }
             }
+        },
+        {
+            "apiVersion": "2020-06-01",
+            "name": "[variables('userManagedIdentityName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups/', variables('resourceGroupName'))]"
+            ],
+            "type": "Microsoft.Resources/deployments",
+            "resourceGroup": "[variables('resourceGroupName')]",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('deploymentUrlBase'),'user-assigned-identity.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "userAssignedIdentityName": {
+                        "value": "[variables('userManagedIdentityName')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2020-06-01",
+            "name": "[concat(variables('userManagedIdentityName'),'-role-assignments')]",
+            "type": "Microsoft.Resources/deployments",
+            "resourceGroup": "[parameters('sharedEnvResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('deploymentUrlBase'),'role-assignment.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "principalId": {
+                        "value": "[reference(variables('userManagedIdentityName')).outputs.objectId.value]"
+                    },
+                    "assignmentType": {
+                        "value": "ServiceBusReceiver"
+                    },
+                    "resourceName": {
+                        "value": "[parameters('sharedServiceBusName')]"
+                    }
+                }
+            }
         }
     ],
     "outputs": {
+        "ResourceGroupName": {
+            "type": "string",
+            "value": "[variables('resourceGroupName')]"
+        },
         "CosmosAccountName": {
             "type": "string",
             "value": "[variables('cosmosAccountName')]"
+        },
+        "UserManagedIdentityName": {
+            "type": "string",
+            "value": "[variables('userManagedIdentityName')]"
+        },
+        "UserManagedIdentityClientId": {
+            "type": "string",
+            "value": "[reference(variables('userManagedIdentityName')).outputs.clientId.value]"
         }
     }
 }
