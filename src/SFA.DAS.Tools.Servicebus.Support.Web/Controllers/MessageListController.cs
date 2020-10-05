@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
@@ -8,15 +10,16 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Web.App_Start;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
+    [ServiceFilter(typeof(KeepUserSessionActiveFilter))]
     public class MessageListController : Controller
     {
         private readonly IUserService _userService;
@@ -65,7 +68,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             }
 
             var queueName = GetQueueName(response.Messages);
-            await _userSessionService.UpsertUserSession(queueName);
+            HttpContext.Session.SetString("queueName", queueName);            
 
             return View(new MessageListViewModel()
             {
@@ -80,8 +83,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         public async Task<IActionResult> ReceiveMessages(string queue)
-        {
-            await _userSessionService.UpsertUserSession(queue);
+        {            
             await _messageService.ProcessMessages(queue);
 
             return RedirectToAction("Index");

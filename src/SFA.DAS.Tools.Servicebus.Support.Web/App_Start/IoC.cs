@@ -32,7 +32,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>();
+            
             services.AddTransient<IAsbService, AsbService>(s =>
             {
                 var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
@@ -49,6 +49,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 );
             });
 
+            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>();
             services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>(s => new CosmosMessageDbContext(s.GetRequiredService<CosmosClient>(), s.GetService<IUserService>(), configuration, s.GetRequiredService<ILogger<CosmosMessageDbContext>>(), s.GetRequiredService<ICosmosInfrastructureService>()));
             services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>(s => new CosmosUserSessionDbContext(s.GetRequiredService<CosmosClient>(), s.GetRequiredService<ICosmosInfrastructureService>(), configuration));
 
@@ -91,6 +92,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             );
 
             services.AddSingleton<IMessageDetailRedactor, MessageDetailRedactor>(s => new MessageDetailRedactor(configuration.GetSection("RedactPatterns").GetChildren().AsEnumerable().Select(a => a.Value)));
+            services.AddSingleton<KeepUserSessionActiveFilter>();
+
 
             return services;
         }

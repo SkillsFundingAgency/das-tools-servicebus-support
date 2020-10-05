@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Domain
 {
@@ -8,6 +9,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Domain
         [JsonProperty("id")]
         public string Id { get; set; }
         [JsonProperty("userId")]
+        [Required]
         public string UserId { get; set; }
         [JsonProperty("userName")]
         public string UserName { get; set; }
