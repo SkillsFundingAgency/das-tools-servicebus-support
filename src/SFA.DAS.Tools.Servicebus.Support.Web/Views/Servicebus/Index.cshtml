@@ -3,29 +3,70 @@
     ViewData["Title"] = "Home Page";
 }
 
+@section Scripts
+{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.18.0/bootstrap-table.min.js"></script>
+
+    <script type="text/javascript">
+
+        function operateFormatter(value, row, index) {
+            return '<a class="detail" href=' + ("@(Url.Action("ReceiveMessages", "MessageList"))" + "/?queue=" + row.id) + ' onclick="displayBusyIndicator()" title ="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>';
+        };
+    </script>
+}
+
+@section Styles
+{
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.18.0/bootstrap-table.min.css" />
+}
+
 <div class="govuk-width-container">
     <h1 class="govuk-heading-xl">Message queues</h1>
-   
-    <table class="govuk-table">
+
+
+    <table id="table"
+           class="govuk-table"
+           data-toggle="table"
+           data-pagination="true"
+           data-search="true"
+           data-click-to-select="true"
+           data-sortable="true"           
+           data-url="@Url.Action("data", "Servicebus")"
+           style="table-layout: fixed">
         <thead class="govuk-table__head">
-        <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header">Queue</th>
-            <th scope="col" class="govuk-table__header">Message Count</th>
-            <th scope="col" class="govuk-table__header"></th>
-        </tr>
-        </thead>
-        <tbody class="govuk-table__body">
-        @foreach (var queue in Model.Queues)
-        {
             <tr class="govuk-table__row">
-                <th scope="row" class="govuk-table__header">@queue.Name</th>
-                <td class="govuk-table__cell">@queue.MessageCount </td>
-                <td class="govuk-table__cell">
-                    <a asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@queue.Name" onclick="displayBusyIndicator()" title="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>
-                </td>
+                <th scope="col"
+                        class="col-wrap"
+                        data-field="id"
+                        data-visible="false">
+                    </th>
+                <th scope="col"
+                    class="col-wrap"
+                    data-sortable="true"
+                    data-field="name"
+                    data-width="40"
+                    data-width-unit="%">
+                    Queue
+                </th>
+                <th scope="col"
+                    class="col-wrap"
+                    data-sortable="true"
+                    data-field="messageCount"
+                    data-width="20"
+                    data-width-unit="%">
+                    Message Count
+                </th>
+
+                <th scope="col"
+                    class="col-wrap"
+                    data-sortable="false"
+                    data-width="20"
+                    data-width-unit="%"
+                    data-formatter="operateFormatter">
+                    Actions
+                </th>
             </tr>
-        }
-        </tbody>
+        </thead>
     </table>
 
 </div>
