@@ -26,7 +26,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
     {
         private readonly ILogger<MessageService> _logger;
         private readonly ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> _bulkCreateMessagesCommand;
-        private readonly IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>  _receiveQueueMessagesQuery;
+        private readonly IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse> _receiveQueueMessagesQuery;
         private readonly IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse> _getQueueMessageCountQuery;
         private readonly IBatchMessageStrategy _batchMessageStrategy;
         private readonly IDictionary<Transactional, Func<string, int, Task<IList<QueueMessage>>>> _processor = new ConcurrentDictionary<Transactional, Func<string, int, Task<IList<QueueMessage>>>>();
@@ -53,7 +53,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _batchSize = batchSize;
             _sendMessagesCommand = sendMessagesCommand;
             _deleteQueueMessageCommand = deleteQueueMessageCommand;
-
             _processor.Add(Transactional.Yes, ProcessMessagesInTransaction);
             _processor.Add(Transactional.No, ProcessMessages);
         }
@@ -189,7 +188,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                 using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     try
-                    {                       
+                    {
                         await _deleteQueueMessageCommand.Handle(new DeleteQueueMessagesCommand()
                         {
                             Ids = batchedIds

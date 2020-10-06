@@ -1,10 +1,10 @@
-﻿using NUnit.Framework;
-using System.Threading.Tasks;
+﻿using FluentAssertions;
 using Moq;
+using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessage;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
-using FluentAssertions;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
+using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.GetMessage
 {
@@ -12,7 +12,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.G
     {
         private readonly string _userId = "1";
         private readonly string _messageId = "1234";
-        private Mock<ICosmosDbContext> _cosmosDbContext;
+        private Mock<ICosmosMessageDbContext> _cosmosDbContext;
 
         public WhenGettingAMessage()
         {
@@ -21,7 +21,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.G
         [Test]
         public async Task ThenWillGetAMessageFromService()
         {
-            _cosmosDbContext = new Mock<ICosmosDbContext>(MockBehavior.Strict);
+            _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
             _cosmosDbContext.Setup(x => x.GetQueueMessageAsync(_userId, _messageId)).ReturnsAsync(new QueueMessage());
 
             var sut = new GetMessageQueryHandler(_cosmosDbContext.Object);
@@ -38,7 +38,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.G
         [Test]
         public async Task AndTheResponseWillBeValid()
         {
-            _cosmosDbContext = new Mock<ICosmosDbContext>(MockBehavior.Strict);
+            _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
             _cosmosDbContext.Setup(x => x.GetQueueMessageAsync(_userId, _messageId)).ReturnsAsync(new QueueMessage());
 
             var sut = new GetMessageQueryHandler(_cosmosDbContext.Object);

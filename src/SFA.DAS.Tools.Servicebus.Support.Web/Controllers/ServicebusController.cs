@@ -53,7 +53,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 UserId = _userService.GetUserId()
             });
 
-            if (response.UserHasExistingSession)
+            if (response.HasSession())
             {
                 return RedirectToAction(actionName: "Index", controllerName: "MessageList");
             }
