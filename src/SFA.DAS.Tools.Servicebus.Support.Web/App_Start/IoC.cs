@@ -61,7 +61,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 return new CosmosClient(cosmosEndpointUrl, cosmosAuthenticationKey, new CosmosClientOptions() { AllowBulkExecution = true });
             });
 
-            services.AddSingleton<IUserService, UserService>();            
+            services.AddTransient<IUserService, UserService>();            
             services.AddTransient<IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse>, GetMessagesQueryHandler>();
             services.AddTransient<IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse>, GetUserSessionQueryHandler>();
             services.AddTransient<IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse>, GetQueuesQueryHandler>();
@@ -92,7 +92,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             );
 
             services.AddSingleton<IMessageDetailRedactor, MessageDetailRedactor>(s => new MessageDetailRedactor(configuration.GetSection("RedactPatterns").GetChildren().AsEnumerable().Select(a => a.Value)));
-            services.AddSingleton<KeepUserSessionActiveFilter>();
+            services.AddTransient<KeepUserSessionActiveFilter>();
 
 
             return services;
