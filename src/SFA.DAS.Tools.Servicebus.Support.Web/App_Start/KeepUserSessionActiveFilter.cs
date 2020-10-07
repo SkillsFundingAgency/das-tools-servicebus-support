@@ -4,7 +4,6 @@ using Microsoft.Extensions.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 using System;
-using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {

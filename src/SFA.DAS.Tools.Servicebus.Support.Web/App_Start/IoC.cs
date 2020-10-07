@@ -77,7 +77,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse>, UpsertUserSessionCommandHandler>();
             services.AddTransient<ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>, DeleteUserSessionCommandHandler>();
             services.AddTransient<IBatchMessageStrategy, BatchMessageStrategy>();
-            services.AddSingleton<IUserSessionService, UserSessionService>();
+            services.AddTransient<IUserSessionService, UserSessionService>();
             services.AddTransient<IMessageService, MessageService>(s =>
                  new MessageService(
                     s.GetService<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>(),
