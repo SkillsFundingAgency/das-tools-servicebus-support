@@ -41,6 +41,7 @@ spec:
       labels:
         app: das-tools-servicebus-support
         service: das-tool-service
+        aadpodidbinding: {{UserManagedIdentityName}}
     spec:
       containers:
       - env:
@@ -49,7 +50,10 @@ spec:
         - name: CosmosDb__Url
           value: {{CosmosUrl}}
         - name: CosmosDb__AuthKey
-          value: {{CosmosAuthKey}}
+          valueFrom:
+            secretKeyRef:
+                name: das-tools-servicebus-support-config
+                key: CosmosAuthKey
         - name: CosmosDb__DatabaseName
           value: {{CosmosDatabaseName}}
         - name: CosmosDb__CollectionName

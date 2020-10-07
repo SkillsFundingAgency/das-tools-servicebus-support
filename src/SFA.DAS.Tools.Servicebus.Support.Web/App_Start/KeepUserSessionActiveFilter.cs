@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 using System;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
@@ -9,8 +10,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
     public class KeepUserSessionActiveFilter : IResultFilter
     {
         private readonly IUserSessionService _userSessionService;
-        private readonly int _userSessionRefreshIntervalMinutes;
-        private DateTime _lastUpdated;
+        private readonly int _userSessionRefreshIntervalMinutes;        
 
         public KeepUserSessionActiveFilter(IUserSessionService userSessionService, IConfiguration config)
         {
@@ -23,15 +23,18 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             
         }
 
-        public async void OnResultExecuting(ResultExecutingContext context)
+        public void OnResultExecuting(ResultExecutingContext context)
         {
-            if (_lastUpdated < DateTime.UtcNow)
+            var sessionActiveUntil = context.HttpContext.Session.Get<DateTime>("sessionActiveUntil");            
+
+            if (sessionActiveUntil < DateTime.UtcNow)
             {
                 var queue = context.HttpContext.Session.GetString("queueName");
                 if (!string.IsNullOrEmpty(queue))
                 {
-                    await _userSessionService.UpsertUserSession(queue);
-                    _lastUpdated = DateTime.UtcNow.AddMinutes(_userSessionRefreshIntervalMinutes);
+                    _userSessionService.UpsertUserSession(queue).Wait();
+                    var sessionExpiry = DateTime.UtcNow.AddMinutes(_userSessionRefreshIntervalMinutes);
+                    context.HttpContext.Session.Set("sessionActiveUntil", sessionExpiry);
                 }                
             }            
         }

@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.Configuration;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using System;
 using System.Threading.Tasks;
@@ -16,13 +18,14 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
         private readonly ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> _deleteUserSessionCommand;
         private readonly IUserService _userService;
         private readonly IConfiguration _config;
-        private UserSession CurrentUserSession = null;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public UserSessionService(ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse> upsertUserSessionCommand,
             IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> getUserSessionQuery,
             ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> deleteUserSessionCommand,
             IUserService userService,
-            IConfiguration config
+            IConfiguration config,
+            IHttpContextAccessor httpContextAccessor
             )
         {
             _upsertUserSessionCommand = upsertUserSessionCommand;
@@ -30,11 +33,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _deleteUserSessionCommand = deleteUserSessionCommand;
             _userService = userService;
             _config = config;
-        }
+            _httpContextAccessor = httpContextAccessor;
+        }        
 
         public async Task<UserSession> UpsertUserSession(string queue)
         {
-            var userSession = CurrentUserSession != null ? CurrentUserSession : await GetUserSession();
+            var currentSession = _httpContextAccessor.HttpContext.Session.Get<UserSession>("userSession");
+            var userSession = currentSession ?? await GetUserSession();                                               
 
             var result = await _upsertUserSessionCommand.Handle(new UpsertUserSessionCommand()
             {
@@ -48,14 +53,15 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                 }
             });
 
-            CurrentUserSession = result.UserSession;
+            _httpContextAccessor.HttpContext.Session.Set("userSession", result.UserSession);
 
             return result.UserSession;
         }
 
         public async Task DeleteUserSession()
         {
-            var userSession = CurrentUserSession != null ? CurrentUserSession : await GetUserSession();
+            var currentSession = _httpContextAccessor.HttpContext.Session.Get<UserSession>("userSession");
+            var userSession = currentSession ?? await GetUserSession();
 
             if (userSession != null)
             {
