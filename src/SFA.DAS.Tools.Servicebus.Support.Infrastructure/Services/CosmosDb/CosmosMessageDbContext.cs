@@ -8,42 +8,42 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
+namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 {
-    public class CosmosDbContext : ICosmosDbContext
+    public class CosmosMessageDbContext : ICosmosMessageDbContext
     {
-        private readonly ILogger<CosmosDbContext> _logger;
+        private readonly ILogger<CosmosMessageDbContext> _logger;
+        private readonly ICosmosInfrastructureService _cosmosInfrastructure;
         private readonly CosmosClient _client;
         private readonly string _databaseName;
         private readonly IUserService _userService;
-        private readonly int _throughput;
 
-        public CosmosDbContext(CosmosClient cosmosClient, IUserService userService, IConfiguration config, ILogger<CosmosDbContext> logger)
+        public CosmosMessageDbContext(CosmosClient cosmosClient, IUserService userService, IConfiguration config, ILogger<CosmosMessageDbContext> logger, ICosmosInfrastructureService cosmosInfrastructure)
         {
             _userService = userService;
             _logger = logger;
+            _cosmosInfrastructure = cosmosInfrastructure;
             _client = cosmosClient;
             _databaseName = config.GetValue<string>("CosmosDb:DatabaseName");
-            _throughput = config.GetValue<int>("CosmosDb:Throughput");
-        }        
+        }
 
         public async Task CreateQueueMessageAsync(QueueMessage msg)
-        {            
+        {
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
-            var container = await CreateContainer(database);
+            var container = await _cosmosInfrastructure.CreateContainer(database);
             await container.CreateItemAsync(msg);
         }
 
         public async Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messsages)
-        {                                   
+        {
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
-            var container = await CreateContainer(database);
+            var container = await _cosmosInfrastructure.CreateContainer(database);
 
             var batch = container.CreateTransactionalBatch(new PartitionKey(_userService.GetUserId()));
-            
+
             foreach (var msg in messsages)
             {
-                batch.CreateItem(msg);                
+                batch.CreateItem(msg);
             }
 
             var batchResponse = await batch.ExecuteAsync();
@@ -58,7 +58,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         public async Task DeleteQueueMessagesAsync(IEnumerable<string> ids)
         {
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
-            var container = await CreateContainer(database);
+            var container = await _cosmosInfrastructure.CreateContainer(database);
 
             var batch = container.CreateTransactionalBatch(new PartitionKey(_userService.GetUserId()));
 
@@ -78,7 +78,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
         public async Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId, SearchProperties searchProperties)
         {
-            var sqlQuery = $"SELECT * FROM c WHERE c.userId ='{userId}'";
+            var sqlQuery = $"SELECT * FROM c WHERE c.userId ='{userId}' and c.type='message'";
 
             sqlQuery = AddSearch(sqlQuery, searchProperties);
             sqlQuery = AddOrderBy(sqlQuery, searchProperties);
@@ -95,7 +95,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
                 foreach (var message in currentResults)
                 {
                     messages.Add(message);
-                }                
+                }
             }
 
             return messages;
@@ -120,10 +120,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             return messages;
         }
-        
+
         public async Task<int> GetMessageCountAsync(string userId, SearchProperties searchProperties = null)
         {
-            var sqlQuery = $"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}'";
+            var sqlQuery = $"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}' and c.type='message'";
             sqlQuery = AddSearch(sqlQuery, searchProperties ?? new SearchProperties());
 
             var queryFeedIterator = await QuerySetup<int>(sqlQuery);
@@ -131,13 +131,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             return currentResults.First();
         }
-       
+
         public async Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId)
         {
-            var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.id = '{messageId}'";
+            var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.id = '{messageId}' and c.type='message'";
 
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
-            var container = await CreateContainer(database);
+            var container = await _cosmosInfrastructure.CreateContainer(database);
 
             var queryDefinition = new QueryDefinition(sqlQuery);
             var queryFeedIterator = container.GetItemQueryIterator<QueueMessage>(queryDefinition);
@@ -150,33 +150,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         private async Task<FeedIterator<T>> QuerySetup<T>(string sqlQuery)
         {
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
-            var container = await CreateContainer(database);
+            var container = await _cosmosInfrastructure.CreateContainer(database);
 
             var queryDefinition = new QueryDefinition(sqlQuery);
             var queryFeedIterator = container.GetItemQueryIterator<T>(queryDefinition);
             return queryFeedIterator;
         }
 
-        private async Task<Container> CreateContainer(Database database)
-        {
-            var container = await database.DefineContainer("Session", "/userId")
-                .WithIndexingPolicy()
-                .WithIncludedPaths()
-                    .Path("/originatingEndpoint/?")
-                    .Path("/processingEndpoint/?")
-                    .Path("/body/?")
-                    .Path("/exception/?")
-                    .Path("/exceptionType/?")
-                    .Attach()
-                .WithExcludedPaths()
-                    .Path("/*")
-                    .Attach()
-                .Attach()
-                .CreateIfNotExistsAsync(_throughput)
-            ;
-
-            return container.Container;
-        }
         private string AddOrderBy(string sqlQuery, SearchProperties searchProperties)
         {
             if (searchProperties.Order == null)
@@ -226,5 +206,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 
             return sb.ToString();
         }
+
+
     }
 }

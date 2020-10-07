@@ -2,7 +2,7 @@
 using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.GetUserSession
@@ -10,13 +10,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.G
     public class WhenGettingUserSession
     {
         private readonly string _userId = "1";
-        private Mock<ICosmosDbContext> _cosmosDbContext;
+        private Mock<ICosmosUserSessionDbContext> _cosmosDbContext;
 
         [Test]
         public async Task ThenWillGetUserSessionFromService()
         {
-            _cosmosDbContext = new Mock<ICosmosDbContext>(MockBehavior.Strict);
-            _cosmosDbContext.Setup(x => x.HasUserAnExistingSession(_userId)).ReturnsAsync(true);
+            _cosmosDbContext = new Mock<ICosmosUserSessionDbContext>(MockBehavior.Strict);
+            _cosmosDbContext.Setup(x => x.GetUserSessionAsync(_userId)).ReturnsAsync(new Domain.UserSession());
 
             var sut = new GetUserSessionQueryHandler(_cosmosDbContext.Object);
 
@@ -25,14 +25,14 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.G
                 UserId = _userId
             });
 
-            _cosmosDbContext.Verify(x => x.HasUserAnExistingSession(_userId), Times.Once);
+            _cosmosDbContext.Verify(x => x.GetUserSessionAsync(_userId), Times.Once);
         }
 
         [Test]
         public async Task AndTheResponseWillBeValid()
         {
-            _cosmosDbContext = new Mock<ICosmosDbContext>(MockBehavior.Strict);
-            _cosmosDbContext.Setup(x => x.HasUserAnExistingSession(_userId)).ReturnsAsync(true);
+            _cosmosDbContext = new Mock<ICosmosUserSessionDbContext>(MockBehavior.Strict);
+            _cosmosDbContext.Setup(x => x.GetUserSessionAsync(_userId)).ReturnsAsync(new Domain.UserSession());
 
             var sut = new GetUserSessionQueryHandler(_cosmosDbContext.Object);
 
@@ -42,7 +42,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.G
             });
 
             response.Should().NotBeNull();
-            response.UserHasExistingSession.Should().BeTrue();
+            response.UserSession.Should().NotBeNull();
         }
     }
 }

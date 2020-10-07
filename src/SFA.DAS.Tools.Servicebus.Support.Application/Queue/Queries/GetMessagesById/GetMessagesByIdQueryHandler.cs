@@ -1,16 +1,13 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById
 {
     public class GetMessagesByIdQueryHandler : IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse>
     {
-        private readonly ICosmosDbContext _cosmosDbContext;
+        private readonly ICosmosMessageDbContext _cosmosDbContext;
 
-        public GetMessagesByIdQueryHandler(ICosmosDbContext cosmosDbContext)
+        public GetMessagesByIdQueryHandler(ICosmosMessageDbContext cosmosDbContext)
         {
             _cosmosDbContext = cosmosDbContext;
         }

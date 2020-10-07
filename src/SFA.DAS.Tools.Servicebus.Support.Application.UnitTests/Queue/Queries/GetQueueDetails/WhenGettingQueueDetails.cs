@@ -1,25 +1,25 @@
-﻿using System.Collections.Generic;
-using NUnit.Framework;
-using System.Threading.Tasks;
+﻿using FluentAssertions;
 using Moq;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessage;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
-using FluentAssertions;
+using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.GetQueueDetails
 {
     public class WhenGettingMessages
     {
         private readonly string _userId = "1";
-        private Mock<ICosmosDbContext> _cosmosDbContext;
+        private Mock<ICosmosMessageDbContext> _cosmosDbContext;
         private readonly SearchProperties _searchProperties = new SearchProperties();
 
         [Test]
         public async Task ThenWillGetQueueDetailsFromService()
         {
-            _cosmosDbContext = new Mock<ICosmosDbContext>(MockBehavior.Strict);
+            _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
             _cosmosDbContext.Setup(x => x.GetQueueMessagesAsync(_userId, _searchProperties)).ReturnsAsync(new List<QueueMessage>());
             _cosmosDbContext.Setup(x => x.GetMessageCountAsync(_userId, It.IsAny<SearchProperties>())).ReturnsAsync(1);
 
@@ -38,7 +38,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.G
         [Test]
         public async Task AndTheResponseWillBeValid()
         {
-            _cosmosDbContext = new Mock<ICosmosDbContext>(MockBehavior.Strict);
+            _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
             _cosmosDbContext.Setup(x => x.GetQueueMessagesAsync(_userId, _searchProperties)).ReturnsAsync(new List<QueueMessage>());
             _cosmosDbContext.Setup(x => x.GetMessageCountAsync(_userId, It.IsAny<SearchProperties>())).ReturnsAsync(1);
 
