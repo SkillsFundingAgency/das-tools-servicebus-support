@@ -14,7 +14,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
         public void ConfigureNLog(IConfiguration configuration)
         {
             var appName = configuration.GetConnectionStringOrSetting("AppName");
-            var env = configuration.GetConnectionStringOrSetting("EnvironmentName");
+            var env = configuration.GetConnectionStringOrSetting("Environment");
             var config = new LoggingConfiguration();
 
             if (string.IsNullOrEmpty(env) || env.Equals("LOCAL", StringComparison.CurrentCultureIgnoreCase))
@@ -48,7 +48,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             {
                 Name = "RedisLog",
                 AppName = appName,
-                EnvironmentKeyName = "EnvironmentName",
+                EnvironmentKeyName = "Environment",
                 ConnectionStringName = "LoggingRedisConnectionString",
                 IncludeAllProperties = true,
                 Layout = "${message}"

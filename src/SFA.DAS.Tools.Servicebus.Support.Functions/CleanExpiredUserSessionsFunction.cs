@@ -60,8 +60,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
                         {
                             Id = session.Id,
                             UserId = session.UserId
-                        });
-                        break;
+                        });                        
                     }
 
                 }
