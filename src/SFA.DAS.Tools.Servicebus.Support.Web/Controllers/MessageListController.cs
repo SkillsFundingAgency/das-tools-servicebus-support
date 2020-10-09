@@ -16,6 +16,7 @@ using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Web.App_Start;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
 using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
@@ -24,10 +25,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
     {
         private readonly IUserService _userService;
         private readonly IMessageService _messageService;
+        private readonly IRetrieveMessagesService _retrieveMessagesService;
         private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
         private readonly IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse> _getMessagesByIdQuery;
         private readonly IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> _getQueueDetailsQuery;
-
+        private readonly IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse> _getQueueMessageCountQuery;
         private readonly ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse>
             _deleteQueueMessageCommand;
 
@@ -42,9 +44,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IMessageService messageService,
             IConfiguration config,
             ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
-            ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse>
-                deleteQueueMessageCommand,
-            IUserSessionService userSessionService)
+            ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
+            IRetrieveMessagesService retrieveMessagesService,
+            IUserSessionService userSessionService,
+            IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse> getQueueMessageCountQuery)
         {
             _userService = userService;
             _getMessagesQuery = getMessagesQuery;
@@ -54,7 +57,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _userSessionService = userSessionService;
             _deleteQueueMessageCommand = deleteQueueMessageCommand;
             _errorQueueRegex = config["ErrorQueueRegex"];
-
+            _retrieveMessagesService = retrieveMessagesService;
+            _getQueueMessageCountQuery = getQueueMessageCountQuery;
         }
 
         public async Task<IActionResult> Index()
@@ -92,7 +96,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> ReceiveMessages(string queue)
         {
-            await _messageService.GetMessages(queue);
+            var count = (await _getQueueMessageCountQuery.Handle(new GetQueueMessageCountQuery()
+            {
+                QueueName = queue
+            })).Count;
+
+            await _retrieveMessagesService.GetMessages(queue, count);
 
             return RedirectToAction("Index");
         }

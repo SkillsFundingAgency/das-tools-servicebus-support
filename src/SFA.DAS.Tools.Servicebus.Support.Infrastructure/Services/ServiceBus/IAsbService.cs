@@ -1,6 +1,8 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
+﻿using System;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Azure.ServiceBus.Core;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
 {

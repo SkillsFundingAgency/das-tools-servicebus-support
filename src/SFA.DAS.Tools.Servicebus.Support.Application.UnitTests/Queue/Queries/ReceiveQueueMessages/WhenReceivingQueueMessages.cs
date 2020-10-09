@@ -6,6 +6,7 @@ using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Azure.ServiceBus.Core;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.ReceiveQueueMessages
 {

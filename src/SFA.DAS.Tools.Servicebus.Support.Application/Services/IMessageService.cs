@@ -6,7 +6,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
 {
     public interface IMessageService
     {
-        Task GetMessages(string queue, Transactional transaction = Transactional.Yes);
         Task AbortMessages(IEnumerable<QueueMessage> messages, string queue);
         Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue);
     }

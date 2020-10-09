@@ -6,7 +6,6 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDeleteQue
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
@@ -21,7 +20,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse>, BatchDeleteQueueMessagesCommandHandler>(
                 s => new BatchDeleteQueueMessagesCommandHandler(
                     s.GetService<ICosmosMessageDbContext>(),
-                    s.GetService<IBatchSendMessageStrategy>(),
                     configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
                     s.GetService<ILogger<BatchDeleteQueueMessagesCommandHandler>>()
                 ));

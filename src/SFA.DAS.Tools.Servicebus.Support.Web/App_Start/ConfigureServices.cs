@@ -6,14 +6,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
@@ -26,8 +24,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
         {
-            
-            services.AddTransient<IAsbService, AsbService>(s =>
+            services.AddScoped<IAsbService, AsbService>(s =>
             {
                 var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
                 var connectionBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
@@ -58,18 +55,29 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<IBatchGetMessageStrategy, BatchGetMessageStrategy>();
             services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
             
-            services.AddTransient<IMessageService, MessageService>(s =>
-                 new MessageService(
-                    s.GetService<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>(),
-                    s.GetService<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>>(),
-                    s.GetService<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>>(),
-                    s.GetService<IBatchGetMessageStrategy>(),
-                    s.GetService<IBatchSendMessageStrategy>(),
-                    s.GetRequiredService<ILogger<MessageService>>(),
-                    configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
-                    s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
-                    s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()
-                )
+            services.AddTransient<IMessageService, MessageService>(s => new MessageService(
+                s.GetService<IBatchSendMessageStrategy>(),
+                s.GetRequiredService<ILogger<MessageService>>(),
+                s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
+                s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()
+            ));
+
+            services.AddTransient<IRetrieveMessagesService, RetrieveMessagesService>(s =>
+                {
+                    var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
+                    var connectionBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
+                    var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
+                        
+                    return new RetrieveMessagesService(
+                        s.GetRequiredService<ILogger<RetrieveMessagesService>>(),
+                        configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
+                        s.GetService<IBatchGetMessageStrategy>(),
+                        s.GetService<IUserService>(),
+                        s.GetService<ICosmosMessageDbContext>(),
+                        configuration.GetValue<int>("ServiceBusRepoSettings:MaxRetrievalSize"),
+                        new MessageReceiverFactory(connectionBuilder, tokenProvider)
+                    );
+                }
             );
 
             services.AddSingleton<IMessageDetailRedactor, MessageDetailRedactor>(s => new MessageDetailRedactor(configuration.GetSection("RedactPatterns").GetChildren().AsEnumerable().Select(a => a.Value)));
@@ -79,16 +87,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             return services;
         }
 
-        private static ManagementClient CreateManagementClient(ServiceBusConnectionStringBuilder connectionBuilder, ITokenProvider tokenProvider)
-        {
-            if (connectionBuilder.SasKey?.Length > 0)
-            {
-                return new ManagementClient(connectionBuilder);
-            }
-            else
-            {
-                return new ManagementClient(connectionBuilder, tokenProvider);
-            }
-        }
+        private static ManagementClient CreateManagementClient(ServiceBusConnectionStringBuilder connectionBuilder, ITokenProvider tokenProvider) => connectionBuilder.HasSasKey() 
+            ? new ManagementClient(connectionBuilder)
+            : new ManagementClient(connectionBuilder, tokenProvider);
     }
 }

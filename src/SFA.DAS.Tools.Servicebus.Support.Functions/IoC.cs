@@ -26,7 +26,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
         {
-
             services.AddTransient<IAsbService, AsbService>(s =>
             {
                 var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
@@ -63,13 +62,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             services.AddTransient<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>, DeleteQueueMessagesCommandHandler>();
             services.AddTransient<IMessageService, MessageService>(s =>
                  new MessageService(
-                    s.GetService<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>(),
-                    s.GetService<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>>(),
-                    s.GetService<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>>(),
-                    s.GetService<IBatchGetMessageStrategy>(),
                     s.GetService<IBatchSendMessageStrategy>(),
                     s.GetRequiredService<ILogger<MessageService>>(),
-                    configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
                     s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
                     s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()
                 )

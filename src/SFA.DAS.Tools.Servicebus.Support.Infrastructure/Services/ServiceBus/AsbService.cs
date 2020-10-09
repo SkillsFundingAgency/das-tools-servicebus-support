@@ -13,17 +13,21 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Polly;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 {
     public class AsbService : IAsbService
     {
-        private readonly IConfiguration _config;
-        private readonly ILogger _logger;
+        private readonly ILogger<AsbService> _logger;
         private readonly TokenProvider _tokenProvider;
         private readonly ServiceBusConnectionStringBuilder _sbConnectionStringBuilder;
         private readonly ManagementClient _managementClient;
         private readonly IUserService _userService;
+        private readonly string _regexString;
+        private const int RetryTimeout = 200;
+        private volatile IMessageReceiver _messageReceiver;
+        private readonly object _padlock = new object();
 
         public AsbService(IUserService userService,
             IConfiguration config,
@@ -33,9 +37,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             ManagementClient managementClient
         )
         {
-            _config = config ?? throw new Exception("config is null");
             _logger = logger ?? throw new Exception("logger is null");
-            
+
+            _regexString = config.GetValue<string>("ServiceBusRepoSettings:QueueSelectionRegex");
             _tokenProvider = tokenProvider;
             _sbConnectionStringBuilder = serviceBusConnectionStringBuilder;
             _managementClient = managementClient;
@@ -44,37 +48,31 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public async Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync()
         {
-            var queues = new List<QueueInfo>();
             var queuesDetails = await _managementClient.GetQueuesRuntimeInfoAsync().ConfigureAwait(false);
-            var regexString = _config.GetValue<string>("ServiceBusRepoSettings:QueueSelectionRegex");
-            var queueSelectionRegex = new Regex(regexString);
+            var queueSelectionRegex = new Regex(_regexString);
             var errorQueues = queuesDetails.Where(q => queueSelectionRegex.IsMatch(q.Path));
 
-            foreach (var queue in errorQueues)
+            return errorQueues.Select(queue => new QueueInfo()
             {
-                queues.Add(new QueueInfo()
-                {
-                    Name = queue.Path,
-                    MessageCount = queue.MessageCount
-                });
-            }
-
-            return queues;
+                Name = queue.Path,
+                MessageCount = queue.MessageCountDetails.ActiveMessageCount
+            }).ToList();
         }
 
         public async Task<QueueInfo> GetQueueDetailsAsync(string name)
         {
-            var result = new QueueInfo();
-
-            if (!string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(name))
             {
-                var queue = await _managementClient.GetQueueRuntimeInfoAsync(name).ConfigureAwait(false);
-
-                result.Name = queue.Path;
-                result.MessageCount = queue.MessageCountDetails.ActiveMessageCount;
+                return new QueueInfo();
             }
 
-            return result;
+            var queue = await _managementClient.GetQueueRuntimeInfoAsync(name).ConfigureAwait(false);
+
+            return new QueueInfo()
+            {
+                Name = queue.Path,
+                MessageCount = queue.MessageCountDetails.ActiveMessageCount
+            };
         }
 
         public async Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty)
@@ -82,11 +80,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             var messageReceiver = CreateMessageReceiver(queueName);
             var messages = await messageReceiver.PeekAsync(qty);
             var formattedMessages = new List<QueueMessage>(messages.Count);
+            formattedMessages.AddRange(messages.Select(message => message.Convert(_userService.GetUserId(), queueName)));
 
-            foreach (var message in messages)
-            {
-                formattedMessages.Add(CreateQueueMessage(message, queueName));
-            }
             await messageReceiver.CloseAsync();
 
             return formattedMessages;
@@ -94,32 +89,22 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
         public async Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty)
         {
-            var messageReceiver = CreateMessageReceiver(queueName);
-            var messages = await messageReceiver.ReceiveAsync(qty);
-            var formattedMessages = new List<QueueMessage>(messages.Count);
+            var messageReceiver = CreateMessageReceiver(queueName, 250);
+            var messages = await messageReceiver.ReceiveAsync(qty, TimeSpan.FromSeconds(60)); 
+            var formattedMessages = new List<QueueMessage>();
+
+            if (messages == null) return new List<QueueMessage>();
 
             foreach (var message in messages)
             {
                 await messageReceiver.CompleteAsync(message.SystemProperties.LockToken);
-                formattedMessages.Add(CreateQueueMessage(message, queueName));
+                formattedMessages.Add(message.Convert(_userService.GetUserId(), queueName));
             }
 
             return formattedMessages;
-        }        
+        }
 
         public async Task<long> GetQueueMessageCountAsync(string queueName) => (await GetQueueDetailsAsync(queueName)).MessageCount;
-
-        private IMessageReceiver CreateMessageReceiver(string queueName)
-        {
-            if ( _sbConnectionStringBuilder.SasKey?.Length > 0)
-            {
-                return new MessageReceiver(new ServiceBusConnection(_sbConnectionStringBuilder),queueName);
-            }
-            else
-            {
-                return new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
-            }                                  
-        }
 
         public async Task SendMessagesAsync(IEnumerable<QueueMessage> messages, string queueName)
         {
@@ -128,48 +113,45 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
                 return;
             }
 
-            var messageSender = GetMessageSender(queueName);
-            var policy = Policy.Handle<Exception>().WaitAndRetryAsync(3, attempt => TimeSpan.FromMilliseconds(200), (ex, t, ctx) =>
-            {
-                _logger.LogError(ex, $"Failed to Send messages to queue: {ex.ToString()}");
-            });
+            var messageSender = CreateMessageSender(queueName);
 
-            await policy.ExecuteAsync(async token =>
+            await Policy.Handle<Exception>().WaitAndRetryAsync(3, attempt => TimeSpan.FromMilliseconds(RetryTimeout), HandleRetryException)
+            .ExecuteAsync(async token =>
             {
                 var originalMessages = messages.Select(m => m.OriginalMessage).ToList();
                 await messageSender.SendAsync(originalMessages);
             }, new CancellationToken());
         }
 
-        private MessageSender GetMessageSender(string queueName)
+        private MessageSender CreateMessageSender(string queueName) => _sbConnectionStringBuilder.HasSasKey()
+            ? new MessageSender(new ServiceBusConnection(_sbConnectionStringBuilder), queueName)
+            : new MessageSender(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
+
+        private IMessageReceiver CreateMessageReceiver(string queueName, int? prefetch = null)
         {
-            if (_sbConnectionStringBuilder.SasKey?.Length > 0)
+            if (_messageReceiver != null) return _messageReceiver;
+
+            lock (_padlock)
             {
-                return new MessageSender(new ServiceBusConnection(_sbConnectionStringBuilder), queueName);
+                if (_messageReceiver != null) return _messageReceiver;
+
+                _messageReceiver = _sbConnectionStringBuilder.HasSasKey()
+                    ? new MessageReceiver(new ServiceBusConnection(_sbConnectionStringBuilder), queueName)
+                    : new MessageReceiver(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
+
+                if (prefetch.HasValue)
+                {
+                    _messageReceiver.PrefetchCount = prefetch.Value;
+                }
             }
-            else
-            {
-                return new MessageSender(_sbConnectionStringBuilder.Endpoint, queueName, _tokenProvider);
-            }
-            
+
+            return _messageReceiver;
         }
 
-        private QueueMessage CreateQueueMessage(Message message, string queueName)
+        private void HandleRetryException(Exception ex, TimeSpan timeSpan, Context context)
         {
-            return new QueueMessage
-            {
-                Id = message.MessageId,
-                UserId = _userService.GetUserId(),
-                OriginalMessage = message,
-                Queue = queueName,
-                IsReadOnly = false,
-                Body = Encoding.UTF8.GetString(message.Body),
-                OriginatingEndpoint = message.UserProperties["NServiceBus.OriginatingEndpoint"].ToString(),
-                ProcessingEndpoint = message.UserProperties["NServiceBus.ProcessingEndpoint"].ToString(),
-                Exception = message.UserProperties["NServiceBus.ExceptionInfo.Message"].ToString(),
-                ExceptionType = message.UserProperties["NServiceBus.ExceptionInfo.ExceptionType"].ToString()
-            };
+            _logger.LogError(ex, $"Failed to Send messages to queue: {ex.ToString()}");
+            throw ex;
         }
-
     }
 }

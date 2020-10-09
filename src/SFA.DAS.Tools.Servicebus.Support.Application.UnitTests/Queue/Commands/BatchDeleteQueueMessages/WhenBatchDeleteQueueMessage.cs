@@ -29,7 +29,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Commands.
             _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
             _cosmosDbContext.Setup(x => x.DeleteQueueMessagesAsync(_messageIds)).Returns(Task.CompletedTask);
 
-            var sut = new BatchDeleteQueueMessagesCommandHandler(_cosmosDbContext.Object, new BatchSendMessageStrategy(), BatchSize, _logger.Object);
+            var sut = new BatchDeleteQueueMessagesCommandHandler(_cosmosDbContext.Object, BatchSize, _logger.Object);
 
             await sut.Handle(new BatchDeleteQueueMessagesCommand()
             {
