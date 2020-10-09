@@ -12,8 +12,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         public CosmosInfrastructureService(IConfiguration config)
         {
             _throughput = config.GetValue<int>("CosmosDb:Throughput");
-            _collectionName = config.GetValue<string>("CosmosDb:CollectionName");
-            
+            _collectionName = config.GetValue<string>("CosmosDb:CollectionName");            
         }
 
         public async Task<Container> CreateContainer(Database database)
