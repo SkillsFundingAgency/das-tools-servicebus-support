@@ -5,7 +5,9 @@ using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
@@ -23,6 +25,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                     configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
                     s.GetService<ILogger<BatchDeleteQueueMessagesCommandHandler>>()
                 ));
+
+            services.AddTransient<ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse>, UpsertUserSessionCommandHandler>();
+            services.AddTransient<ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>, DeleteUserSessionCommandHandler>();
 
             return services;
         }

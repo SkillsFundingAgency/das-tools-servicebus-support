@@ -82,7 +82,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
         public async Task<IEnumerable<QueueMessage>> GetQueueMessagesAsync(string userId, SearchProperties searchProperties)
         {
-            var sqlQuery = $"SELECT * FROM c WHERE c.userId ='{userId}' and c.type='message'";
+            var sqlQuery = AddTypeClause($"SELECT * FROM c WHERE c.userId ='{userId}'");
 
             sqlQuery = AddSearch(sqlQuery, searchProperties);
             sqlQuery = AddOrderBy(sqlQuery, searchProperties);
@@ -127,7 +127,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
         public async Task<int> GetMessageCountAsync(string userId, SearchProperties searchProperties = null)
         {
-            var sqlQuery = $"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}' and c.type='message'";
+            var sqlQuery = AddTypeClause($"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}'");
             sqlQuery = AddSearch(sqlQuery, searchProperties ?? new SearchProperties());
 
             var queryFeedIterator = await QuerySetup<int>(sqlQuery);
@@ -138,7 +138,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
         public async Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId)
         {
-            var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.id = '{messageId}' and c.type='message'";
+            var sqlQuery = AddTypeClause($"SELECT * FROM c WHERE c.userId = '{userId}' and c.id = '{messageId}'");
 
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             var container = await _cosmosInfrastructure.CreateContainer(database);
@@ -153,7 +153,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
         public async Task<bool> MessageExists(string userId, string messageId)
         {
-            var sqlQuery = $"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}' AND c.id = '{messageId}'";
+            var sqlQuery = AddTypeClause($"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}' AND c.id = '{messageId}'");
 
             var queryFeedIterator = await QuerySetup<int>(sqlQuery);
             var currentResults = await queryFeedIterator.ReadNextAsync();
@@ -221,6 +221,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
             return sb.ToString();
         }
 
-
+        private static string AddTypeClause(string sqlQuery) => sqlQuery + " AND c.type='message'";
     }
 }
