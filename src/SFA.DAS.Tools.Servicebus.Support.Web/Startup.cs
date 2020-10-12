@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using SFA.DAS.Configuration.AzureTableStorage;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web
 {
@@ -26,12 +27,24 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
             var builder = new ConfigurationBuilder()
                 .AddConfiguration(configuration)
                 .SetBasePath(Directory.GetCurrentDirectory())
+#if DEBUG
                 .AddJsonFile("appsettings.json", true)
                 .AddJsonFile("appsettings.Development.json", true)
-                .AddEnvironmentVariables()
-                .Build();
+#endif                
+                .AddEnvironmentVariables();
 
-            _configuration = builder;
+            if (!configuration["Environment"].Equals("DEV", StringComparison.CurrentCultureIgnoreCase))
+            {
+                builder.AddAzureTableStorage(options =>
+                {
+                    options.ConfigurationKeys = configuration["ConfigNames"].Split(",");
+                    options.StorageConnectionString = configuration["ConfigurationStorageConnectionString"];
+                    options.EnvironmentName = configuration["Environment"];
+                    options.PreFixConfigurationKeys = false;
+                });
+            }
+
+            _configuration = builder.Build();
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
