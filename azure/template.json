@@ -31,6 +31,9 @@
         "sharedServiceBusName": {
             "type": "string"
         },
+        "loggingRedisConnectionString": {
+            "type": "securestring"
+        },
         "configurationStorageConnectionString": {
             "type": "securestring"
         },
@@ -221,6 +224,10 @@
                             {
                                 "name": "AzureWebJobsStorage",
                                 "value": "[parameters('sharedStorageAccountConnectionString')]"
+                            },
+                            {
+                                "name": "LoggingRedisConnectionString",
+                                "value": "[parameters('loggingRedisConnectionString')]"
                             },
                             {
                                 "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
