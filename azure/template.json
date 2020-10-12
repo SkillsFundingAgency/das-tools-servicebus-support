@@ -56,7 +56,6 @@
         "resourceGroupName": "[concat(variables('resourceNamePrefix'), '-rg')]",
         "cosmosAccountName": "[concat(variables('resourceNamePrefix'), '-cdb')]",
         "userManagedIdentityName": "[concat(variables('resourceNamePrefix'), '-umi')]",
-        "storageAccountName": "[concat('das',toLower(parameters('resourceEnvironmentName')),parameters('serviceName'),'str')]",
         "consumptionPlanName": "[concat(variables('resourceNamePrefix'),'-asp')]",
         "functionAppName": "[concat(variables('resourceNamePrefix'), '-fa')]"
     },
@@ -140,24 +139,6 @@
                     },
                     "resourceName": {
                         "value": "[parameters('sharedServiceBusName')]"
-                    }
-                }
-            }
-        },
-        {
-            "apiVersion": "2020-06-01",
-            "name": "storage-account",
-            "type": "Microsoft.Resources/deployments",
-            "resourceGroup": "[variables('resourceGroupName')]",
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[concat(variables('deploymentUrlBase'), 'storage-account-arm.json')]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {
-                    "storageAccountName": {
-                        "value": "[variables('storageAccountName')]"
                     }
                 }
             }
