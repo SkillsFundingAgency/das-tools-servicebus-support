@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using SFA.DAS.Configuration.AzureTableStorage;
+using Microsoft.Extensions.Logging;
+using Polly.Registry;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web
 {

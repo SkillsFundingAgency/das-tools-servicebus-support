@@ -5,27 +5,32 @@ using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Polly;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
 using System.Linq;
+using Polly.Registry;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {
     public static class IoC
     {
-        public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
+       public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddSingleton<PolicyRegistry>();
+
             services.AddScoped<IAsbService, AsbService>(s =>
             {
+                var policyRegistry = s.GetRequiredService<PolicyRegistry>();
+                policyRegistry.ConfigureWaitAndRetry(Constants.MessageQueueWaitAndRetry, s.GetRequiredService<ILogger<AsbService>>());
+
                 var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
                 var connectionBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
                 var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
@@ -35,7 +40,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                     s.GetRequiredService<ILogger<AsbService>>(),
                     tokenProvider,
                     connectionBuilder,
-                    CreateManagementClient(connectionBuilder, tokenProvider)
+                    CreateManagementClient(connectionBuilder, tokenProvider),
+                    policyRegistry.Get<IAsyncPolicy>(Constants.MessageQueueWaitAndRetry)
                 );
             });
 
@@ -83,7 +89,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddSingleton<IMessageDetailRedactor, MessageDetailRedactor>(s => new MessageDetailRedactor(configuration.GetSection("RedactPatterns").GetChildren().AsEnumerable().Select(a => a.Value)));
             
             services.AddTransient<IUserSessionService, UserSessionService>();
-            services.AddTransient<KeepUserSessionActiveFilter>();
+            services.AddTransient<KeepUserSessionActiveFilter>(s => new KeepUserSessionActiveFilter(s.GetRequiredService<IUserSessionService>(), configuration));
 
 
             return services;
