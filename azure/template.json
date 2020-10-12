@@ -183,6 +183,7 @@
             "apiVersion": "2020-06-01",
             "name": "function-app-tools-sbus",
             "type": "Microsoft.Resources/deployments",
+            "resourceGroup": "[variables('resourceGroupName')]",
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
@@ -197,7 +198,7 @@
                         "value": "[variables('consumptionPlanName')]"
                     },
                     "appServicePlanResourceGroup": {
-                        "value": "[resourceGroup().name]"
+                        "value": "[variables('resourceGroupName')]"
                     },
                     "functionAppAppSettings": {
                         "value": [
