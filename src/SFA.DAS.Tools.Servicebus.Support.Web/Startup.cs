@@ -33,13 +33,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
 #endif                
                 .AddEnvironmentVariables();
 
-            if (!configuration["Environment"].Equals("DEV", StringComparison.CurrentCultureIgnoreCase))
+            if (!configuration["EnvironmentName"].Equals("DEV", StringComparison.CurrentCultureIgnoreCase))
             {
                 builder.AddAzureTableStorage(options =>
                 {
                     options.ConfigurationKeys = configuration["ConfigNames"].Split(",");
                     options.StorageConnectionString = configuration["ConfigurationStorageConnectionString"];
-                    options.EnvironmentName = configuration["Environment"];
+                    options.EnvironmentName = configuration["EnvironmentName"];
                     options.PreFixConfigurationKeys = false;
                 });
             }
