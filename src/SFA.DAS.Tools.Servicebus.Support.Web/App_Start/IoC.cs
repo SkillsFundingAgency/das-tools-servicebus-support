@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Cosmos;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Azure.ServiceBus.Primitives;
@@ -32,7 +33,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
         {
-            
+
             services.AddTransient<IAsbService, AsbService>(s =>
             {
                 var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
@@ -61,7 +62,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 return new CosmosClient(cosmosEndpointUrl, cosmosAuthenticationKey, new CosmosClientOptions() { AllowBulkExecution = true });
             });
 
-            services.AddTransient<IUserService, UserService>();            
+            services.AddTransient<IUserService, UserService>();
             services.AddTransient<IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse>, GetMessagesQueryHandler>();
             services.AddTransient<IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse>, GetUserSessionQueryHandler>();
             services.AddTransient<IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse>, GetQueuesQueryHandler>();
@@ -77,7 +78,16 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse>, UpsertUserSessionCommandHandler>();
             services.AddTransient<ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>, DeleteUserSessionCommandHandler>();
             services.AddTransient<IBatchMessageStrategy, BatchMessageStrategy>();
-            services.AddTransient<IUserSessionService, UserSessionService>();
+            services.AddTransient<IUserSessionService, UserSessionService>(s =>
+                new UserSessionService(
+                    s.GetService<ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse>>(),
+                    s.GetService<IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse>>(),
+                    s.GetService<ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>>(),
+                    s.GetService<IUserService>(),
+                    configuration,
+                    s.GetService<IHttpContextAccessor>()
+                )
+            );
             services.AddTransient<IMessageService, MessageService>(s =>
                  new MessageService(
                     s.GetService<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>(),
