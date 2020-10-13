@@ -92,7 +92,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             );
 
             services.AddSingleton<IMessageDetailRedactor, MessageDetailRedactor>(s => new MessageDetailRedactor(configuration.GetSection("RedactPatterns").GetChildren().AsEnumerable().Select(a => a.Value)));
-            services.AddTransient<KeepUserSessionActiveFilter>();
+            services.AddTransient<KeepUserSessionActiveFilter>(s => new KeepUserSessionActiveFilter(s.GetRequiredService<IUserSessionService>(), configuration));
 
 
             return services;
