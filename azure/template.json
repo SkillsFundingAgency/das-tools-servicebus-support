@@ -145,6 +145,30 @@
         },
         {
             "apiVersion": "2020-06-01",
+            "name": "[concat(variables('userManagedIdentityName'),'-role-assignments')]",
+            "type": "Microsoft.Resources/deployments",
+            "resourceGroup": "[parameters('sharedEnvResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('deploymentUrlBase'),'role-assignment.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "principalId": {
+                        "value": "[reference(variables('userManagedIdentityName')).outputs.objectId.value]"
+                    },
+                    "assignmentType": {
+                        "value": "ServiceBusReceiver"
+                    },
+                    "resourceName": {
+                        "value": "[parameters('sharedServiceBusName')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2020-06-01",
             "name": "consumption-plan",
             "type": "Microsoft.Resources/deployments",
             "resourceGroup": "[variables('resourceGroupName')]",
