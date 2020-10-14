@@ -239,7 +239,7 @@
                             },
                             {
                                 "name": "AppName",
-                                "value": "das-tools-servicebus-support"
+                                "value": "das-tools-servicebus-support-function"
                             },
                             {
                                 "name": "FUNCTIONS_WORKER_RUNTIME",
