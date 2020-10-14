@@ -17,12 +17,16 @@ using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
 using System.Linq;
 using Polly.Registry;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
+using Microsoft.AspNetCore.Http;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {
     public static class IoC
     {
-       public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddSingleton<PolicyRegistry>();
 
@@ -57,10 +61,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 return new CosmosClient(cosmosEndpointUrl, cosmosAuthenticationKey, new CosmosClientOptions() { AllowBulkExecution = true });
             });
 
-            services.AddTransient<IUserService, UserService>();            
+            services.AddTransient<IUserService, UserService>();
             services.AddTransient<IBatchGetMessageStrategy, BatchGetMessageStrategy>();
             services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
-            
+
             services.AddTransient<IMessageService, MessageService>(s => new MessageService(
                 s.GetService<IBatchSendMessageStrategy>(),
                 s.GetRequiredService<ILogger<MessageService>>(),
@@ -73,7 +77,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                     var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
                     var connectionBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
                     var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-                        
+
                     return new RetrieveMessagesService(
                         s.GetRequiredService<ILogger<RetrieveMessagesService>>(),
                         configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
@@ -87,15 +91,24 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             );
 
             services.AddSingleton<IMessageDetailRedactor, MessageDetailRedactor>(s => new MessageDetailRedactor(configuration.GetSection("RedactPatterns").GetChildren().AsEnumerable().Select(a => a.Value)));
-            
-            services.AddTransient<IUserSessionService, UserSessionService>();
+
+            services.AddTransient<IUserSessionService, UserSessionService>(s =>
+               new UserSessionService(
+                   s.GetService<ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse>>(),
+                   s.GetService<IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse>>(),
+                   s.GetService<ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>>(),
+                   s.GetService<IUserService>(),
+                   configuration,
+                   s.GetService<IHttpContextAccessor>()
+               )
+            );
             services.AddTransient<KeepUserSessionActiveFilter>(s => new KeepUserSessionActiveFilter(s.GetRequiredService<IUserSessionService>(), configuration));
 
 
             return services;
         }
 
-        private static ManagementClient CreateManagementClient(ServiceBusConnectionStringBuilder connectionBuilder, ITokenProvider tokenProvider) => connectionBuilder.HasSasKey() 
+        private static ManagementClient CreateManagementClient(ServiceBusConnectionStringBuilder connectionBuilder, ITokenProvider tokenProvider) => connectionBuilder.HasSasKey()
             ? new ManagementClient(connectionBuilder)
             : new ManagementClient(connectionBuilder, tokenProvider);
     }
