@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
@@ -16,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static SFA.DAS.Tools.Servicebus.Support.Web.Startup;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
@@ -28,7 +30,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse> _getMessagesByIdQuery;
         private readonly IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> _getQueueDetailsQuery;
         private readonly IUserSessionService _userSessionService;
-        private readonly string _errorQueueRegex;
+        private readonly Settings _settings;
 
         public MessageListController(
             IUserService userService,
@@ -36,8 +38,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse> getMessagesByIdQuery,
             IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> getQueueDetailsQuery,
             IMessageService messageService,
-            IConfiguration config,
-            IUserSessionService userSessionService)
+            IUserSessionService userSessionService,
+            IOptions<Settings> settings)
         {
             _userService = userService;
             _getMessagesQuery = getMessagesQuery;
@@ -45,8 +47,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _getQueueDetailsQuery = getQueueDetailsQuery;
             _messageService = messageService;
             _userSessionService = userSessionService;
-            _errorQueueRegex = config["ErrorQueueRegex"];
-
+            _settings = settings.Value;
         }
 
         public async Task<IActionResult> Index()
@@ -68,7 +69,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             }
 
             var queueName = GetQueueName(response.Messages);
-            HttpContext.Session.SetString("queueName", queueName);            
+            HttpContext.Session.SetString("queueName", queueName);
 
             return View(new MessageListViewModel()
             {
@@ -83,7 +84,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         public async Task<IActionResult> ReceiveMessages(string queue)
-        {            
+        {
             await _messageService.ProcessMessages(queue);
 
             return RedirectToAction("Index");
@@ -188,7 +189,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         private string GetProcessingQueueName(string errorQueueName)
         {
-            return Regex.Replace(errorQueueName, _errorQueueRegex, "");
+            return Regex.Replace(errorQueueName, _settings.ErrorQueueRegex, "");
         }
 
         private async Task DeleteUserSession()
