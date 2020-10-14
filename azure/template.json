@@ -298,6 +298,10 @@
         "UserManagedIdentityClientId": {
             "type": "string",
             "value": "[reference(variables('userManagedIdentityName')).outputs.clientId.value]"
+        },
+        "FunctionAppName": {
+            "type": "string",
+            "value": "[variables('functionAppName')]"
         }
     }
 }
