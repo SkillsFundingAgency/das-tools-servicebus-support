@@ -135,7 +135,7 @@
                         "value": "[reference(variables('userManagedIdentityName')).outputs.objectId.value]"
                     },
                     "assignmentType": {
-                        "value": "ServiceBusReceiver"
+                        "value": "ServiceBusSender"
                     },
                     "resourceName": {
                         "value": "[parameters('sharedServiceBusName')]"
