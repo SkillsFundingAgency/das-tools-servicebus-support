@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using SFA.DAS.Configuration.AzureTableStorage;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web
 {
@@ -45,12 +46,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
             }
 
             _configuration = builder.Build();
-        }
+        }        
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddOptions();
+            services.Configure<Settings>(_configuration);
             services.AddServices(_configuration);
             services.AddAntiforgery(options =>
             {
