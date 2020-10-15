@@ -238,7 +238,7 @@
                             },
                             {
                                 "name": "FUNCTIONS_EXTENSION_VERSION",
-                                "value": "3~"
+                                "value": "~3"
                             },
                             {
                                 "name": "AppName",
