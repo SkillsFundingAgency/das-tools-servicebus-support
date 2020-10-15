@@ -4,7 +4,6 @@ using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
@@ -25,8 +24,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
     public static class IoC
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.Replace(ServiceDescriptor.Singleton(typeof(IConfiguration), configuration));
+        {            
             services.AddTransient<IAsbService, AsbService>(s =>
             {
                 var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
