@@ -48,7 +48,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                     Id = userSession?.Id ?? Guid.NewGuid().ToString(),
                     UserId = userSession?.UserId ?? _userService.GetUserId(),
                     UserName = userSession?.UserName ?? _userService.GetName(),
-                    ExpiryDateUtc = DateTime.UtcNow.AddHours(_config.GetValue<int>("UserSessionExpirtyHours")), 
+                    ExpiryDateUtc = DateTime.UtcNow.AddHours(_config.GetValue<int>("UserSessionExpiryHours")), 
                     Queue = queue
                 }
             });
