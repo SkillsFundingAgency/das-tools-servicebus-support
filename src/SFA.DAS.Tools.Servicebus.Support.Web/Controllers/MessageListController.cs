@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDeleteQueueMessages;
@@ -34,7 +35,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _deleteQueueMessageCommand;
 
         private readonly IUserSessionService _userSessionService;
-        private readonly string _errorQueueRegex;
+        private readonly Settings _settings;
 
         public MessageListController(
             IUserService userService,
@@ -42,11 +43,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse> getMessagesByIdQuery,
             IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> getQueueDetailsQuery,
             IMessageService messageService,
-            IConfiguration config,
+            IUserSessionService userSessionService,
+            IOptions<Settings> settings,
             ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
             ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
-            IRetrieveMessagesService retrieveMessagesService,
-            IUserSessionService userSessionService,
+            IRetrieveMessagesService retrieveMessagesService,            
             IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse> getQueueMessageCountQuery)
         {
             _userService = userService;
@@ -55,8 +56,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _getQueueDetailsQuery = getQueueDetailsQuery;
             _messageService = messageService;
             _userSessionService = userSessionService;
-            _deleteQueueMessageCommand = deleteQueueMessageCommand;
-            _errorQueueRegex = config["ErrorQueueRegex"];
+            _settings = settings.Value;
+            _deleteQueueMessageCommand = deleteQueueMessageCommand;            
             _retrieveMessagesService = retrieveMessagesService;
             _getQueueMessageCountQuery = getQueueMessageCountQuery;
         }
@@ -144,7 +145,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 Ids = selectedMessages.Ids
             });
 
-            var processingQueueName = selectedMessages.GetProcessingQueueName(_errorQueueRegex);
+            var processingQueueName = selectedMessages.GetProcessingQueueName(_settings.ErrorQueueRegex);
             await _messageService.ReplayMessages(response.Messages, processingQueueName);
 
             return Json(string.Empty);

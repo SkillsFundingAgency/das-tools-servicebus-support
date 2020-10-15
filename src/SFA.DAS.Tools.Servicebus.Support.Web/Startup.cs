@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using SFA.DAS.Configuration.AzureTableStorage;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using Microsoft.Extensions.Logging;
 using Polly.Registry;
 
@@ -47,12 +48,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
             }
 
             _configuration = builder.Build();
-        }
+        }        
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddOptions();
+            services.Configure<Settings>(_configuration);
             services.AddCommands(_configuration);
             services.AddQueries();
             services.AddServices(_configuration);
