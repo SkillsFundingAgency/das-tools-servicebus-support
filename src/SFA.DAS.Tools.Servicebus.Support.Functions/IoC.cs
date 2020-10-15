@@ -24,8 +24,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
     public static class IoC
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
-        {
-
+        {            
             services.AddTransient<IAsbService, AsbService>(s =>
             {
                 var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
