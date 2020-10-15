@@ -48,7 +48,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             {
                 Name = "RedisLog",
                 AppName = appName,
-                EnvironmentKeyName = "Environment",
+                EnvironmentKeyName = "EnvironmentName",
                 ConnectionStringName = "LoggingRedisConnectionString",
                 IncludeAllProperties = true,
                 Layout = "${message}"

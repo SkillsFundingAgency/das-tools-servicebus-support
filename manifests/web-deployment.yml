@@ -45,29 +45,8 @@ spec:
     spec:
       containers:
       - env:
-        - name: RequiredRole
-          value: {{RequiredRole}}
-        - name: CosmosDb__Url
-          value: {{CosmosUrl}}
-        - name: CosmosDb__AuthKey
-          valueFrom:
-            secretKeyRef:
-                name: das-tools-servicebus-support-config
-                key: CosmosAuthKey
-        - name: CosmosDb__DatabaseName
-          value: {{CosmosDatabaseName}}
-        - name: CosmosDb__CollectionName
-          value: {{CosmosCollectionName}}
-        - name: ServiceBusRepoSettings__ServiceBusConnectionString
-          value: {{ServiceBusConnectionString}}
-        - name: ServiceBusRepoSettings__QueueSelectionRegex
-          value: {{ServiceBusQueueSelectionRegex}}
         - name: ServiceBusRepoSettings__EnvName
           value: {{EnvironmentName}}
-        - name: ServiceBusRepoSettings__PeekMessageBatchSize
-          value: {{ServiceBusPeekMessageBatchSize}}
-        - name: ServiceBusRepoSettings__NotifyUIBatchSize
-          value: {{ServiceBusNotifyUIBatchSize}}
         image: {{WebImage}}
         imagePullPolicy: IfNotPresent
         name: das-tools-servicebus-support
