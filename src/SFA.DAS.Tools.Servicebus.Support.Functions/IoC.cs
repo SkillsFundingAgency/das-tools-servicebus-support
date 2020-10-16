@@ -59,6 +59,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
                 return new CosmosClient(cosmosEndpointUrl, cosmosAuthenticationKey, new CosmosClientOptions() { AllowBulkExecution = true });
             });
             services.AddSingleton<IUserService, FunctionUserService>();
+            services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
             services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>(s=> new CosmosInfrastructureService(configuration));
             services.AddTransient<IQueryHandler<GetExpiredUserSessionsQuery, GetExpiredUserSessionsQueryResponse>, GetExpiredUserSessionsQueryHandler>();
             services.AddTransient<IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse>, GetMessagesQueryHandler>();
