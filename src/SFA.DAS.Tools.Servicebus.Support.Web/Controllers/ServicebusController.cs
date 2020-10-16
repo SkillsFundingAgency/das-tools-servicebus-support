@@ -12,6 +12,8 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMessages;
+using System;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
@@ -56,6 +58,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             {
                 return RedirectToAction(actionName: "Index", controllerName: "MessageList");
             }
+
+            HttpContext.Session.Set("sessionActiveUntil", DateTime.MinValue);
 
             var searchVM = new QueueViewModel
             {
