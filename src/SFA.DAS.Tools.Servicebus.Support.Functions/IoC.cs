@@ -5,9 +5,11 @@ using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Polly;
+using Polly.Registry;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetExpiredUserSessions;
@@ -15,7 +17,9 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
 
@@ -24,9 +28,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
     public static class IoC
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
-        {            
+        {
+            services.AddSingleton<PolicyRegistry>();
+
             services.AddTransient<IAsbService, AsbService>(s =>
             {
+                var policyRegistry = s.GetRequiredService<PolicyRegistry>();
+                policyRegistry.ConfigureWaitAndRetry(Constants.MessageQueueWaitAndRetry, s.GetRequiredService<ILogger<AsbService>>());
                 var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
                 var connectionBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
                 var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
@@ -37,7 +45,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
                     tokenProvider,
                     connectionBuilder,
                     CreateManagementClient(connectionBuilder, tokenProvider),
-                    new BatchMessageStrategy()
+                    policyRegistry.Get<IAsyncPolicy>(Constants.MessageQueueWaitAndRetry)
                 );
             });
             services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>(s => new CosmosInfrastructureService(configuration));
@@ -62,12 +70,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             services.AddTransient<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>, DeleteQueueMessagesCommandHandler>();
             services.AddTransient<IMessageService, MessageService>(s =>
                  new MessageService(
-                    s.GetService<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>(),
-                    s.GetService<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>>(),
-                    s.GetService<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>>(),
-                    s.GetService<IBatchMessageStrategy>(),
+                    s.GetService<IBatchSendMessageStrategy>(),
                     s.GetRequiredService<ILogger<MessageService>>(),
-                    configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
                     s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
                     s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()
                 )

@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using SFA.DAS.Configuration.AzureTableStorage;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
+using Microsoft.Extensions.Logging;
+using Polly.Registry;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web
 {
@@ -53,6 +55,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
         {
             services.AddOptions();
             services.Configure<Settings>(_configuration);
+            services.AddCommands(_configuration);
+            services.AddQueries();
             services.AddServices(_configuration);
             services.AddAntiforgery(options =>
             {

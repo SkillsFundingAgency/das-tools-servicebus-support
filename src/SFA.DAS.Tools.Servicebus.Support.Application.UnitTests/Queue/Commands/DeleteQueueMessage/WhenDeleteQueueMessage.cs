@@ -1,6 +1,6 @@
 ﻿using Moq;
 using NUnit.Framework;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessage;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System.Collections.Generic;
 using System.Threading.Tasks;
