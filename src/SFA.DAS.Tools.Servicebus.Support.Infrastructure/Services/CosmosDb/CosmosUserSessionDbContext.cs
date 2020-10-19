@@ -52,7 +52,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
             await container.DeleteItemAsync<UserSession>(id, new PartitionKey(userId));
         }
 
-        public async Task<IEnumerable<UserSession>> GetExpiredUserSessions()
+        public async Task<IEnumerable<UserSession>> GetExpiredUserSessionsAsync()
         {
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             var container = await _cosmosInfrastructure.CreateContainer(database);
@@ -70,6 +70,31 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
             }
 
             return userSessions;
+        }
+
+        public async Task<IEnumerable<UserSession>> GetUserSessionsAsync()
+        {
+            var sqlQuery = $"select * from c where c.type = 'session'";
+
+            var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
+            var container = await _cosmosInfrastructure.CreateContainer(database);
+
+            var queryDefinition = new QueryDefinition(sqlQuery);
+            var queryFeedIterator = container.GetItemQueryIterator<UserSession>(queryDefinition);
+            
+            var sessions = new List<UserSession>();
+
+            while (queryFeedIterator.HasMoreResults)
+            {
+                var currentResults = await queryFeedIterator.ReadNextAsync();
+
+                foreach (var session in currentResults)
+                {
+                    sessions.Add(session);
+                }
+            }
+
+            return sessions;
         }
     }
 }

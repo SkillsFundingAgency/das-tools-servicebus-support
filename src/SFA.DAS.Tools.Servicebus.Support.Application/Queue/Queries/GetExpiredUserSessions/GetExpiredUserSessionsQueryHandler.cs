@@ -14,7 +14,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetExpiredU
 
         public async Task<GetExpiredUserSessionsQueryResponse> Handle(GetExpiredUserSessionsQuery query)
         {
-            var expiredUserSessions = await _cosmosDbContext.GetExpiredUserSessions();
+            var expiredUserSessions = await _cosmosDbContext.GetExpiredUserSessionsAsync();
 
             return new GetExpiredUserSessionsQueryResponse
             {

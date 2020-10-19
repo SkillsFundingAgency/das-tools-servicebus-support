@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using System;
 using System.Collections.Generic;
@@ -222,5 +223,24 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         }
 
         private static string AddTypeClause(string sqlQuery) => sqlQuery + " AND c.type='message'";
+        
+        public async Task<IEnumerable<UserMessageCount>> GetMessageCountPerUser()
+        {            
+            var sqlQuery = $"select value messages  from (select c.Queue, c.userId,  count(1) as MessageCount from c where c.type = 'message' group by c.Queue, c.userId ) as messages";
+
+            var queryFeedIterator = await QuerySetup<UserMessageCount>(sqlQuery);
+
+            var messages = new List<UserMessageCount>();
+
+            while (queryFeedIterator.HasMoreResults)
+            {
+                var currentResults = await queryFeedIterator.ReadNextAsync();
+
+                var newMessages = currentResults.ToList();
+                messages.AddRange(newMessages);
+            }
+
+            return messages;
+        }
     }
 }

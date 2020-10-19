@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessageCountPerUser;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
@@ -24,6 +25,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private readonly IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse> _getQueuesQuery;
         private readonly IQueryHandler<PeekQueueMessagesQuery, PeekQueueMessagesQueryResponse> _peekQueueMessagesQuery;
         private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
+        private readonly IQueryHandler<GetMessageCountPerUserQuery, GetMessageCountPerUserQueryResponse> _getMessageCountPerUser;
         private readonly ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> _bulkCreateMessagesCommand;
         private readonly ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> _sendMessagesCommand;
 
@@ -34,7 +36,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IQueryHandler<PeekQueueMessagesQuery, PeekQueueMessagesQueryResponse> peekQueueMessagesQuery,
             ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse> bulkCreateMessagesCommand,
             ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
-            IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery)
+            IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery,
+            IQueryHandler<GetMessageCountPerUserQuery, GetMessageCountPerUserQueryResponse> getMessageCountPerUser)
         {
             _logger = logger;
             _userService = userService;
@@ -42,6 +45,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _getQueuesQuery = getQueuesQuery;
             _peekQueueMessagesQuery = peekQueueMessagesQuery;
             _getMessagesQuery = getMessagesQuery;
+            _getMessageCountPerUser = getMessageCountPerUser;
             _bulkCreateMessagesCommand = bulkCreateMessagesCommand;
             _sendMessagesCommand = sendMessagesCommand;
         }
@@ -63,16 +67,19 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> Data()
         {
-            var response = await _getQueuesQuery.Handle(new GetQueuesQuery());
+            var queuesResponse = await _getQueuesQuery.Handle(new GetQueuesQuery());
+
+            var messageCountResponse = await _getMessageCountPerUser.Handle(new GetMessageCountPerUserQuery());
 
             return Json(new
             {
-                Total = response.Queues.Count(),
-                Rows = response.Queues.Select(q => new
+                Total = queuesResponse.Queues.Count(),
+                Rows = queuesResponse.Queues.Select(q => new
                 {
                     Id = q.Name,
                     Name = q.Name,
-                    MessageCount = q.MessageCount
+                    MessageCount = q.MessageCount,
+                    MessageCountInvestigation = messageCountResponse.QueueMessageCount.ContainsKey(q.Name) ? messageCountResponse.QueueMessageCount[q.Name].Sum(c => c.MessageCount) : 0
                 })
             });
         }

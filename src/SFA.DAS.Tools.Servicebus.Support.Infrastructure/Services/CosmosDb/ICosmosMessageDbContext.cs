@@ -1,4 +1,5 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
+﻿using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,7 +14,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         Task<IEnumerable<QueueMessage>> GetQueueMessagesByIdAsync(string userId, IEnumerable<string> ids);
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
         Task<int> GetMessageCountAsync(string userId, SearchProperties searchProperties = null);
-        Task<bool> HasUserAnExistingSession(string userId);        
+        Task<bool> HasUserAnExistingSession(string userId);
+        Task<IEnumerable<UserMessageCount>> GetMessageCountPerUser();
         Task<bool> MessageExists(string userId, string messageId);
     }
 }

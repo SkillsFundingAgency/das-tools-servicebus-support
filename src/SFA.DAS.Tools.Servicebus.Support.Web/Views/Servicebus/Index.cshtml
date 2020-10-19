@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.18.0/bootstrap-table.min.css" />
 }
 
-<div class="govuk-width-container">
+<div>
     <h1 class="govuk-heading-xl">Message queues</h1>
 
 
@@ -36,10 +36,10 @@
         <thead class="govuk-table__head">
             <tr class="govuk-table__row">
                 <th scope="col"
-                        class="col-wrap"
-                        data-field="id"
-                        data-visible="false">
-                    </th>
+                    class="col-wrap"
+                    data-field="id"
+                    data-visible="false">
+                </th>
                 <th scope="col"
                     class="col-wrap"
                     data-sortable="true"
@@ -56,7 +56,14 @@
                     data-width-unit="%">
                     Message Count
                 </th>
-
+                <th scope="col"
+                    class="col-wrap"
+                    data-sortable="true"
+                    data-field="messageCountInvestigation"
+                    data-width="20"
+                    data-width-unit="%">
+                    Under Investigation
+                </th>
                 <th scope="col"
                     class="col-wrap"
                     data-sortable="false"
