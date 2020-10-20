@@ -12,7 +12,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         }
 
         public string GetUserId()
-        {            
+        {
             return _httpContextAccessor.HttpContext?.User.Claims.Where(x => x.Type.Contains("nameidentifier")).Select(x => x.Value).FirstOrDefault();
         }
 
