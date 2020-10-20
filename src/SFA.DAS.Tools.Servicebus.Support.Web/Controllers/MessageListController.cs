@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SFA.DAS.Tools.Servicebus.Support.Application;
@@ -18,6 +17,8 @@ using SFA.DAS.Tools.Servicebus.Support.Web.App_Start;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
 using System.Threading.Tasks;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
+using System;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
@@ -97,6 +98,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> ReceiveMessages(string queue)
         {
+            HttpContext.Session.SetString("queueName", queue);
             var count = (await _getQueueMessageCountQuery.Handle(new GetQueueMessageCountQuery()
             {
                 QueueName = queue
@@ -162,10 +164,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             return Json(string.Empty);
         }
-
+        
         private async Task DeleteUserSession()
-        {
+        {            
             await _userSessionService.DeleteUserSession();
+            HttpContext.Session.Set<DateTime?>("sessionActiveUntil", null);            
+            HttpContext.Session.SetString("queueName", string.Empty);
         }
     }
 }

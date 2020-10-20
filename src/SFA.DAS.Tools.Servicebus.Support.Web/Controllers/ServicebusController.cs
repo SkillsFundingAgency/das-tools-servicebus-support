@@ -55,7 +55,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             if (response.HasSession())
             {
                 return RedirectToAction(actionName: "Index", controllerName: "MessageList");
-            }
+            }            
 
             var searchVM = new QueueViewModel
             {
