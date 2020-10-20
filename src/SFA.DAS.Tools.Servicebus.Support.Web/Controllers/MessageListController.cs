@@ -98,6 +98,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         public async Task<IActionResult> ReceiveMessages(string queue)
         {
+            HttpContext.Session.SetString("queueName", queue);
             var count = (await _getQueueMessageCountQuery.Handle(new GetQueueMessageCountQuery()
             {
                 QueueName = queue
@@ -167,8 +168,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         private async Task DeleteUserSession()
         {            
             await _userSessionService.DeleteUserSession();
-            HttpContext.Session.Set<DateTime?>("sessionActiveUntil", null);
-            HttpContext.Session.Set("deleteSession", true);
+            HttpContext.Session.Set<DateTime?>("sessionActiveUntil", null);            
+            HttpContext.Session.SetString("queueName", string.Empty);
         }
     }
 }
