@@ -7,36 +7,36 @@ using System;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {
-    public class KeepUserSessionActiveFilter : IResultFilter
+    public class KeepUserSessionActiveFilter : IActionFilter
     {
         private readonly IUserSessionService _userSessionService;
-        private readonly int _userSessionRefreshIntervalMinutes;        
+        private readonly int _userSessionRefreshIntervalMinutes;
 
         public KeepUserSessionActiveFilter(IUserSessionService userSessionService, IConfiguration config)
         {
             _userSessionService = userSessionService;
-            _userSessionRefreshIntervalMinutes = config.GetValue<int>("UserRefreshSessionIntervalMinutes");            
+            _userSessionRefreshIntervalMinutes = config.GetValue<int>("UserRefreshSessionIntervalMinutes");
         }
 
-        public void OnResultExecuted(ResultExecutedContext context)
+        public void OnActionExecuted(ActionExecutedContext context)
         {
             
         }
 
-        public void OnResultExecuting(ResultExecutingContext context)
+        public void OnActionExecuting(ActionExecutingContext context)
         {
-            var sessionActiveUntil = context.HttpContext.Session.Get<DateTime>("sessionActiveUntil");            
+            var sessionActiveUntil = context.HttpContext.Session.Get<DateTime?>("sessionActiveUntil");
 
-            if (sessionActiveUntil < DateTime.UtcNow)
-            {
+            if (!sessionActiveUntil.HasValue || sessionActiveUntil < DateTime.UtcNow)
+            {                
                 var queue = context.HttpContext.Session.GetString("queueName");
                 if (!string.IsNullOrEmpty(queue))
                 {
                     _userSessionService.UpsertUserSession(queue).Wait();
                     var sessionExpiry = DateTime.UtcNow.AddMinutes(_userSessionRefreshIntervalMinutes);
                     context.HttpContext.Session.Set("sessionActiveUntil", sessionExpiry);
-                }                
-            }            
-        }
+                }
+            }
+        }            
     }
 }
