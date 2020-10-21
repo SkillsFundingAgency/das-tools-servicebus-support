@@ -2,12 +2,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessage;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessageCountPerUser;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSessions;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 
@@ -26,6 +28,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<IQueryHandler<GetMessageQuery, GetMessageQueryResponse>, GetMessageQueryHandler>();
             services.AddTransient<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>, GetQueueMessageCountQueryHandler>();
             services.AddTransient<IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse>, GetMessagesByIdQueryHandler>();
+            services.AddTransient<IQueryHandler<GetMessageCountPerUserQuery, GetMessageCountPerUserQueryResponse>, GetMessageCountPerUserQueryHandler>();
+            services.AddTransient<IQueryHandler<GetUserSessionsQuery, GetUserSessionsQueryResponse>, GetUserSessionsQueryHandler>();
 
             return services;
         }

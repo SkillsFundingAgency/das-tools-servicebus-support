@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using System;
 using System.Collections.Generic;
@@ -149,9 +150,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
             return currentResults.FirstOrDefault();
         }
-        public async Task<bool> HasUserAnExistingSession(string userId) => await GetMessageCountAsync(userId) > 0;
+        public async Task<bool> HasUserAnExistingSessionAsync(string userId) => await GetMessageCountAsync(userId) > 0;
 
-        public async Task<bool> MessageExists(string userId, string messageId)
+        public async Task<bool> MessageExistsAsync(string userId, string messageId)
         {
             var sqlQuery = AddTypeClause($"SELECT VALUE COUNT(1) FROM c WHERE c.userId ='{userId}' AND c.id = '{messageId}'");
 
@@ -222,5 +223,23 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         }
 
         private static string AddTypeClause(string sqlQuery) => sqlQuery + " AND c.type='message'";
+        
+        public async Task<IEnumerable<UserMessageCount>> GetMessageCountPerUserAsync()
+        {            
+            var sqlQuery = $"select value messages  from (select c.Queue, c.userId,  count(1) as MessageCount from c where c.type = 'message' group by c.Queue, c.userId ) as messages";
+
+            var queryFeedIterator = await QuerySetup<UserMessageCount>(sqlQuery);
+
+            var messages = new List<UserMessageCount>();
+
+            while (queryFeedIterator.HasMoreResults)
+            {
+                var currentResults = await queryFeedIterator.ReadNextAsync();
+                
+                messages.AddRange(currentResults.ToList());
+            }
+
+            return messages;
+        }
     }
 }
