@@ -58,7 +58,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             var names = new List<string>();
             foreach (var msgCount in userMessageCounts)
             {
-                names.Add(userSessions.FirstOrDefault(s => s.UserId == msgCount.UserId).UserName);
+                names.Add(userSessions.FirstOrDefault(s => s.UserId == msgCount.UserId)?.UserName);
             }
 
             msg.Append(" (");
