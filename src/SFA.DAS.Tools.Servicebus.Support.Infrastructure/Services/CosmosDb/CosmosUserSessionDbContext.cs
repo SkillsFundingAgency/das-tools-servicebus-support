@@ -15,6 +15,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         private readonly CosmosClient _client;
         private readonly ICosmosInfrastructureService _cosmosInfrastructure;
         private readonly string _databaseName;
+        private const string MessageType = "session";
 
         public CosmosUserSessionDbContext(CosmosClient cosmosClient, ICosmosInfrastructureService cosmosInfrastructure, IConfiguration config)
         {
@@ -32,7 +33,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
         public async Task<UserSession> GetUserSessionAsync(string userId)
         {
-            var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.type = 'session'";
+            var sqlQuery = $"SELECT * FROM c WHERE c.userId = '{userId}' and c.type = '{MessageType}'";
 
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             var container = await _cosmosInfrastructure.CreateContainer(database);
@@ -74,7 +75,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
         public async Task<IEnumerable<UserSession>> GetUserSessionsAsync()
         {
-            var sqlQuery = $"select * from c where c.type = 'session'";
+            var sqlQuery = $"select * from c where c.type = '{MessageType}'";
 
             var database = await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
             var container = await _cosmosInfrastructure.CreateContainer(database);
@@ -88,10 +89,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
             {
                 var currentResults = await queryFeedIterator.ReadNextAsync();
 
-                foreach (var session in currentResults)
-                {
-                    sessions.Add(session);
-                }
+                sessions.AddRange(currentResults.ToList());                
             }
 
             return sessions;

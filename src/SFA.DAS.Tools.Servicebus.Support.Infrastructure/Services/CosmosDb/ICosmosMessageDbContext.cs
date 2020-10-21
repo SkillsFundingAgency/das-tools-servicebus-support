@@ -14,8 +14,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         Task<IEnumerable<QueueMessage>> GetQueueMessagesByIdAsync(string userId, IEnumerable<string> ids);
         Task<QueueMessage> GetQueueMessageAsync(string userId, string messageId);
         Task<int> GetMessageCountAsync(string userId, SearchProperties searchProperties = null);
-        Task<bool> HasUserAnExistingSession(string userId);
-        Task<IEnumerable<UserMessageCount>> GetMessageCountPerUser();
-        Task<bool> MessageExists(string userId, string messageId);
+        Task<bool> HasUserAnExistingSessionAsync(string userId);
+        Task<IEnumerable<UserMessageCount>> GetMessageCountPerUserAsync();
+        Task<bool> MessageExistsAsync(string userId, string messageId);
     }
 }

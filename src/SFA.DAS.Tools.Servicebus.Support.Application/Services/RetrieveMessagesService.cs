@@ -104,7 +104,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                 {
                     if (statusCode != HttpStatusCode.Conflict)
                     {
-                        if ((await _cosmosDbContext.MessageExists(_userService.GetUserId(), message.Id)))
+                        if ((await _cosmosDbContext.MessageExistsAsync(_userService.GetUserId(), message.Id)))
                         {
                             await _messageReceiver.DeadLetterAsync(message.OriginalMessage.GetLockToken(),
                                 "Conflict in CosmosDB", "Duplicate message");

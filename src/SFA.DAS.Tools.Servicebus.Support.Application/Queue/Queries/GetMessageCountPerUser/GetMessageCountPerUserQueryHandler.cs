@@ -17,7 +17,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessageC
 
         public async Task<GetMessageCountPerUserQueryResponse> Handle(GetMessageCountPerUserQuery query)
         {
-            var messageCountPerUser = await _cosmosDbContext.GetMessageCountPerUser();
+            var messageCountPerUser = await _cosmosDbContext.GetMessageCountPerUserAsync();
 
             var result = new Dictionary<string, List<UserMessageCount>>();
             foreach(var count in messageCountPerUser)
