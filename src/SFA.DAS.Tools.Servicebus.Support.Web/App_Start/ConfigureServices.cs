@@ -61,7 +61,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 return new CosmosClient(cosmosEndpointUrl, cosmosAuthenticationKey, new CosmosClientOptions() { AllowBulkExecution = true });
             });
 
-            services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IUserService, UserService>(s=> new UserService(s.GetRequiredService<IHttpContextAccessor>(), configuration.GetValue<string>("NameClaim")));
             services.AddTransient<IBatchGetMessageStrategy, BatchGetMessageStrategy>();
             services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
 
