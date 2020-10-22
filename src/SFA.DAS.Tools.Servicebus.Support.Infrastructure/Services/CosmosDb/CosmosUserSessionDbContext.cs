@@ -26,11 +26,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
         public async Task<UserSession> GetUserSessionAsync(string userId)
         {
-            var queryDefinition = new QueryDefinition($"SELECT * FROM c WHERE c.userId = @userId and c.type = @messageType")
-                .WithParameter("@userId", userId)
-                .WithParameter("@messageType", MessageType);
+            var container = await _cosmosInfrastructure.CreateContainer();
+            var queryFeedIterator = container.GetItemLinqQueryable<UserSession>()
+                .Where(s => s.UserId == userId && s.Type == MessageType)
+                .ToFeedIterator()
+            ;
 
-            var queryFeedIterator = await _cosmosInfrastructure.GetItemQueryIterator<UserSession>(queryDefinition);
             var currentResults = await queryFeedIterator.ReadNextAsync();
 
             return currentResults.FirstOrDefault();
@@ -46,35 +47,30 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         public async Task<IEnumerable<UserSession>> GetExpiredUserSessionsAsync()
         {
             var container = await _cosmosInfrastructure.CreateContainer();
-            var queryFeedIterator = container.GetItemLinqQueryable<UserSession>().Where(s => s.ExpiryDateUtc < DateTime.UtcNow).ToFeedIterator();
 
-            var userSessions = new List<UserSession>();
-
-            while (queryFeedIterator.HasMoreResults)
-            {
-                var currentResults = await queryFeedIterator.ReadNextAsync();
-
-                var newSessions = currentResults.ToList();
-                userSessions.AddRange(newSessions);
-            }
-
-            return userSessions;
+            return await IterateUserSessionResults(container.GetItemLinqQueryable<UserSession>()
+                .Where(s => s.ExpiryDateUtc < DateTime.UtcNow)
+                .ToFeedIterator());
         }
 
         public async Task<IEnumerable<UserSession>> GetUserSessionsAsync()
         {
-            var sqlQuery = $"select * from c where c.type = @messageType";
-            var queryDefinition = new QueryDefinition(sqlQuery)
-                .WithParameter("@messageType", MessageType);
+            var container = await _cosmosInfrastructure.CreateContainer();
 
-            var queryFeedIterator = await _cosmosInfrastructure.GetItemQueryIterator<UserSession>(queryDefinition);
+            return await IterateUserSessionResults(container.GetItemLinqQueryable<UserSession>()
+                .Where(s => s.Type == MessageType)
+                .ToFeedIterator());
+        }
+
+        private static async Task<IEnumerable<UserSession>> IterateUserSessionResults(FeedIterator<UserSession> queryFeedIterator)
+        {
             var sessions = new List<UserSession>();
 
             while (queryFeedIterator.HasMoreResults)
             {
                 var currentResults = await queryFeedIterator.ReadNextAsync();
 
-                sessions.AddRange(currentResults.ToList());                
+                sessions.AddRange(currentResults.ToList());
             }
 
             return sessions;
