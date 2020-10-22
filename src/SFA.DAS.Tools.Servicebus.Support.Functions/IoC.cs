@@ -50,6 +50,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             });
             
             services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>(s => new CosmosMessageDbContext(s.GetService<IUserService>(), s.GetRequiredService<ILogger<CosmosMessageDbContext>>(), s.GetRequiredService<ICosmosInfrastructureService>()));
+            services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>(s => new CosmosUserSessionDbContext( s.GetRequiredService<ICosmosInfrastructureService>()));
+
             services.AddSingleton(s =>
             {
                 var cosmosEndpointUrl = configuration.GetValue<string>("CosmosDb:Url");
