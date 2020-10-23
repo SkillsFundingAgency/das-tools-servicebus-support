@@ -22,5 +22,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
         {
             return _userId;
         }
+
+        public bool IsAdmin()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

@@ -148,8 +148,10 @@
         <fieldset>
             <legend>Message Actions</legend>
             <a class="govuk-link" asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Get any further messages that may be on the queue">Get More</a> |
-            <a class="govuk-link" id="btnReplayMessages" href="#" title="Move selected messages back to the processing queue">Move Selected to Processing Queue</a> |
-            <a class="govuk-link" id="btnDeleteMessages" href="#" onclick="displayBusyIndicator()" title="Delete the selected messages permanently">Delete Selected</a> |
+            @if (Model.IsAdmin){
+            <a class="govuk-link" id="btnReplayMessages" href="#" title="Move selected messages back to the processing queue">Move Selected to Processing Queue</a>  <span>|</span>
+            <a class="govuk-link" id="btnDeleteMessages" href="#" onclick="displayBusyIndicator()" title="Delete the selected messages permanently">Delete Selected</a>  <span>|</span>
+            }
             <a class="govuk-link" id="btnAbortMessages" href="#" title="Release selected messages back to the ServiceBus Queue they came from">Release Selected</a> |
             <a class="govuk-link" asp-controller="MessageList" asp-action="ReleaseMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the ServiceBus Queue they came from">Release All</a>
         </fieldset>

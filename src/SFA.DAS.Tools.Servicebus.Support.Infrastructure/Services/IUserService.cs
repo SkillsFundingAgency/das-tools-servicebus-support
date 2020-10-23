@@ -5,6 +5,8 @@
         string GetUserId();
         string GetName();
 
+        bool IsAdmin();
+
         void Configure(string userId, string userName);
     }
 }

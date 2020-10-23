@@ -91,8 +91,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 {
                     QueueName = queueName
                 })).QueueInfo,
-                UserSession = await _userSessionService.GetUserSession()
-
+                UserSession = await _userSessionService.GetUserSession(),
+                IsAdmin = _userService.IsAdmin()
             });
         }
 
