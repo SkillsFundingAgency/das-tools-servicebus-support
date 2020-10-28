@@ -48,9 +48,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
                     policyRegistry.Get<IAsyncPolicy>(Constants.MessageQueueWaitAndRetry)
                 );
             });
-            
-            services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>(s => new CosmosMessageDbContext(s.GetService<IUserService>(), s.GetRequiredService<ILogger<CosmosMessageDbContext>>(), s.GetRequiredService<ICosmosInfrastructureService>()));
-            services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>(s => new CosmosUserSessionDbContext( s.GetRequiredService<ICosmosInfrastructureService>()));
+
+            services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>(s => new CosmosMessageDbContext(s.GetService<IUserService>(), s.GetRequiredService<ILogger<CosmosMessageDbContext>>(), s.GetRequiredService<ICosmosInfrastructureService>(), s.GetRequiredService<ICosmosDbPolicies>()));
+            services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>(s => new CosmosUserSessionDbContext(s.GetRequiredService<ICosmosInfrastructureService>(), s.GetRequiredService<ICosmosDbPolicies>()));
 
             services.AddSingleton(s =>
             {
@@ -61,7 +61,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             });
             services.AddSingleton<IUserService, FunctionUserService>();
             services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
-            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>(s=> new CosmosInfrastructureService(configuration, s.GetRequiredService<CosmosClient>()));
+            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>(s => new CosmosInfrastructureService(configuration, s.GetRequiredService<CosmosClient>(), s.GetRequiredService<ICosmosDbPolicies>()));
             services.AddTransient<IQueryHandler<GetExpiredUserSessionsQuery, GetExpiredUserSessionsQueryResponse>, GetExpiredUserSessionsQueryHandler>();
             services.AddTransient<IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse>, GetMessagesQueryHandler>();
             services.AddTransient<ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>, DeleteUserSessionCommandHandler>();

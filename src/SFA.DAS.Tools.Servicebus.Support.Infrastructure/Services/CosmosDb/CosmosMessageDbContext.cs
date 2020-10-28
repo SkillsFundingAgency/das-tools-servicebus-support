@@ -1,6 +1,10 @@
 ﻿using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
+using Polly;
+using Polly.Retry;
+using Polly.Timeout;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Exceptions;
@@ -8,6 +12,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
@@ -17,32 +23,39 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         private readonly ILogger<CosmosMessageDbContext> _logger;
         private readonly ICosmosInfrastructureService _cosmosInfrastructure;
         private readonly IUserService _userService;
+        private readonly ICosmosDbPolicies _policies;
         private const string MessageType = "message";
 
-        public CosmosMessageDbContext(IUserService userService, ILogger<CosmosMessageDbContext> logger, ICosmosInfrastructureService cosmosInfrastructure)
+        public CosmosMessageDbContext(IUserService userService, ILogger<CosmosMessageDbContext> logger, ICosmosInfrastructureService cosmosInfrastructure, ICosmosDbPolicies policies)
         {
             _userService = userService;
             _logger = logger;
             _cosmosInfrastructure = cosmosInfrastructure;
+            _policies = policies;
         }
 
         public async Task CreateQueueMessageAsync(QueueMessage msg)
         {
             var container = await _cosmosInfrastructure.CreateContainer();
-            await container.CreateItemAsync(msg);
+            await _policies.ResiliencePolicy.ExecuteAsync(() => container.CreateItemAsync(msg));
         }
 
         public async Task BulkCreateQueueMessagesAsync(IEnumerable<QueueMessage> messages)
         {
             var container = await _cosmosInfrastructure.CreateContainer();
-            var batch = container.CreateTransactionalBatch(new PartitionKey(_userService.GetUserId()));
+            var batchResponse = default(TransactionalBatchResponse);
 
-            foreach (var msg in messages)
+            await _policies.BulkBatchPolicy.ExecuteAsync(async () =>
             {
-                batch.CreateItem(msg);
-            }
+                var batch = container.CreateTransactionalBatch(new PartitionKey(_userService.GetUserId()));
 
-            var batchResponse = await batch.ExecuteAsync();
+                foreach (var msg in messages)
+                {
+                    batch.CreateItem(msg);
+                }
+
+                batchResponse = await batch.ExecuteAsync();
+            });
 
             if (!batchResponse.IsSuccessStatusCode)
             {
@@ -54,14 +67,19 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         public async Task DeleteQueueMessagesAsync(IEnumerable<string> ids)
         {
             var container = await _cosmosInfrastructure.CreateContainer();
-            var batch = container.CreateTransactionalBatch(new PartitionKey(_userService.GetUserId()));
+            var batchResponse = default(TransactionalBatchResponse);
 
-            foreach (var id in ids)
+            await _policies.BulkBatchPolicy.ExecuteAsync(async () =>
             {
-                batch.DeleteItem(id);
-            }
+                var batch = container.CreateTransactionalBatch(new PartitionKey(_userService.GetUserId()));
 
-            var batchResponse = await batch.ExecuteAsync();
+                foreach (var id in ids)
+                {
+                    batch.DeleteItem(id);
+                }
+
+                batchResponse = await batch.ExecuteAsync();
+            });
 
             if (!batchResponse.IsSuccessStatusCode)
             {
@@ -88,7 +106,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
             while (queryFeedIterator.HasMoreResults)
             {
-                var currentResults = await queryFeedIterator.ReadNextAsync();
+                var currentResults = await _policies.ResiliencePolicy.ExecuteAsync(() => queryFeedIterator.ReadNextAsync());
 
                 messages.AddRange(currentResults.ToList());
             }
@@ -108,7 +126,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
             while (queryFeedIterator.HasMoreResults)
             {
-                var currentResults = await queryFeedIterator.ReadNextAsync();
+                var currentResults = await _policies.ResiliencePolicy.ExecuteAsync(() => queryFeedIterator.ReadNextAsync());
 
                 var newMessages = currentResults.ToList();
                 messages.AddRange(newMessages);
@@ -127,7 +145,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
                 ;
 
             queryDefinition = AddSearchTermToQueryDefinition(searchProperties, queryDefinition);
-            var result = await queryDefinition.CountAsync();
+            var result = await _policies.ResiliencePolicy.ExecuteAsync(() => queryDefinition.CountAsync());
 
             return result.Resource;
         }
@@ -140,7 +158,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
                     .ToFeedIterator()
                 ;
 
-            var currentResults = await queryFeedIterator.ReadNextAsync();
+            var currentResults = await _policies.ResiliencePolicy.ExecuteAsync(() => queryFeedIterator.ReadNextAsync());
 
             return currentResults.FirstOrDefault();
         }
@@ -153,7 +171,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
                     .Where(m => m.UserId == userId && m.Id == messageId && m.Type == MessageType)
                 ;
 
-            var result = await queryDefinition.CountAsync();
+            var result = await _policies.ResiliencePolicy.ExecuteAsync(() => queryDefinition.CountAsync());
 
             return result.Resource != 0;
         }
@@ -193,7 +211,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         }
 
         public async Task<IEnumerable<UserMessageCount>> GetMessageCountPerUserAsync()
-        {            
+        {
             var sqlQuery = $"select value messages  from (select c.Queue, c.userId,  count(1) as MessageCount from c where c.type = 'message' group by c.Queue, c.userId ) as messages";
 
             var queryFeedIterator = await _cosmosInfrastructure.GetItemQueryIterator<UserMessageCount>(new QueryDefinition(sqlQuery));
@@ -201,8 +219,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
             while (queryFeedIterator.HasMoreResults)
             {
-                var currentResults = await queryFeedIterator.ReadNextAsync();
-                
+                var currentResults = await _policies.ResiliencePolicy.ExecuteAsync(() => queryFeedIterator.ReadNextAsync());
+
                 messages.AddRange(currentResults.ToList());
             }
 

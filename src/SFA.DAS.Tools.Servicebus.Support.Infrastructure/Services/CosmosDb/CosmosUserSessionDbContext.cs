@@ -11,17 +11,19 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
     public class CosmosUserSessionDbContext : ICosmosUserSessionDbContext
     {
         private readonly ICosmosInfrastructureService _cosmosInfrastructure;
+        private readonly ICosmosDbPolicies _policies;
         private const string MessageType = "session";
 
-        public CosmosUserSessionDbContext(ICosmosInfrastructureService cosmosInfrastructure)
+        public CosmosUserSessionDbContext(ICosmosInfrastructureService cosmosInfrastructure, ICosmosDbPolicies policies)
         {
             _cosmosInfrastructure = cosmosInfrastructure;
+            _policies = policies;
         }
 
         public async Task<UserSession> UpsertUserSessionAsync(UserSession userSession)
         {
             var container = await _cosmosInfrastructure.CreateContainer();
-            return await container.UpsertItemAsync(userSession);
+            return await _policies.ResiliencePolicy.ExecuteAsync(() => container.UpsertItemAsync(userSession));
         }
 
         public async Task<UserSession> GetUserSessionAsync(string userId)
@@ -32,7 +34,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
                 .ToFeedIterator()
             ;
 
-            var currentResults = await queryFeedIterator.ReadNextAsync();
+            var currentResults = await _policies.ResiliencePolicy.ExecuteAsync(() => queryFeedIterator.ReadNextAsync());
 
             return currentResults.FirstOrDefault();
         }
@@ -41,25 +43,25 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         {
             var container = await _cosmosInfrastructure.CreateContainer();
 
-            await container.DeleteItemAsync<UserSession>(id, new PartitionKey(userId));
+            await _policies.ResiliencePolicy.ExecuteAsync(() => container.DeleteItemAsync<UserSession>(id, new PartitionKey(userId)));
         }
 
         public async Task<IEnumerable<UserSession>> GetExpiredUserSessionsAsync()
         {
             var container = await _cosmosInfrastructure.CreateContainer();
 
-            return await IterateUserSessionResults(container.GetItemLinqQueryable<UserSession>()
+            return await _policies.ResiliencePolicy.ExecuteAsync(() => IterateUserSessionResults(container.GetItemLinqQueryable<UserSession>()
                 .Where(s => s.ExpiryDateUtc < DateTime.UtcNow)
-                .ToFeedIterator());
+                .ToFeedIterator()));
         }
 
         public async Task<IEnumerable<UserSession>> GetUserSessionsAsync()
         {
             var container = await _cosmosInfrastructure.CreateContainer();
 
-            return await IterateUserSessionResults(container.GetItemLinqQueryable<UserSession>()
+            return await _policies.ResiliencePolicy.ExecuteAsync(() => IterateUserSessionResults(container.GetItemLinqQueryable<UserSession>()
                 .Where(s => s.Type == MessageType)
-                .ToFeedIterator());
+                .ToFeedIterator()));
         }
 
         private static async Task<IEnumerable<UserSession>> IterateUserSessionResults(FeedIterator<UserSession> queryFeedIterator)
