@@ -21,6 +21,9 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSess
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using Microsoft.AspNetCore.Http;
+using SFA.DAS.Tools.Servicebus.Support.Audit;
+using SFA.DAS.Audit.Client;
+using System.Configuration;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {
@@ -69,7 +72,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 s.GetService<IBatchSendMessageStrategy>(),
                 s.GetRequiredService<ILogger<MessageService>>(),
                 s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
-                s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()
+                s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>(), 
+                s.GetService<IAuditService>()
             ));
 
             services.AddTransient<IRetrieveMessagesService, RetrieveMessagesService>(s =>
@@ -104,6 +108,16 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             );
             services.AddTransient<KeepUserSessionActiveFilter>(s => new KeepUserSessionActiveFilter(s.GetRequiredService<IUserSessionService>(), configuration));
 
+            services.AddTransient<IAuditApiConfiguration>(s => new AuditApiConfiguration {
+                ApiBaseUrl = configuration.GetValue<string>("ApiBaseUrl"),
+                ClientId = configuration.GetValue<string>("ClientId"),
+                ClientSecret = configuration.GetValue<string>("ClientSecret"),
+                IdentifierUri = configuration.GetValue<string>("IdentifierUri"),
+                Tenant = configuration.GetValue<string>("Tenant")
+            });
+            services.AddTransient<IAuditApiClient, AuditApiClient>();
+            services.AddTransient<IAuditMessageFactory, AuditMessageFactory>();
+            services.AddTransient<IAuditService, AuditService>();
 
             return services;
         }
