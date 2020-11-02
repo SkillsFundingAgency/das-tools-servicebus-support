@@ -37,7 +37,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>();
             services.AddSingleton<IServiceBusPolicies, ServiceBusPolicies>();
 
-            services.AddTransient<IAuditApiConfiguration>(s => new AuditApiConfiguration {
+            services.AddTransient<IAuditApiConfiguration>(s => new AuditApiConfiguration
+            {
                 ApiBaseUrl = configuration.GetValue<string>("ApiBaseUrl"),
                 ClientId = configuration.GetValue<string>("ClientId"),
                 ClientSecret = configuration.GetValue<string>("ClientSecret"),
@@ -47,6 +48,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<IAuditApiClient, AuditApiClient>();
             services.AddTransient<IAuditMessageFactory, AuditMessageFactory>();
             services.AddTransient<IAuditService, AuditService>();
+            services.AddTransient<IWebMessageBuilders, WebMessageBuilders>();
 
             return services;
         }

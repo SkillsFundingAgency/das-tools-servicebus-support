@@ -15,6 +15,7 @@ using SFA.DAS.Configuration.AzureTableStorage;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
 using Microsoft.Extensions.Logging;
 using Polly.Registry;
+using SFA.DAS.Tools.Servicebus.Support.Audit;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web
 {
@@ -94,7 +95,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IWebMessageBuilders webMessageBuilders)
         {
             if (env.IsDevelopment())
             {
@@ -155,6 +156,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
                     name: "default",
                     pattern: "servicebus/{controller=Servicebus}/{action=Index}/{id?}");
             });
+
+            webMessageBuilders.Register();
         }
     }
 }

@@ -39,8 +39,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Audit
                 client.DefaultRequestHeaders.Add("api-version", "1");
                 client.DefaultRequestHeaders.Add("accept", "application/json");
 
-                var response = await client.PostAsync(url, new StringContent(JsonConvert.SerializeObject(message), Encoding.UTF8, "application/json"));
-                response.EnsureSuccessStatusCode();
+                var response = await client.PostAsync(url, new StringContent(JsonConvert.SerializeObject(message), Encoding.UTF8, "application/json"));                
             }
         }
     }
