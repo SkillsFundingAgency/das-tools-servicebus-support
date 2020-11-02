@@ -36,11 +36,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _auditService = auditService;
         }
         
-        public async Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue) => await SendMessageAndDeleteFromDb(messages, queue);
+        public async Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue) => await SendMessageAndDeleteFromDb(messages, queue,true);
         
         public async Task AbortMessages(IEnumerable<QueueMessage> messages, string queue) => await SendMessageAndDeleteFromDb(messages, queue);
 
-        private async Task SendMessageAndDeleteFromDb(IEnumerable<QueueMessage> messages, string queue)
+        private async Task SendMessageAndDeleteFromDb(IEnumerable<QueueMessage> messages, string queue, bool createAudit = false)
         {
             await _batchSendMessageStrategy.Execute(messages,
                 async (messages) =>
@@ -60,6 +60,14 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                         });
 
                         ts.Complete();
+
+                        if (createAudit)
+                        {                               
+                            foreach (var message in messages)
+                            {
+                                await _auditService.WriteAudit(new MessageQueueReplayAuditMessage(message));                                
+                            }
+                        }                        
                     }
                     catch (Exception ex)
                     {

@@ -8,6 +8,7 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMes
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
+using SFA.DAS.Tools.Servicebus.Support.Audit;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
@@ -23,7 +24,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 s => new BatchDeleteQueueMessagesCommandHandler(
                     s.GetService<ICosmosMessageDbContext>(),
                     configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
-                    s.GetService<ILogger<BatchDeleteQueueMessagesCommandHandler>>()
+                    s.GetService<ILogger<BatchDeleteQueueMessagesCommandHandler>>(),
+                    s.GetService<IAuditService>()
                 ));
 
             services.AddTransient<ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse>, UpsertUserSessionCommandHandler>();

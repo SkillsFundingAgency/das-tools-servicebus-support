@@ -64,7 +64,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 return new CosmosClient(cosmosEndpointUrl, cosmosAuthenticationKey, new CosmosClientOptions() { AllowBulkExecution = true });
             });
 
-            services.AddTransient<IUserService, UserService>(s=> new UserService(s.GetRequiredService<IHttpContextAccessor>(), configuration.GetValue<string>("NameClaim")));
+            services.AddTransient<IUserService, UserService>(s => new UserService(s.GetRequiredService<IHttpContextAccessor>(), configuration.GetValue<string>("NameClaim")));
             services.AddTransient<IBatchGetMessageStrategy, BatchGetMessageStrategy>();
             services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
 
@@ -72,7 +72,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 s.GetService<IBatchSendMessageStrategy>(),
                 s.GetRequiredService<ILogger<MessageService>>(),
                 s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
-                s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>(), 
+                s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>(),
                 s.GetService<IAuditService>()
             ));
 
@@ -108,7 +108,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             );
             services.AddTransient<KeepUserSessionActiveFilter>(s => new KeepUserSessionActiveFilter(s.GetRequiredService<IUserSessionService>(), configuration));
 
-            services.AddTransient<IAuditApiConfiguration>(s => new AuditApiConfiguration {
+            services.AddTransient<IAuditApiConfiguration>(s => new AuditApiConfiguration
+            {
                 ApiBaseUrl = configuration.GetValue<string>("ApiBaseUrl"),
                 ClientId = configuration.GetValue<string>("ClientId"),
                 ClientSecret = configuration.GetValue<string>("ClientSecret"),
@@ -118,6 +119,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<IAuditApiClient, AuditApiClient>();
             services.AddTransient<IAuditMessageFactory, AuditMessageFactory>();
             services.AddTransient<IAuditService, AuditService>();
+            services.AddTransient<IWebMessageBuilders, WebMessageBuilders>();
 
             return services;
         }

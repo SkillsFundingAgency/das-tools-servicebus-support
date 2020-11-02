@@ -17,6 +17,7 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
+using SFA.DAS.Tools.Servicebus.Support.Audit;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
@@ -75,7 +76,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
                     s.GetService<IBatchSendMessageStrategy>(),
                     s.GetRequiredService<ILogger<MessageService>>(),
                     s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
-                    s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()
+                    s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>(),
+                    s.GetService<IAuditService>()
                 )
             );
 
