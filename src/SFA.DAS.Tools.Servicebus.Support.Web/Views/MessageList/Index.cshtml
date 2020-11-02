@@ -146,12 +146,12 @@
 
     <div>
         <fieldset>
-            <legend>Message Actions</legend>
-            <a class="govuk-link" asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Get any further messages that may be on the queue">Get More</a> |
-            <a class="govuk-link" id="btnReplayMessages" href="#" title="Move selected messages back to the processing queue">Move Selected to Processing Queue</a> |
-            <a class="govuk-link" id="btnDeleteMessages" href="#" onclick="displayBusyIndicator()" title="Delete the selected messages permanently">Delete Selected</a> |
-            <a class="govuk-link" id="btnAbortMessages" href="#" title="Release selected messages back to the ServiceBus Queue they came from">Release Selected</a> |
-            <a class="govuk-link" asp-controller="MessageList" asp-action="ReleaseMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the ServiceBus Queue they came from">Release All</a>
+            <legend>Message actions</legend>
+            <a class="govuk-link" asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Get any further messages that may be on the queue">Get more</a> |
+            <a class="govuk-link" id="btnReplayMessages" href="#" title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
+            <a class="govuk-link" id="btnDeleteMessages" href="#" onclick="displayBusyIndicator()" title="Delete the selected messages permanently">Delete selected</a> |
+            <a class="govuk-link" id="btnAbortMessages" href="#" title="Release selected messages back to the ServiceBus Queue they came from">Release selected</a> |
+            <a class="govuk-link" asp-controller="MessageList" asp-action="ReleaseMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the servicebus queue they came from">Release all</a>
         </fieldset>
     </div>
 
@@ -186,7 +186,7 @@
                     data-field="originatingEndpoint"
                     data-width="10"
                     data-width-unit="%">
-                    Originating Endpoint
+                    Originating endpoint
                 </th>
                 <th scope="col"
                     class="col-wrap"
@@ -194,7 +194,7 @@
                     data-field="processingEndpoint"
                     data-width="10"
                     data-width-unit="%">
-                    Processing Endpoint
+                    Processing endpoint
                 </th>
                 <th scope="col"
                     class="col-wrap"
@@ -218,7 +218,7 @@
                     data-field="exceptionType"
                     data-width="10"
                     data-width-unit="%">
-                    Exception Type
+                    Exception type
                 </th>
                 <th scope="col"
                     class="col-wrap"
