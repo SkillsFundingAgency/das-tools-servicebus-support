@@ -78,6 +78,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
                     s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()
                 )
             );
+            services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>();
 
             return services;
         }
