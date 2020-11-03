@@ -49,9 +49,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 );
             });
 
-            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>(s => new CosmosInfrastructureService(configuration, s.GetRequiredService<CosmosClient>()));
-            services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>(s => new CosmosMessageDbContext(s.GetService<IUserService>(), s.GetRequiredService<ILogger<CosmosMessageDbContext>>(), s.GetRequiredService<ICosmosInfrastructureService>()));
-            services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>(s => new CosmosUserSessionDbContext(s.GetRequiredService<ICosmosInfrastructureService>()));
+            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>(s => new CosmosInfrastructureService(configuration, s.GetRequiredService<CosmosClient>(), s.GetRequiredService<ICosmosDbPolicies>()));
+            services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>(s => new CosmosMessageDbContext(s.GetService<IUserService>(), s.GetRequiredService<ILogger<CosmosMessageDbContext>>(), s.GetRequiredService<ICosmosInfrastructureService>(), s.GetRequiredService<ICosmosDbPolicies>()));
+            services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>(s => new CosmosUserSessionDbContext(s.GetRequiredService<ICosmosInfrastructureService>(), s.GetRequiredService<ICosmosDbPolicies>()));
 
             services.AddSingleton(s =>
             {
@@ -61,7 +61,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 return new CosmosClient(cosmosEndpointUrl, cosmosAuthenticationKey, new CosmosClientOptions() { AllowBulkExecution = true });
             });
 
-            services.AddTransient<IUserService, UserService>(s=> new UserService(s.GetRequiredService<IHttpContextAccessor>(), configuration.GetValue<string>("NameClaim")));
+            services.AddTransient<IUserService, UserService>(s => new UserService(s.GetRequiredService<IHttpContextAccessor>(), configuration.GetValue<string>("NameClaim")));
             services.AddTransient<IBatchGetMessageStrategy, BatchGetMessageStrategy>();
             services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
 
@@ -103,7 +103,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                )
             );
             services.AddTransient<KeepUserSessionActiveFilter>(s => new KeepUserSessionActiveFilter(s.GetRequiredService<IUserSessionService>(), configuration));
-
+            services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>(s => new CosmosDbPolicies(configuration, s.GetRequiredService<ILogger<CosmosDbPolicies>>()));
 
             return services;
         }
