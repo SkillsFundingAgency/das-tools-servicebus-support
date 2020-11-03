@@ -1,12 +1,15 @@
 ﻿using Microsoft.AspNetCore.Http;
 using SFA.DAS.Tools.Servicebus.Support.Audit.Types;
 using System.Linq;
+using System.Security.Claims;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders
 {
-    internal class ChangedByMessageBuilder : IChangedByMessageBuilder
+    public class ChangedByMessageBuilder : IAuditMessageBuilder
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private const string _userIdClaim = ClaimTypes.NameIdentifier;
+        private const string _userEmailClaim = ClaimTypes.Email;
 
         public ChangedByMessageBuilder(IHttpContextAccessor httpContextAccessor)
         {
@@ -35,25 +38,20 @@ namespace SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders
                 return;
             }
 
-            if (!string.IsNullOrEmpty(WebMessageBuilders.UserIdClaim))
+            var userIdClaim = user.Claims.FirstOrDefault(c => c.Type.Equals(_userIdClaim, System.StringComparison.CurrentCultureIgnoreCase));
+            if (userIdClaim == null)
             {
-                var claim = user.Claims.FirstOrDefault(c => c.Type.Equals(WebMessageBuilders.UserIdClaim, System.StringComparison.CurrentCultureIgnoreCase));
-                if (claim == null)
-                {
-                    throw new InvalidContextException($"User does not have claim {WebMessageBuilders.UserIdClaim} to populate AuditMessage.ChangedBy.Id");
-                }
-                actor.Id = claim.Value;
+                throw new InvalidContextException($"User does not have claim {_userIdClaim} to populate AuditMessage.ChangedBy.Id");
             }
+            actor.Id = userIdClaim.Value;
 
-            if (!string.IsNullOrEmpty(WebMessageBuilders.UserEmailClaim))
+
+            var userEmailClaim = user.Claims.FirstOrDefault(c => c.Type.Equals(_userEmailClaim, System.StringComparison.CurrentCultureIgnoreCase));
+            if (userEmailClaim == null)
             {
-                var claim = user.Claims.FirstOrDefault(c => c.Type.Equals(WebMessageBuilders.UserEmailClaim, System.StringComparison.CurrentCultureIgnoreCase));
-                if (claim == null)
-                {
-                    throw new InvalidContextException($"User does not have claim {WebMessageBuilders.UserEmailClaim} to populate AuditMessage.ChangedBy.EmailAddress");
-                }
-                actor.EmailAddress = claim.Value;
+                throw new InvalidContextException($"User does not have claim {_userEmailClaim} to populate AuditMessage.ChangedBy.EmailAddress");
             }
+            actor.EmailAddress = userEmailClaim.Value;
         }
     }
 }
