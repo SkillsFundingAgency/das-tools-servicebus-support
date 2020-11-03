@@ -22,8 +22,8 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using Microsoft.AspNetCore.Http;
 using SFA.DAS.Tools.Servicebus.Support.Audit;
-using SFA.DAS.Audit.Client;
-using System.Configuration;
+using SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders;
+using SFA.DAS.Tools.Servicebus.Support.Audit.MesssageBuilders;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {
@@ -117,9 +117,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                 Tenant = configuration.GetValue<string>("Tenant")
             });
             services.AddTransient<IAuditApiClient, AuditApiClient>();
-            services.AddTransient<IAuditMessageFactory, AuditMessageFactory>();
+            services.AddTransient<IAuditMessageBuilder, BaseAuditMessageBuilder>();
+            services.AddTransient<IAuditMessageBuilder, ChangedByMessageBuilder>();
             services.AddTransient<IAuditService, AuditService>();
-            services.AddTransient<IWebMessageBuilders, WebMessageBuilders>();
 
             return services;
         }

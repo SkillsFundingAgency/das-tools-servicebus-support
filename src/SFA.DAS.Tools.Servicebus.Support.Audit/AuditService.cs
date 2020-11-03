@@ -1,4 +1,7 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Audit.Types;
+﻿using SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders;
+using SFA.DAS.Tools.Servicebus.Support.Audit.Types;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Audit
@@ -6,24 +9,22 @@ namespace SFA.DAS.Tools.Servicebus.Support.Audit
     public class AuditService : IAuditService
     {
         private readonly IAuditApiClient _client;
-        private readonly IAuditMessageFactory _messageFactory;
+        private readonly IEnumerable<IAuditMessageBuilder> _builders;
 
-        public AuditService(IAuditApiClient client, IAuditMessageFactory messageFactory)
+        public AuditService(IAuditApiClient client, IEnumerable<IAuditMessageBuilder> builders)
         {
             _client = client;
-            _messageFactory = messageFactory;
+            _builders = builders;
         }
 
         public async Task WriteAudit(AuditMessage message)
         {
-            var auditMessage = _messageFactory.Build();
-            auditMessage.AffectedEntity = message.AffectedEntity;
-            auditMessage.Category = message.Category;
-            auditMessage.Description = message.Description;
-            auditMessage.ChangedProperties = message.ChangedProperties;
-            auditMessage.RelatedEntities = message.RelatedEntities;
+            foreach (var builder in _builders)
+            {
+                builder.Build(message);
+            }
 
-            await _client.Audit(auditMessage);
+            await _client.Audit(message);
         }
     }
 }

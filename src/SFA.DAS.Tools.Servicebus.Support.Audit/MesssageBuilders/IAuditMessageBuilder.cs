@@ -2,7 +2,7 @@
 
 namespace SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders
 {
-    internal interface IChangedByMessageBuilder
+    public interface IAuditMessageBuilder
     {
         void Build(AuditMessage message);
     }
