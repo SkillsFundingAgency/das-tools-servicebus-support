@@ -44,5 +44,31 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Commands.
 
             _cosmosDbContext.Verify(x => x.DeleteQueueMessagesAsync(_messageIds), Times.Exactly(2));
         }
+
+        [Test]
+        public async Task ThenWillCallAuditServiceToRecordMessageIds()
+        {
+            _messageIds = new List<string>();
+            var i = 0;
+            while (i++ < 10)
+            {
+                _messageIds.Add($"id{i}");
+            }
+
+            _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
+            _cosmosDbContext.Setup(x => x.DeleteQueueMessagesAsync(_messageIds)).Returns(Task.CompletedTask);
+            _auditService.Setup(x => x.WriteAudit(It.IsAny<MessageQueueDeleteAuditMessage>()));
+
+            var sut = new BatchDeleteQueueMessagesCommandHandler(_cosmosDbContext.Object, BatchSize, _logger.Object, _auditService.Object);
+
+            await sut.Handle(new BatchDeleteQueueMessagesCommand()
+            {
+                Ids = _messageIds
+            });
+
+            _auditService.Verify(x => x.WriteAudit(It.IsAny<MessageQueueDeleteAuditMessage>()), Times.Once);
+        }
+
+        
     }
 }
