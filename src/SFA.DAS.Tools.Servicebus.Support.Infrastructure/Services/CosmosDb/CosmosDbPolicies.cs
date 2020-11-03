@@ -24,8 +24,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         public CosmosDbPolicies(IConfiguration configuration, ILogger<CosmosDbPolicies> logger)
         {
             _logger = logger;
-            var cosmosDbOperationTimeout = configuration.GetValue<int>("DefaultCosmosOperationTimeout", defaultCosmosOperationTimeout);
-            var cosmosDbInterimRequestTimeout = configuration.GetValue<int>("DefaultCosmosInterimRequestTimeout", defaultCosmosInterimRequestTimeout);
+            var cosmosDbOperationTimeout = configuration.GetValue<int>("CosmosDb:DefaultCosmosOperationTimeout", defaultCosmosOperationTimeout);
+            var cosmosDbInterimRequestTimeout = configuration.GetValue<int>("CosmosDb:DefaultCosmosInterimRequestTimeout", defaultCosmosInterimRequestTimeout);
 
             // Handle CosmosException Only,
             // If the status code is not 429, try 3 times with 2 seconds inbetween by default,

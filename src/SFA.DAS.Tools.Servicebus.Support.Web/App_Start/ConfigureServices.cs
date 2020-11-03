@@ -103,7 +103,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                )
             );
             services.AddTransient<KeepUserSessionActiveFilter>(s => new KeepUserSessionActiveFilter(s.GetRequiredService<IUserSessionService>(), configuration));
-            services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>();
+            services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>(s => new CosmosDbPolicies(configuration, s.GetRequiredService<ILogger<CosmosDbPolicies>>()));
 
             return services;
         }
