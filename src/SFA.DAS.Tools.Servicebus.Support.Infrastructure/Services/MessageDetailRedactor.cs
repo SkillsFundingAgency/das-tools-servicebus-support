@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SFA.DAS.Tools.Servicebus.Support.Domain;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +13,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         private readonly IEnumerable<string> _tokens;
         private readonly string _redacted = "[REDACTED]";
 
-        public MessageDetailRedactor(IEnumerable<string> tokens)
+        public MessageDetailRedactor(ServiceBusErrorManagementSettings serviceBusSettings)
         {
-            _tokens = tokens;
+            _tokens = serviceBusSettings.RedactPatterns;
         }
 
         public IEnumerable<KeyValuePair<string, string>> Redact(IEnumerable<KeyValuePair<string, object>> values)

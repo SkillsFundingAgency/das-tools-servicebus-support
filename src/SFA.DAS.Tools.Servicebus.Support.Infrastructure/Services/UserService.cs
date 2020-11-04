@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using System.Linq;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
@@ -8,10 +9,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly string _nameClame;
 
-        public UserService(IHttpContextAccessor httpContextAccessor, string nameClame)
+        public UserService(IHttpContextAccessor httpContextAccessor, UserIdentitySettings userIdentitySettings)
         {
             _httpContextAccessor = httpContextAccessor;
-            _nameClame = nameClame;
+            _nameClame = userIdentitySettings.NameClaim; ;
         }
 
         public string GetUserId()

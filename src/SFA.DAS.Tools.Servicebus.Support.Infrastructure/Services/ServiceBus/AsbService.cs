@@ -5,8 +5,10 @@ using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Polly;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,32 +28,29 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
         private readonly string _regexString;
         private volatile IMessageReceiver _messageReceiver;
         private readonly object _padlock = new object();
-        private readonly IAsyncPolicy _policy;
+        private readonly IServiceBusPolicies _policies;
 
         public AsbService(IUserService userService,
-            IConfiguration config,
+            ServiceBusErrorManagementSettings serviceBusSettings,
             ILogger<AsbService> logger,
-            TokenProvider tokenProvider,
-            ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder,
-            ManagementClient managementClient,
-            IAsyncPolicy policy
-        )
+            IServiceBusPolicies serviceBusPolicies)
         {
             _logger = logger ?? throw new Exception("logger is null");
-
-            _regexString = config.GetValue<string>("ServiceBusRepoSettings:QueueSelectionRegex");
-            _tokenProvider = tokenProvider;
-            _sbConnectionStringBuilder = serviceBusConnectionStringBuilder;
-            _managementClient = managementClient;
+            _regexString = serviceBusSettings.QueueSelectionRegex;
             _userService = userService;
-            _policy = policy;
+            _policies = serviceBusPolicies;
+
+            _sbConnectionStringBuilder = new ServiceBusConnectionStringBuilder(serviceBusSettings.ServiceBusConnectionString);
+            _tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
+            _managementClient = _sbConnectionStringBuilder.HasSasKey()
+                ? new ManagementClient(_sbConnectionStringBuilder) : new ManagementClient(_sbConnectionStringBuilder, _tokenProvider);
         }
 
         public async Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync()
         {
             IEnumerable<QueueRuntimeInfo> errorQueues = new List<QueueRuntimeInfo>();
 
-            await _policy.ExecuteAsync(async token =>
+            await _policies.ResiliencePolicy.ExecuteAsync(async token =>
             {
                 var queuesDetails = await _managementClient.GetQueuesRuntimeInfoAsync(cancellationToken: token).ConfigureAwait(false);
                 var queueSelectionRegex = new Regex(_regexString);
@@ -74,7 +73,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
             var queueInfo = new QueueInfo();
 
-            await _policy.ExecuteAsync(async token =>
+            await _policies.ResiliencePolicy.ExecuteAsync(async token =>
             {
                 var queue = await _managementClient.GetQueueRuntimeInfoAsync(name, token).ConfigureAwait(false);
                 queueInfo = new QueueInfo()
@@ -102,7 +101,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
         public async Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty)
         {
             var messageReceiver = CreateMessageReceiver(queueName, 250);
-            var messages = await messageReceiver.ReceiveAsync(qty, TimeSpan.FromSeconds(60)); 
+            var messages = await messageReceiver.ReceiveAsync(qty, TimeSpan.FromSeconds(60));
             var formattedMessages = new List<QueueMessage>();
 
             if (messages == null) return new List<QueueMessage>();
@@ -127,7 +126,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
 
             var messageSender = CreateMessageSender(queueName);
 
-            await _policy.ExecuteAsync(async token =>
+            await _policies.ResiliencePolicy.ExecuteAsync(async token =>
             {
                 var originalMessages = messages.Select(m => m.OriginalMessage).ToList();
                 await messageSender.SendAsync(originalMessages);
@@ -157,12 +156,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
             }
 
             return _messageReceiver;
-        }
-
-        private void HandleRetryException(Exception ex, TimeSpan timeSpan, Context context)
-        {
-            _logger.LogError(ex, $"Failed to Send messages to queue: {ex.ToString()}");
-            throw ex;
         }
     }
 }

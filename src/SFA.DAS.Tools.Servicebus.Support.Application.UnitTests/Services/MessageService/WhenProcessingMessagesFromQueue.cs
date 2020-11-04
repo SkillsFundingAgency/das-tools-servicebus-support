@@ -19,14 +19,13 @@ using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using Service = SFA.DAS.Tools.Servicebus.Support.Application.Services;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.MessageService
 {
     public class WhenProcessingMessagesFromQueue
     {
         private readonly string _queueName = "q";
-        private readonly int _batchSize = 9;
-        private const int MaxRetrievalSize = 3;
         private const string serviceBusConnectionString = "ServiceBusRepoSettings:ServiceBusConnectionString";
 
         private readonly Mock<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>
@@ -57,6 +56,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
         private readonly Mock<IMessageReceiver> _messageReceiver =
             new Mock<IMessageReceiver>(MockBehavior.Strict);
 
+        private readonly ServiceBusErrorManagementSettings serviceBusSettings = new ServiceBusErrorManagementSettings
+        {
+            MaxRetrievalSize = 3,
+            PeekMessageBatchSize = 9
+        };
+
         [Test]
         public async Task ThenTheMessagesAreRequestedFromTheQueueAndSentToTheDatabase()
         {
@@ -78,12 +83,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
             _messageReceiverFactory.Setup(x => x.Create(_queueName)).Returns(_messageReceiver.Object);
 
             var sut = new Service.RetrieveMessagesService(
+                serviceBusSettings,
                 _iLogger.Object,
-                _batchSize,
                 new BatchGetMessageStrategy(),
                 _userService.Object,
                 _cosmosDbContext.Object,
-                MaxRetrievalSize,
                 _messageReceiverFactory.Object
             );
 

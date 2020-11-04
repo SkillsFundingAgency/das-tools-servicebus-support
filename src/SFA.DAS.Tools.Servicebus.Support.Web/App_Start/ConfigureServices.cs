@@ -21,95 +21,37 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSess
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using Microsoft.AspNetCore.Http;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {
     public static class IoC
     {
-        public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddServices(this IServiceCollection services)
         {
-            services.AddSingleton<PolicyRegistry>();
-
-            services.AddScoped<IAsbService, AsbService>(s =>
-            {
-                var policyRegistry = s.GetRequiredService<PolicyRegistry>();
-                policyRegistry.ConfigureWaitAndRetry(Constants.MessageQueueWaitAndRetry, s.GetRequiredService<ILogger<AsbService>>());
-
-                var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
-                var connectionBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
-                var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-
-                return new AsbService(s.GetService<IUserService>(),
-                    configuration,
-                    s.GetRequiredService<ILogger<AsbService>>(),
-                    tokenProvider,
-                    connectionBuilder,
-                    CreateManagementClient(connectionBuilder, tokenProvider),
-                    policyRegistry.Get<IAsyncPolicy>(Constants.MessageQueueWaitAndRetry)
-                );
-            });
-
-            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>(s => new CosmosInfrastructureService(configuration, s.GetRequiredService<CosmosClient>(), s.GetRequiredService<ICosmosDbPolicies>()));
-            services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>(s => new CosmosMessageDbContext(s.GetService<IUserService>(), s.GetRequiredService<ILogger<CosmosMessageDbContext>>(), s.GetRequiredService<ICosmosInfrastructureService>(), s.GetRequiredService<ICosmosDbPolicies>()));
-            services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>(s => new CosmosUserSessionDbContext(s.GetRequiredService<ICosmosInfrastructureService>(), s.GetRequiredService<ICosmosDbPolicies>()));
-
             services.AddSingleton(s =>
             {
-                var cosmosEndpointUrl = configuration.GetValue<string>("CosmosDb:Url");
-                var cosmosAuthenticationKey = configuration.GetValue<string>("CosmosDb:AuthKey");
-
-                return new CosmosClient(cosmosEndpointUrl, cosmosAuthenticationKey, new CosmosClientOptions() { AllowBulkExecution = true });
+                var cosmosDbSettings = s.GetRequiredService<CosmosDbSettings>();
+                return new CosmosClient(cosmosDbSettings.Url, cosmosDbSettings.AuthKey, new CosmosClientOptions() { AllowBulkExecution = true });
             });
 
-            services.AddTransient<IUserService, UserService>(s => new UserService(s.GetRequiredService<IHttpContextAccessor>(), configuration.GetValue<string>("NameClaim")));
+            services.AddScoped<IAsbService, AsbService>();
+            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>();
+            services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>();
+            services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>();
+            services.AddTransient<IUserService, UserService>();
             services.AddTransient<IBatchGetMessageStrategy, BatchGetMessageStrategy>();
             services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
-
-            services.AddTransient<IMessageService, MessageService>(s => new MessageService(
-                s.GetService<IBatchSendMessageStrategy>(),
-                s.GetRequiredService<ILogger<MessageService>>(),
-                s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
-                s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()
-            ));
-
-            services.AddTransient<IRetrieveMessagesService, RetrieveMessagesService>(s =>
-                {
-                    var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
-                    var connectionBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
-                    var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-
-                    return new RetrieveMessagesService(
-                        s.GetRequiredService<ILogger<RetrieveMessagesService>>(),
-                        configuration.GetValue<int>("ServiceBusRepoSettings:PeekMessageBatchSize"),
-                        s.GetService<IBatchGetMessageStrategy>(),
-                        s.GetService<IUserService>(),
-                        s.GetService<ICosmosMessageDbContext>(),
-                        configuration.GetValue<int>("ServiceBusRepoSettings:MaxRetrievalSize"),
-                        new MessageReceiverFactory(connectionBuilder, tokenProvider)
-                    );
-                }
-            );
-
-            services.AddSingleton<IMessageDetailRedactor, MessageDetailRedactor>(s => new MessageDetailRedactor(configuration.GetSection("RedactPatterns").GetChildren().AsEnumerable().Select(a => a.Value)));
-
-            services.AddTransient<IUserSessionService, UserSessionService>(s =>
-               new UserSessionService(
-                   s.GetService<ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse>>(),
-                   s.GetService<IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse>>(),
-                   s.GetService<ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>>(),
-                   s.GetService<IUserService>(),
-                   configuration,
-                   s.GetService<IHttpContextAccessor>()
-               )
-            );
-            services.AddTransient<KeepUserSessionActiveFilter>(s => new KeepUserSessionActiveFilter(s.GetRequiredService<IUserSessionService>(), configuration));
-            services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>(s => new CosmosDbPolicies(configuration, s.GetRequiredService<ILogger<CosmosDbPolicies>>()));
+            services.AddTransient<IMessageService, MessageService>();
+            services.AddTransient<IMessageReceiverFactory, MessageReceiverFactory>();
+            services.AddTransient<IRetrieveMessagesService, RetrieveMessagesService>();
+            services.AddSingleton<IMessageDetailRedactor, MessageDetailRedactor>();
+            services.AddTransient<IUserSessionService, UserSessionService>();
+            services.AddTransient<KeepUserSessionActiveFilter>();
+            services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>();
+            services.AddSingleton<IServiceBusPolicies, ServiceBusPolicies>();
 
             return services;
         }
-
-        private static ManagementClient CreateManagementClient(ServiceBusConnectionStringBuilder connectionBuilder, ITokenProvider tokenProvider) => connectionBuilder.HasSasKey()
-            ? new ManagementClient(connectionBuilder)
-            : new ManagementClient(connectionBuilder, tokenProvider);
     }
 }

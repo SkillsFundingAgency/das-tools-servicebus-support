@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 using System;
 
@@ -12,10 +13,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
         private readonly IUserSessionService _userSessionService;
         private readonly int _userSessionRefreshIntervalMinutes;
 
-        public KeepUserSessionActiveFilter(IUserSessionService userSessionService, IConfiguration config)
+        public KeepUserSessionActiveFilter(IUserSessionService userSessionService, UserIdentitySettings userIdentitySettings)
         {
             _userSessionService = userSessionService;
-            _userSessionRefreshIntervalMinutes = config.GetValue<int>("UserRefreshSessionIntervalMinutes");
+            _userSessionRefreshIntervalMinutes = userIdentitySettings.UserRefreshSessionIntervalMinutes;
         }
 
         public void OnActionExecuted(ActionExecutedContext context)

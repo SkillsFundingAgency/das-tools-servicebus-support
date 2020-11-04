@@ -2,6 +2,7 @@
 using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDeleteQueueMessages;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System.Collections.Generic;
@@ -14,7 +15,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Commands.
         private Mock<ICosmosMessageDbContext> _cosmosDbContext;
         private readonly Mock<ILogger<BatchDeleteQueueMessagesCommandHandler>> _logger = new Mock<ILogger<BatchDeleteQueueMessagesCommandHandler>>();
         private IList<string> _messageIds;
-        private const int BatchSize = 20;
+        private readonly ServiceBusErrorManagementSettings _serviceBusSettings = new ServiceBusErrorManagementSettings
+        {
+            PeekMessageBatchSize = 20
+        };
 
         [Test]
         public async Task ThenWillCallServiceToDeleteMessage()
@@ -29,7 +33,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Commands.
             _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
             _cosmosDbContext.Setup(x => x.DeleteQueueMessagesAsync(_messageIds)).Returns(Task.CompletedTask);
 
-            var sut = new BatchDeleteQueueMessagesCommandHandler(_cosmosDbContext.Object, BatchSize, _logger.Object);
+            var sut = new BatchDeleteQueueMessagesCommandHandler(_cosmosDbContext.Object, _serviceBusSettings, _logger.Object);
 
             await sut.Handle(new BatchDeleteQueueMessagesCommand()
             {

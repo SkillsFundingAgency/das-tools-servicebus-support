@@ -1,5 +1,8 @@
-﻿using Microsoft.Azure.ServiceBus.Core;
+﻿using Microsoft.Azure.ServiceBus;
+using Microsoft.Azure.ServiceBus.Core;
+using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Logging;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Exceptions;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
@@ -27,21 +30,20 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
         private readonly int _maxRetrievalSize;
 
         public RetrieveMessagesService(
+            ServiceBusErrorManagementSettings serviceBusSettings,
             ILogger<RetrieveMessagesService> logger,
-            int batchSize,
             IBatchGetMessageStrategy batchMessageStrategy,
             IUserService userService,
             ICosmosMessageDbContext cosmosDbContext,
-            int maxRetrievalSize,
             IMessageReceiverFactory messageReceiverFactory
         )
         {
             _batchMessageStrategy = batchMessageStrategy;
             _logger = logger;
-            _batchSize = batchSize;
+            _batchSize = serviceBusSettings.PeekMessageBatchSize;
             _userService = userService;
             _cosmosDbContext = cosmosDbContext;
-            _maxRetrievalSize = maxRetrievalSize;
+            _maxRetrievalSize = serviceBusSettings.MaxRetrievalSize;
             _messageReceiverFactory = messageReceiverFactory;
         }
 
@@ -77,7 +79,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             catch (CosmosBatchInsertException ex)
             {
                 await HandleBatchCreationFailure(formattedMessages, ex.StatusCode);
-                
+
                 _logger.LogError("Failed to create messages with error: {0}, exception: {1}", ex.StatusCode.ToString(),
                     ex.ToString());
             }

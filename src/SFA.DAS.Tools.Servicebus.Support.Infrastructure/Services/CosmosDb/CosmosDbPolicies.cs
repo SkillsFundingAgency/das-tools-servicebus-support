@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Polly;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -21,25 +22,38 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         private const int defaultCosmosOperationTimeout = 55;
         private const int defaultCosmosInterimRequestTimeout = 2;
 
-        public CosmosDbPolicies(IConfiguration configuration, ILogger<CosmosDbPolicies> logger)
+        public CosmosDbPolicies(CosmosDbSettings cosmosDbSettings, ILogger<CosmosDbPolicies> logger)
         {
             _logger = logger;
-            var cosmosDbOperationTimeout = configuration.GetValue<int>("CosmosDb:DefaultCosmosOperationTimeout", defaultCosmosOperationTimeout);
-            var cosmosDbInterimRequestTimeout = configuration.GetValue<int>("CosmosDb:DefaultCosmosInterimRequestTimeout", defaultCosmosInterimRequestTimeout);
+            var cosmosDbOperationTimeout = 
+                cosmosDbSettings.DefaultCosmosOperationTimeout <= 0 ? defaultCosmosOperationTimeout : cosmosDbSettings.DefaultCosmosInterimRequestTimeout;
+
+            var cosmosDbInterimRequestTimeout = 
+                cosmosDbSettings.DefaultCosmosInterimRequestTimeout <= 0 ? defaultCosmosInterimRequestTimeout : cosmosDbSettings.DefaultCosmosInterimRequestTimeout;
 
             // Handle CosmosException Only,
             // If the status code is not 429, try 3 times with 2 seconds inbetween by default,
             // If it is 429, inspect the retry after value and retry then.
-            ResiliencePolicy = Policy.Handle<CosmosException>()
+            ResiliencePolicy = Policy.Handle<Exception>()
                 .WaitAndRetryAsync(3, sleepDurationProvider: (retryCount, response, context) =>
                 {
-                    if (response is CosmosException cosmosException && cosmosException.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                    if (response is CosmosException cosmosException 
+                    && cosmosException.StatusCode == System.Net.HttpStatusCode.TooManyRequests
+                    && cosmosException.RetryAfter.HasValue)
                     {
-                        return cosmosException.RetryAfter.HasValue ? cosmosException.RetryAfter.Value : TimeSpan.FromSeconds(cosmosDbInterimRequestTimeout);
+                        return cosmosException.RetryAfter.Value;
                     }
 
-                    return TimeSpan.FromSeconds(2);
-                }, async (e, ts, r, c) => { await Task.CompletedTask; });
+                    return TimeSpan.FromSeconds(cosmosDbInterimRequestTimeout);
+
+                }, onRetryAsync: async (exception, timeSpan, rretryCount, pollyContext) => 
+                {
+                    logger.LogWarning(exception, $"Error executing command for method {pollyContext.PolicyKey} " +
+                                                 $"Reason: {exception?.Message}. " +
+                                                 $"Retrying in {timeSpan.Seconds} secs...");
+
+                    await Task.CompletedTask;
+                });
 
             // Some calls have a static time before they have to fail due to peeklock demands of 60 seconds tiemout
             // Therefore, don't let the request exceed 60 seconds so it shorts and returns the peeklock.

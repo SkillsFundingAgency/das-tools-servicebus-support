@@ -36,7 +36,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _deleteQueueMessageCommand;
 
         private readonly IUserSessionService _userSessionService;
-        private readonly Settings _settings;
+        private readonly ServiceBusErrorManagementSettings _settings;
 
         public MessageListController(
             IUserService userService,
@@ -45,7 +45,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> getQueueDetailsQuery,
             IMessageService messageService,
             IUserSessionService userSessionService,
-            IOptions<Settings> settings,
+            IOptions<ServiceBusErrorManagementSettings> settings,
             ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
             ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
             IRetrieveMessagesService retrieveMessagesService,            
