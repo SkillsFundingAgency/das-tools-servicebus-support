@@ -34,7 +34,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
             // Handle CosmosException Only,
             // If the status code is not 429, try 3 times with 2 seconds inbetween by default,
             // If it is 429, inspect the retry after value and retry then.
-            ResiliencePolicy = Policy.Handle<Exception>()
+            ResiliencePolicy = Policy.Handle<CosmosException>()
                 .WaitAndRetryAsync(3, sleepDurationProvider: (retryCount, response, context) =>
                 {
                     if (response is CosmosException cosmosException 
@@ -48,10 +48,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 
                 }, onRetryAsync: async (exception, timeSpan, rretryCount, pollyContext) => 
                 {
-                    logger.LogWarning(exception, $"Error executing command for method {pollyContext.PolicyKey} " +
-                                                 $"Reason: {exception?.Message}. " +
-                                                 $"Retrying in {timeSpan.Seconds} secs...");
-
+                    logger.LogWarning(exception, $"Error accessing CosmosDb, Reason: {exception?.Message}. Retrying in {timeSpan.Seconds} secs...");
                     await Task.CompletedTask;
                 });
 
