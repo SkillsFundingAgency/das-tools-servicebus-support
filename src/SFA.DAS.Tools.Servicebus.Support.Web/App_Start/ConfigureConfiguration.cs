@@ -1,11 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using SFA.DAS.Tools.Servicebus.Support.Domain;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {

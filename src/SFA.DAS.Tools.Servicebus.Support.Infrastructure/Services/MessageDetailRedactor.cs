@@ -1,5 +1,4 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Domain;
-using System;
+﻿using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;

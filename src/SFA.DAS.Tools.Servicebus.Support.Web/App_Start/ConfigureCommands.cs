@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
@@ -8,7 +6,6 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMes
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {

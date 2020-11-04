@@ -1,8 +1,6 @@
-﻿using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Core;
-using Microsoft.Azure.ServiceBus.Primitives;
+﻿using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Logging;
-using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Exceptions;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;

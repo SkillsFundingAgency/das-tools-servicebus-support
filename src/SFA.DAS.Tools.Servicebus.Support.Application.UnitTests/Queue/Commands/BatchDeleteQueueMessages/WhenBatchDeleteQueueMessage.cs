@@ -2,8 +2,7 @@
 using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDeleteQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Domain;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System.Collections.Generic;
 using System.Threading.Tasks;

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using MoreLinq;
-using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System;
 using System.Threading.Tasks;

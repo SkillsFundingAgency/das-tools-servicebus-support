@@ -3,7 +3,7 @@ using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

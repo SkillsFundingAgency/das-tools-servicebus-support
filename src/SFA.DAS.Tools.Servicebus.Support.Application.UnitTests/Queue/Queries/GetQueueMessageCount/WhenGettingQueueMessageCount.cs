@@ -1,13 +1,9 @@
-﻿using System.Collections.Generic;
-using NUnit.Framework;
-using System.Threading.Tasks;
+﻿using FluentAssertions;
 using Moq;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessage;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
-using FluentAssertions;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
+using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
-using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
+using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.GetQueueDetails
 {

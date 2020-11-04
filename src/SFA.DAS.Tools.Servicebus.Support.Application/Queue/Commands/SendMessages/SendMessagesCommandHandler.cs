@@ -1,4 +1,4 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages

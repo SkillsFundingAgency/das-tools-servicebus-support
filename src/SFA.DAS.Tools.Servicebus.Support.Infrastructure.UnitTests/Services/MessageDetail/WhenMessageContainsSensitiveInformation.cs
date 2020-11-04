@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.Azure.Amqp.Serialization;
 using NUnit.Framework;
-using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using System.Collections.Generic;
 using System.Linq;

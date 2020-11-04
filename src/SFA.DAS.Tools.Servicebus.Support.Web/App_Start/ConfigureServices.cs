@@ -1,27 +1,11 @@
 ﻿using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Management;
-using Microsoft.Azure.ServiceBus.Primitives;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Polly;
-using SFA.DAS.Tools.Servicebus.Support.Application;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
-using System.Linq;
-using Polly.Registry;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
-using Microsoft.AspNetCore.Http;
-using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {

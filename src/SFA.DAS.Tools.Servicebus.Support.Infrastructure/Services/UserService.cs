@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
-using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using System.Linq;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services

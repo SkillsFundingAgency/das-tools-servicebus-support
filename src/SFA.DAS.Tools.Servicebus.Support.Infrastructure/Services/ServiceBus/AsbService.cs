@@ -2,13 +2,10 @@ using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Azure.ServiceBus.Primitives;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Polly;
-using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +13,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService
+namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus
 {
     public class AsbService : IAsbService
     {

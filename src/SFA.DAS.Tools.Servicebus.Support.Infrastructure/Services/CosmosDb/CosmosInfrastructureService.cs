@@ -3,7 +3,7 @@ using System.Linq;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
-using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 {

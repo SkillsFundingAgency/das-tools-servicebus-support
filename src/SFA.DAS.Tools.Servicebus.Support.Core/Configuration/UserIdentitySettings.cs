@@ -1,4 +1,4 @@
-﻿namespace SFA.DAS.Tools.Servicebus.Support.Domain
+﻿namespace SFA.DAS.Tools.Servicebus.Support.Domain.Configuration
 {
     public class UserIdentitySettings
     {

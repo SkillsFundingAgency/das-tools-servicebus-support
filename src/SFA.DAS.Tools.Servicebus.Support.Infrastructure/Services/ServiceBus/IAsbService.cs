@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.ServiceBus.Core;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
+namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus
 {
     public interface IAsbService
     {
