@@ -25,7 +25,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
         private readonly object _padlock = new object();
         private readonly ICosmosMessageDbContext _cosmosDbContext;
         private readonly int _batchSize;
-        private readonly int _maxRetrievalSize;
 
         public RetrieveMessagesService(
             ServiceBusErrorManagementSettings serviceBusSettings,
@@ -41,13 +40,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _batchSize = serviceBusSettings.PeekMessageBatchSize;
             _userService = userService;
             _cosmosDbContext = cosmosDbContext;
-            _maxRetrievalSize = serviceBusSettings.MaxRetrievalSize;
             _messageReceiverFactory = messageReceiverFactory;
         }
 
-        public async Task GetMessages(string queueName, long count)
+        public async Task GetMessages(string queueName, long count, int getQty)
         {
-            count = count > _maxRetrievalSize ? _maxRetrievalSize : count;
+            count = count > getQty ? getQty : count;
 
             CreateMessageReceiver(queueName, 250);
 

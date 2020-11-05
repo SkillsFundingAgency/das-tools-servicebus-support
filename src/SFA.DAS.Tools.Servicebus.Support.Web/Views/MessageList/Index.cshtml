@@ -107,6 +107,14 @@
             }
         });
 
+        function updateGetQty(selection) {
+            $("#getQty")[0].value = selection.value;            
+        }
+
+        function getRequestQty() {
+            return $("#getQty").val();
+        }
+
     </script>
 }
 
@@ -122,9 +130,10 @@
     <input id="replayUrl" type="hidden" value="@(Url.Action("ReplayMessages", "MessageList"))" />
     <input id="abortUrl" type="hidden" value="@(Url.Action("AbortMessages", "MessageList"))" />
     <input id="queueName" type="hidden" value="@Model.QueueInfo.Name" />
+    <input id="getQty" type="hidden"  />
 
     <h3 class="govuk-heading-l">Queue - @Model.QueueInfo.Name</h3>
-    
+
     <dl class="govuk-summary-list">
         <div class="govuk-summary-list__row">
             <dt class="govuk-summary-list__key">
@@ -147,7 +156,16 @@
     <div>
         <fieldset>
             <legend>Message actions</legend>
-            <a class="govuk-link" asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Get any further messages that may be on the queue">Get more</a> |
+
+            <select name="getQty" id="getQty" onchange="updateGetQty(this)">
+                <option value="10">test10</option>
+                <option value="250">250</option>
+                <option value="500">500</option>
+                <option value="1000">1000</option>
+            </select>
+            <a class="govuk-link" asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" asp-route-qty="getRequestQty()" onclick="displayBusyIndicator()" title="Get any further messages that may be on the queue">Get more</a> |
+
+
             <a class="govuk-link" id="btnReplayMessages" href="#" title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
             <a class="govuk-link" id="btnDeleteMessages" href="#" onclick="displayBusyIndicator()" title="Delete the selected messages permanently">Delete selected</a> |
             <a class="govuk-link" id="btnAbortMessages" href="#" title="Release selected messages back to the ServiceBus Queue they came from">Release selected</a> |

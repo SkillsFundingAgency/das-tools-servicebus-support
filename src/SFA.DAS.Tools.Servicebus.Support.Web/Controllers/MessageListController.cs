@@ -49,7 +49,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IOptions<ServiceBusErrorManagementSettings> settings,
             ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
             ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
-            IRetrieveMessagesService retrieveMessagesService,            
+            IRetrieveMessagesService retrieveMessagesService,
             IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse> getQueueMessageCountQuery)
         {
             _userService = userService;
@@ -59,7 +59,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _messageService = messageService;
             _userSessionService = userSessionService;
             _settings = settings.Value;
-            _deleteQueueMessageCommand = deleteQueueMessageCommand;            
+            _deleteQueueMessageCommand = deleteQueueMessageCommand;
             _retrieveMessagesService = retrieveMessagesService;
             _getQueueMessageCountQuery = getQueueMessageCountQuery;
         }
@@ -93,11 +93,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                     QueueName = queueName
                 })).QueueInfo,
                 UserSession = await _userSessionService.GetUserSession()
-
             });
         }
 
-        public async Task<IActionResult> ReceiveMessages(string queue)
+        public async Task<IActionResult> ReceiveMessages(string queue, string qty)
         {
             HttpContext.Session.SetString("queueName", queue);
             var count = (await _getQueueMessageCountQuery.Handle(new GetQueueMessageCountQuery()
@@ -105,7 +104,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 QueueName = queue
             })).Count;
 
-            await _retrieveMessagesService.GetMessages(queue, count);
+            await _retrieveMessagesService.GetMessages(queue, count, 10);
 
             return RedirectToAction("Index");
         }
@@ -165,11 +164,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             return Json(string.Empty);
         }
-        
+
         private async Task DeleteUserSession()
-        {            
+        {
             await _userSessionService.DeleteUserSession();
-            HttpContext.Session.Set<DateTime?>("sessionActiveUntil", null);            
+            HttpContext.Session.Set<DateTime?>("sessionActiveUntil", null);
             HttpContext.Session.SetString("queueName", string.Empty);
         }
     }

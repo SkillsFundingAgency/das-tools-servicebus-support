@@ -22,6 +22,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
     public class WhenProcessingMessagesFromQueue
     {
         private readonly string _queueName = "q";
+        private readonly int _batchSize = 9;
+        private const int GetQty = 3;
         private const string serviceBusConnectionString = "ServiceBusRepoSettings:ServiceBusConnectionString";
 
         private readonly Mock<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>
@@ -87,7 +89,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
                 _messageReceiverFactory.Object
             );
 
-            await sut.GetMessages(_queueName, 10);
+            await sut.GetMessages(_queueName, 10, GetQty);
 
             _messageReceiver.VerifySet(receiver => receiver.PrefetchCount);
             _messageReceiver.Verify(receiver => receiver.ReceiveAsync(3, It.IsAny<TimeSpan>()), Times.Once);
