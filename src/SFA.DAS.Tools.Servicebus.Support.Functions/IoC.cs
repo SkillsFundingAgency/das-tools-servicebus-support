@@ -1,12 +1,7 @@
 ﻿using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Management;
-using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Polly;
-using Polly.Registry;
+using Microsoft.Extensions.Options;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
@@ -17,11 +12,11 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.SvcBusService;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Functions
 {
@@ -29,39 +24,27 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddSingleton<PolicyRegistry>();
+            services.Configure<ServiceBusErrorManagementSettings>(configuration.GetSection(ServiceBusErrorManagementSettings.ServiceBusErrorManagementSettingsKey));
+            services.Configure<UserIdentitySettings>(configuration.GetSection(UserIdentitySettings.UserIdentitySettingsKey));
+            services.Configure<CosmosDbSettings>(configuration.GetSection(CosmosDbSettings.CosmosDbSettingsKey));
 
-            services.AddTransient<IAsbService, AsbService>(s =>
-            {
-                var policyRegistry = s.GetRequiredService<PolicyRegistry>();
-                policyRegistry.ConfigureWaitAndRetry(Constants.MessageQueueWaitAndRetry, s.GetRequiredService<ILogger<AsbService>>());
-                var serviceBusConnectionString = configuration.GetValue<string>("ServiceBusRepoSettings:ServiceBusConnectionString");
-                var connectionBuilder = new ServiceBusConnectionStringBuilder(serviceBusConnectionString);
-                var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-
-                return new AsbService(s.GetService<IUserService>(),
-                    configuration,
-                    s.GetRequiredService<ILogger<AsbService>>(),
-                    tokenProvider,
-                    connectionBuilder,
-                    CreateManagementClient(connectionBuilder, tokenProvider),
-                    policyRegistry.Get<IAsyncPolicy>(Constants.MessageQueueWaitAndRetry)
-                );
-            });
-
-            services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>(s => new CosmosMessageDbContext(s.GetService<IUserService>(), s.GetRequiredService<ILogger<CosmosMessageDbContext>>(), s.GetRequiredService<ICosmosInfrastructureService>(), s.GetRequiredService<ICosmosDbPolicies>()));
-            services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>(s => new CosmosUserSessionDbContext(s.GetRequiredService<ICosmosInfrastructureService>(), s.GetRequiredService<ICosmosDbPolicies>()));
+            // Remove IOptions Abstraction from Configure
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<CosmosDbSettings>>().Value);
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<UserIdentitySettings>>().Value);
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServiceBusErrorManagementSettings>>().Value);
 
             services.AddSingleton(s =>
             {
-                var cosmosEndpointUrl = configuration.GetValue<string>("CosmosDb:Url");
-                var cosmosAuthenticationKey = configuration.GetValue<string>("CosmosDb:AuthKey");
-
-                return new CosmosClient(cosmosEndpointUrl, cosmosAuthenticationKey, new CosmosClientOptions() { AllowBulkExecution = true });
+                var cosmosDbSettings = s.GetRequiredService<CosmosDbSettings>();
+                return new CosmosClient(cosmosDbSettings.Url, cosmosDbSettings.AuthKey, new CosmosClientOptions() { AllowBulkExecution = true });
             });
+
+            services.AddTransient<IAsbService, AsbService>();
+            services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>();
+            services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>();
             services.AddSingleton<IUserService, FunctionUserService>();
             services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
-            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>(s => new CosmosInfrastructureService(configuration, s.GetRequiredService<CosmosClient>(), s.GetRequiredService<ICosmosDbPolicies>()));
+            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>();
             services.AddTransient<IQueryHandler<GetExpiredUserSessionsQuery, GetExpiredUserSessionsQueryResponse>, GetExpiredUserSessionsQueryHandler>();
             services.AddTransient<IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse>, GetMessagesQueryHandler>();
             services.AddTransient<ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>, DeleteUserSessionCommandHandler>();
@@ -70,29 +53,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             services.AddTransient<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>, GetQueueMessageCountQueryHandler>();
             services.AddTransient<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>, SendMessagesCommandHandler>();
             services.AddTransient<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>, DeleteQueueMessagesCommandHandler>();
-            services.AddTransient<IMessageService, MessageService>(s =>
-                 new MessageService(
-                    s.GetService<IBatchSendMessageStrategy>(),
-                    s.GetRequiredService<ILogger<MessageService>>(),
-                    s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
-                    s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>()
-                )
-            );
+            services.AddTransient<IMessageService, MessageService>();
             services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>();
+            services.AddSingleton<IServiceBusPolicies, ServiceBusPolicies>();
 
             return services;
-        }
-
-        private static ManagementClient CreateManagementClient(ServiceBusConnectionStringBuilder connectionBuilder, TokenProvider tokenProvider)
-        {
-            if (connectionBuilder.SasKey?.Length > 0)
-            {
-                return new ManagementClient(connectionBuilder);
-            }
-            else
-            {
-                return new ManagementClient(connectionBuilder, tokenProvider);
-            }
         }
     }
 }

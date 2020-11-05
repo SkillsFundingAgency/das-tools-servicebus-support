@@ -1,23 +1,20 @@
-﻿using System;
+﻿using Microsoft.Azure.ServiceBus;
+using Microsoft.Azure.ServiceBus.Core;
+using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Core;
-using Microsoft.Azure.ServiceBus.Management;
-using Microsoft.Azure.ServiceBus.Primitives;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
 using Service = SFA.DAS.Tools.Servicebus.Support.Application.Services;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.MessageService
@@ -25,8 +22,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
     public class WhenProcessingMessagesFromQueue
     {
         private readonly string _queueName = "q";
-        private readonly int _batchSize = 9;
-        private const int MaxRetrievalSize = 3;
         private const string serviceBusConnectionString = "ServiceBusRepoSettings:ServiceBusConnectionString";
 
         private readonly Mock<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>
@@ -57,6 +52,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
         private readonly Mock<IMessageReceiver> _messageReceiver =
             new Mock<IMessageReceiver>(MockBehavior.Strict);
 
+        private readonly ServiceBusErrorManagementSettings serviceBusSettings = new ServiceBusErrorManagementSettings
+        {
+            MaxRetrievalSize = 3,
+            PeekMessageBatchSize = 9
+        };
+
         [Test]
         public async Task ThenTheMessagesAreRequestedFromTheQueueAndSentToTheDatabase()
         {
@@ -78,12 +79,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
             _messageReceiverFactory.Setup(x => x.Create(_queueName)).Returns(_messageReceiver.Object);
 
             var sut = new Service.RetrieveMessagesService(
+                serviceBusSettings,
                 _iLogger.Object,
-                _batchSize,
                 new BatchGetMessageStrategy(),
                 _userService.Object,
                 _cosmosDbContext.Object,
-                MaxRetrievalSize,
                 _messageReceiverFactory.Object
             );
 

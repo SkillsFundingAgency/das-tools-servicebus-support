@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -9,16 +8,18 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Web.App_Start;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
-using System.Threading.Tasks;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using System;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
@@ -36,7 +37,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _deleteQueueMessageCommand;
 
         private readonly IUserSessionService _userSessionService;
-        private readonly Settings _settings;
+        private readonly ServiceBusErrorManagementSettings _settings;
 
         public MessageListController(
             IUserService userService,
@@ -45,7 +46,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse> getQueueDetailsQuery,
             IMessageService messageService,
             IUserSessionService userSessionService,
-            IOptions<Settings> settings,
+            IOptions<ServiceBusErrorManagementSettings> settings,
             ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
             ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
             IRetrieveMessagesService retrieveMessagesService,            

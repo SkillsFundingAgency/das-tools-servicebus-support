@@ -3,10 +3,9 @@ using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Azure.ServiceBus.Core;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.ReceiveQueueMessages
 {

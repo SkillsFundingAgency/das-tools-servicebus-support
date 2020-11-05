@@ -2,7 +2,7 @@
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

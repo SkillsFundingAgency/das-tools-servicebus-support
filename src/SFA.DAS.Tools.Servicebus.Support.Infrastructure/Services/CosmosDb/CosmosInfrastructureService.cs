@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 {
@@ -14,11 +15,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         private readonly CosmosClient _client;
         private readonly ICosmosDbPolicies _policies;
 
-        public CosmosInfrastructureService(IConfiguration config, CosmosClient client, ICosmosDbPolicies policies)
+        public CosmosInfrastructureService(CosmosDbSettings cosmosDbSettings, CosmosClient client, ICosmosDbPolicies policies)
         {
-            _throughput = config.GetValue<int>("CosmosDb:Throughput");
-            _collectionName = config.GetValue<string>("CosmosDb:CollectionName");
-            _databaseName = config.GetValue<string>("CosmosDb:DatabaseName");
+            _throughput = cosmosDbSettings.Throughput;
+            _collectionName = cosmosDbSettings.CollectionName;
+            _databaseName = cosmosDbSettings.DatabaseName;
             _client = client;
             _policies = policies;
         }

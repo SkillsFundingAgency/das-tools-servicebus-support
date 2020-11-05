@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using MoreLinq;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System;
 using System.Threading.Tasks;
@@ -16,11 +17,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDelet
 
         public BatchDeleteQueueMessagesCommandHandler(
             ICosmosMessageDbContext cosmosDbContext,
-            int batchSize,
+            ServiceBusErrorManagementSettings serviceBusSettings,
             ILogger<BatchDeleteQueueMessagesCommandHandler > logger)
         {
             _cosmosDbContext = cosmosDbContext;
-            _batchSize = batchSize;
+            _batchSize = serviceBusSettings.PeekMessageBatchSize;
             _logger = logger;
         }
 

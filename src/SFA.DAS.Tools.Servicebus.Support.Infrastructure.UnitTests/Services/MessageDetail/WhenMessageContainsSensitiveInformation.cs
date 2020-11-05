@@ -1,5 +1,7 @@
 ﻿using FluentAssertions;
+using Microsoft.Azure.Amqp.Serialization;
 using NUnit.Framework;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +22,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests.Services.Mes
             values.Add(new KeyValuePair<string, object>("Key1", "NotSensitive"));
             values.Add(new KeyValuePair<string, object>("Key2", "xyz;SharedAccessKey=12345qwerty="));
 
-            var redactor = new MessageDetailRedactor(tokens);
+            var serviceBusSettings = new ServiceBusErrorManagementSettings
+            {
+                RedactPatterns = tokens.ToArray()
+            };
+
+            var redactor = new MessageDetailRedactor(serviceBusSettings);
 
             var result = redactor.Redact(values);
 
