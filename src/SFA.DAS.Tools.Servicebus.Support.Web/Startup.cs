@@ -15,6 +15,7 @@ using SFA.DAS.Configuration.AzureTableStorage;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
 using Microsoft.Extensions.Logging;
 using Polly.Registry;
+using SFA.DAS.Tools.Servicebus.Support.Audit;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web
 {

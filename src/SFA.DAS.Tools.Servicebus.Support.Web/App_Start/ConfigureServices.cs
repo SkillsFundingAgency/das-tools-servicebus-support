@@ -6,6 +6,9 @@ using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
+using SFA.DAS.Tools.Servicebus.Support.Audit;
+using SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders;
+using SFA.DAS.Tools.Servicebus.Support.Audit.MesssageBuilders;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {
@@ -34,6 +37,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddTransient<KeepUserSessionActiveFilter>();
             services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>();
             services.AddSingleton<IServiceBusPolicies, ServiceBusPolicies>();
+            services.AddTransient<IAuditApiClient, AuditApiClient>();
+            services.AddTransient<IAuditMessageBuilder, BaseAuditMessageBuilder>();
+            services.AddTransient<IAuditMessageBuilder, ChangedByMessageBuilder>();
+            services.AddTransient<IAuditService, AuditService>();
 
             return services;
         }

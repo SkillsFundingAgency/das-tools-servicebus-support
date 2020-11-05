@@ -13,6 +13,8 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessage
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
+using SFA.DAS.Tools.Servicebus.Support.Audit;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
@@ -56,7 +58,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             services.AddTransient<IMessageService, MessageService>();
             services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>();
             services.AddSingleton<IServiceBusPolicies, ServiceBusPolicies>();
-
+            
             return services;
         }
     }
