@@ -12,6 +12,23 @@
         function operateFormatter(value, row, index) {
             return '<a class="detail" href=' + ("@(Url.Action("ReceiveMessages", "MessageList"))" + "/?queue=" + row.id) + ' onclick="displayBusyIndicator()" title ="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>';
         };
+
+        function queryParams(params) {
+            params.filterEmptyQueues = $('#toggleHideEmptyQueues').is(":checked");
+            return params
+        }
+
+        function refreshBootstrapTable() {
+            $('#toggleHideEmptyQueues').attr('disabled', true);
+            $('#queueTable').bootstrapTable('refresh');
+        }
+
+        $(function () {
+            $('#queueTable').on('load-success.bs.table', function () {
+                $('#toggleHideEmptyQueues').attr('disabled', false);
+            });
+        })
+
     </script>
 }
 
@@ -23,15 +40,21 @@
 <div>
     <h1 class="govuk-heading-xl">Message queues</h1>
 
-
-    <table id="table"
+    <fieldset>
+        <div class="custom-control custom-switch float-right">
+            <input type="checkbox" checked class="custom-control-input" id="toggleHideEmptyQueues" onchange="refreshBootstrapTable()">
+            <label class="custom-control-label" for="toggleHideEmptyQueues">Hide empty queues.</label>
+        </div>
+    </fieldset>
+    <table id="queueTable"
            class="govuk-table"
            data-toggle="table"
            data-pagination="true"
            data-search="true"
            data-click-to-select="true"
-           data-sortable="true"           
+           data-sortable="true"
            data-url="@Url.Action("Index", "Queues")"
+           data-query-params="queryParams"
            style="table-layout: fixed">
         <thead class="govuk-table__head">
             <tr class="govuk-table__row">
