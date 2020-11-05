@@ -84,7 +84,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
                         s.GetService<IBatchGetMessageStrategy>(),
                         s.GetService<IUserService>(),
                         s.GetService<ICosmosMessageDbContext>(),
-                        configuration.GetValue<int>("ServiceBusRepoSettings:MaxRetrievalSize"),
                         new MessageReceiverFactory(connectionBuilder, tokenProvider)
                     );
                 }

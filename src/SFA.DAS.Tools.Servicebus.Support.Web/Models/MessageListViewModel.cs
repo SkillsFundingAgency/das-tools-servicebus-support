@@ -10,5 +10,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Models
         public QueueInfo QueueInfo { get; set; }
         public int Count { get; set; }
         public UserSession UserSession { get; set; }
+        public string GetQty { get; set; }
     }
 }

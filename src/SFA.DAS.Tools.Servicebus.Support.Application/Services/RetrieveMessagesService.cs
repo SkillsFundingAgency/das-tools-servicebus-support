@@ -24,7 +24,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
         private readonly object _padlock = new object();
         private readonly ICosmosMessageDbContext _cosmosDbContext;
         private readonly int _batchSize;
-        private readonly int _maxRetrievalSize;
 
         public RetrieveMessagesService(
             ILogger<RetrieveMessagesService> logger,
@@ -32,7 +31,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             IBatchGetMessageStrategy batchMessageStrategy,
             IUserService userService,
             ICosmosMessageDbContext cosmosDbContext,
-            int maxRetrievalSize,
             IMessageReceiverFactory messageReceiverFactory
         )
         {
@@ -41,13 +39,12 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _batchSize = batchSize;
             _userService = userService;
             _cosmosDbContext = cosmosDbContext;
-            _maxRetrievalSize = maxRetrievalSize;
             _messageReceiverFactory = messageReceiverFactory;
         }
 
-        public async Task GetMessages(string queueName, long count)
+        public async Task GetMessages(string queueName, long count, int getQty)
         {
-            count = count > _maxRetrievalSize ? _maxRetrievalSize : count;
+            count = count > getQty ? getQty : count;
 
             CreateMessageReceiver(queueName, 250);
 
@@ -77,7 +74,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             catch (CosmosBatchInsertException ex)
             {
                 await HandleBatchCreationFailure(formattedMessages, ex.StatusCode);
-                
+
                 _logger.LogError("Failed to create messages with error: {0}, exception: {1}", ex.StatusCode.ToString(),
                     ex.ToString());
             }
