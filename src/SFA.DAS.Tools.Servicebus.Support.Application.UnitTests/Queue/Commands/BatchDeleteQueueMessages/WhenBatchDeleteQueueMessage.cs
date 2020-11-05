@@ -4,7 +4,6 @@ using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Audit;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -59,7 +58,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Commands.
             _cosmosDbContext.Setup(x => x.DeleteQueueMessagesAsync(_messageIds)).Returns(Task.CompletedTask);
             _auditService.Setup(x => x.WriteAudit(It.IsAny<MessageQueueDeleteAuditMessage>()));
 
-            var sut = new BatchDeleteQueueMessagesCommandHandler(_cosmosDbContext.Object, BatchSize, _logger.Object, _auditService.Object);
+            var sut = new BatchDeleteQueueMessagesCommandHandler(_cosmosDbContext.Object, _serviceBusSettings, _logger.Object, _auditService.Object);
 
             await sut.Handle(new BatchDeleteQueueMessagesCommand()
             {

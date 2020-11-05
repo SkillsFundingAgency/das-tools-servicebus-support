@@ -58,16 +58,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             services.AddTransient<IMessageService, MessageService>();
             services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>();
             services.AddSingleton<IServiceBusPolicies, ServiceBusPolicies>();
-            services.AddTransient<IMessageService, MessageService>(s =>
-                 new MessageService(
-                    s.GetService<IBatchSendMessageStrategy>(),
-                    s.GetRequiredService<ILogger<MessageService>>(),
-                    s.GetService<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>(),
-                    s.GetService<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>(),
-                    s.GetService<IAuditService>()
-                )
-            );
-
+            
             return services;
         }
     }
