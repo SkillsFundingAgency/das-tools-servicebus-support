@@ -56,7 +56,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
 
         private readonly ServiceBusErrorManagementSettings serviceBusSettings = new ServiceBusErrorManagementSettings
         {
-            MaxRetrievalSize = 3,
             PeekMessageBatchSize = 9
         };
 
