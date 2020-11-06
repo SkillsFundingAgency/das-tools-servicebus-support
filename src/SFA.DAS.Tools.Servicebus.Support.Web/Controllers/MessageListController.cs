@@ -96,17 +96,20 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             });
         }
 
-        public async Task<IActionResult> ReceiveMessages(string queue, string qty)
+        public async Task<IActionResult> ReceiveMessages(string data)
         {
-            HttpContext.Session.SetString("queueName", queue);
+            var request = JsonConvert.DeserializeObject<GetMessagesRequest>(data);
+
+            HttpContext.Session.SetString("queueName", request.Queue);
             var count = (await _getQueueMessageCountQuery.Handle(new GetQueueMessageCountQuery()
             {
-                QueueName = queue
+                QueueName = request.Queue
             })).Count;
 
-            await _retrieveMessagesService.GetMessages(queue, count, 10);
-
-            return RedirectToAction("Index");
+            await _retrieveMessagesService.GetMessages(request.Queue, count, request.Qty);
+            
+            //RedirectToAction("Index");
+            return Json(string.Empty);
         }
 
         [HttpPost]

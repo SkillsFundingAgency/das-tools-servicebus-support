@@ -3,15 +3,56 @@
     ViewData["Title"] = "Home Page";
 }
 
+@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "__AjaxAntiForgeryForm" }))
+{
+    @Html.AntiForgeryToken()
+}
+
 @section Scripts
 {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.18.0/bootstrap-table.min.js"></script>
 
     <script type="text/javascript">
 
+        function sendRequest(url, data) {
+            displayBusyIndicator();
+
+            var form = $('#__AjaxAntiForgeryForm');
+            var token = $('input[name="__RequestVerificationToken"]', form).val();
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                dataType: 'json',
+                data: {
+                    '__RequestVerificationToken': token,
+                    "data": JSON.stringify(data)
+                },
+                failure: function (response) {
+                    console.log(response.responseText);
+                },
+                error: function (response) {
+                    console.log(response.responseText);
+                }
+            })
+                .then(function () {
+                    location.reload();
+                });
+        }
+
         function operateFormatter(value, row, index) {
-            return '<a class="detail" href=' + ("@(Url.Action("ReceiveMessages", "MessageList"))" + "/?queue=" + row.id) + ' onclick="displayBusyIndicator()" title ="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>';
+            //return '<a class="detail" href=' + ("@(Url.Action("ReceiveMessages", "MessageList"))" + "/?queue=" + row.id) + ' onclick="displayBusyIndicator()" title ="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>';
+            return '<a class="detail" href="#" onclick="displayBusyIndicator();getMessages(\'' +row.id + '\')" title ="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>';
         };
+
+        function getMessages(queue) {
+            var data = {
+                "queue": queue, "qty": $("#getQty")[0].value
+            }
+
+            sendRequest($('#receiveUrl').val(), data);
+        }
+
     </script>
 }
 
@@ -21,8 +62,17 @@
 }
 
 <div>
+    <input id="receiveUrl" type="hidden" value="@(Url.Action("ReceiveMessages", "MessageList"))" />
+
     <h1 class="govuk-heading-xl">Message queues</h1>
 
+    <label for="getQty">Get qty</label>
+    <select name="getQty" id="getQty">
+        <option value="10">test10</option>
+        <option value="250">250</option>
+        <option value="500">500</option>
+        <option value="1000">1000</option>
+    </select>
 
     <table id="table"
            class="govuk-table"
@@ -30,7 +80,7 @@
            data-pagination="true"
            data-search="true"
            data-click-to-select="true"
-           data-sortable="true"           
+           data-sortable="true"
            data-url="@Url.Action("Index", "Queues")"
            style="table-layout: fixed">
         <thead class="govuk-table__head">
