@@ -23,47 +23,48 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
         private readonly Mock<ILogger<Service.MessageService>> _logger = new Mock<ILogger<Service.MessageService>>();
         private readonly Mock<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>> _sendMessagesCommand = new Mock<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>();
         private readonly Mock<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>> _deleteQueueMessageCommand = new Mock<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>();
-        private readonly Mock<IAuditService> _auditService = new Mock<IAuditService>();
 
 
         [Test]
         public async Task ThenAuditServiceShouldBeCalled()
         {
-            var messages = new List<QueueMessage>();            
+            var _auditService = new Mock<IAuditService>();
+            var messages = new List<QueueMessage>();
             var queueMessage = new QueueMessage
             {
-                OriginalMessage = new Message(Encoding.UTF8.GetBytes("{}")){ MessageId = Guid.NewGuid().ToString()}
+                OriginalMessage = new Message(Encoding.UTF8.GetBytes("{}")) { MessageId = Guid.NewGuid().ToString() }
             };
             messages.Add(queueMessage);
 
             _auditService.Setup(x => x.WriteAudit(It.IsAny<MessageQueueReplayAuditMessage>()));
-            
+
             var sut = new Service.MessageService(
                 new BatchSendMessageStrategy(),
-                _logger.Object, 
-                _sendMessagesCommand.Object, 
-                _deleteQueueMessageCommand.Object, 
+                _logger.Object,
+                _sendMessagesCommand.Object,
+                _deleteQueueMessageCommand.Object,
                 _auditService.Object
             );
 
             await sut.ReplayMessages(messages, "test");
-            
-            _auditService.Verify(s => s.WriteAudit(It.IsAny<MessageQueueReplayAuditMessage>()), Times.Once);            
+
+            _auditService.Verify(s => s.WriteAudit(It.IsAny<MessageQueueReplayAuditMessage>()), Times.Once);
         }
 
         [Test]
         public async Task ThenAuditServiceShouldBeCalledOnceForEveryMessage()
         {
+            var _auditService = new Mock<IAuditService>();
             var messages = new List<QueueMessage>();
-            
-            for(var i = 0; i< 4; i++)
+
+            for (var i = 0; i < 4; i++)
             {
                 var queueMessage = new QueueMessage
                 {
                     OriginalMessage = new Message(Encoding.UTF8.GetBytes("{}")) { MessageId = Guid.NewGuid().ToString() }
                 };
                 messages.Add(queueMessage);
-            }                        
+            }
 
             _auditService.Setup(x => x.WriteAudit(It.IsAny<MessageQueueReplayAuditMessage>()));
 
