@@ -20,7 +20,7 @@
             var form = $('#__AjaxAntiForgeryForm');
             var token = $('input[name="__RequestVerificationToken"]', form).val();
 
-            $.ajax({
+            return $.ajax({
                 type: "POST",
                 url: url,
                 dataType: 'json',
@@ -35,14 +35,11 @@
                     console.log(response.responseText);
                 }
             })
-                .then(function () {
-                    location.reload();
-                });
+
         }
 
         function operateFormatter(value, row, index) {
-            //return '<a class="detail" href=' + ("@(Url.Action("ReceiveMessages", "MessageList"))" + "/?queue=" + row.id) + ' onclick="displayBusyIndicator()" title ="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>';
-            return '<a class="detail" href="#" onclick="displayBusyIndicator();getMessages(\'' +row.id + '\')" title ="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>';
+            return '<a class="detail" href="#" onclick="displayBusyIndicator();getMessages(\'' + row.id + '\')" title ="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>';
         };
 
         function getMessages(queue) {
@@ -50,7 +47,10 @@
                 "queue": queue, "qty": $("#getQty")[0].value
             }
 
-            sendRequest($('#receiveUrl').val(), data);
+            sendRequest($('#receiveUrl').val(), data).then(function () {
+                window.location.href = $('#messageListUrl').val();
+            });
+
         }
 
     </script>
@@ -63,12 +63,12 @@
 
 <div>
     <input id="receiveUrl" type="hidden" value="@(Url.Action("ReceiveMessages", "MessageList"))" />
+    <input id="messageListUrl" type="hidden" value="@(Url.Action("Index", "MessageList"))" />
 
     <h1 class="govuk-heading-xl">Message queues</h1>
 
     <label for="getQty">Get qty</label>
     <select name="getQty" id="getQty">
-        <option value="10">test10</option>
         <option value="250">250</option>
         <option value="500">500</option>
         <option value="1000">1000</option>
