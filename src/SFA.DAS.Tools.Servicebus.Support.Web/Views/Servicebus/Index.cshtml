@@ -53,6 +53,23 @@
 
         }
 
+
+        function queryParams(params) {
+            params.filterEmptyQueues = $('#toggleHideEmptyQueues').is(":checked");
+            return params
+        }
+
+        function refreshBootstrapTable() {
+            $('#toggleHideEmptyQueues').attr('disabled', true);
+            $('#queueTable').bootstrapTable('refresh');
+        }
+
+        $(function () {
+            $('#queueTable').on('load-success.bs.table', function () {
+                $('#toggleHideEmptyQueues').attr('disabled', false);
+            });
+        })
+
     </script>
 }
 
@@ -73,8 +90,13 @@
         <option value="500">500</option>
         <option value="1000">1000</option>
     </select>
-
-    <table id="table"
+    <fieldset>
+        <div class="custom-control custom-switch float-right">
+            <input type="checkbox" checked class="custom-control-input" id="toggleHideEmptyQueues" onchange="refreshBootstrapTable()">
+            <label class="custom-control-label" for="toggleHideEmptyQueues">Hide empty queues.</label>
+        </div>
+    </fieldset>
+    <table id="queueTable"
            class="govuk-table"
            data-toggle="table"
            data-pagination="true"
@@ -82,6 +104,7 @@
            data-click-to-select="true"
            data-sortable="true"
            data-url="@Url.Action("Index", "Queues")"
+           data-query-params="queryParams"
            style="table-layout: fixed">
         <thead class="govuk-table__head">
             <tr class="govuk-table__row">
