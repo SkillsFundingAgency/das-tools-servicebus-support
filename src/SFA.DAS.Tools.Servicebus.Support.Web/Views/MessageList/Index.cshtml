@@ -12,7 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
 
     <script type="text/javascript">
-        
+
         function operateFormatter(value, row, index) {
             return '<a class="detail" href=' + ($('#baseUrl').val() + "/?id=" + row.id) + ' title ="Detail">Detail</a>';
         };
@@ -82,12 +82,19 @@
 
         $("#btnDeleteMessages").click(function () {
 
+            $('#deleteConfirmationModal').modal()
+        });
+
+        $('#btnDeleteMessagesModalConfirmation').click(function () {
+
+            $('#deleteConfirmationModal').modal('hide');
+            displayBusyIndicator();
             var data = { "ids": selections }
 
             if (selections.length > 0) {
                 sendRequest($('#deleteUrl').val(), data);
             }
-        });
+        })
 
         $("#btnAbortMessages").click(function () {
 
@@ -124,7 +131,7 @@
     <input id="queueName" type="hidden" value="@Model.QueueInfo.Name" />
 
     <h3 class="govuk-heading-l">Queue - @Model.QueueInfo.Name</h3>
-    
+
     <dl class="govuk-summary-list">
         <div class="govuk-summary-list__row">
             <dt class="govuk-summary-list__key">
@@ -149,7 +156,7 @@
             <legend>Message actions</legend>
             <a class="govuk-link" asp-controller="MessageList" asp-action="ReceiveMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Get any further messages that may be on the queue">Get more</a> |
             <a class="govuk-link" id="btnReplayMessages" href="#" title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
-            <a class="govuk-link" id="btnDeleteMessages" href="#" onclick="displayBusyIndicator()" title="Delete the selected messages permanently">Delete selected</a> |
+            <a class="govuk-link" id="btnDeleteMessages" href="#" title="Delete the selected messages permanently">Delete selected</a> |
             <a class="govuk-link" id="btnAbortMessages" href="#" title="Release selected messages back to the ServiceBus Queue they came from">Release selected</a> |
             <a class="govuk-link" asp-controller="MessageList" asp-action="ReleaseMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the servicebus queue they came from">Release all</a>
         </fieldset>
@@ -231,4 +238,24 @@
             </tr>
         </thead>
     </table>
+
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title govuk-heading-m">Delete messages</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="govuk-body">Deleting a message will permanently remove it from a queue. This action is not reversible.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="govuk-button" data-module="govuk-button" id="btnDeleteMessagesModalConfirmation">Confirm</button>
+                    <button type="button" class="govuk-button govuk-button--secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
