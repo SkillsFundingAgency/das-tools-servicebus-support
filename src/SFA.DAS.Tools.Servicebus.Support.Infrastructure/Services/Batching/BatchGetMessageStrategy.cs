@@ -44,8 +44,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching
                                 peekedMessages.Add(formattedMsg);
                             });
                         }
-
-                        await Task.Delay(2000);
                     }
                     finally
                     {
@@ -54,8 +52,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching
                 })));
 
                 await Task.WhenAll(tasks.ToArray());
-
-                Thread.Sleep(2000);
 
                 isComplete = (peekedMessages.Count >= qty || runtime.Elapsed > maxWaitTime) || breaker == 1;
             }

@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
 {
@@ -12,40 +13,42 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         private readonly string _collectionName;
         private readonly string _databaseName;
         private readonly CosmosClient _client;
+        private readonly ICosmosDbPolicies _policies;
 
-        public CosmosInfrastructureService(IConfiguration config, CosmosClient client)
+        public CosmosInfrastructureService(CosmosDbSettings cosmosDbSettings, CosmosClient client, ICosmosDbPolicies policies)
         {
-            _throughput = config.GetValue<int>("CosmosDb:Throughput");
-            _collectionName = config.GetValue<string>("CosmosDb:CollectionName");
-            _databaseName = config.GetValue<string>("CosmosDb:DatabaseName");
+            _throughput = cosmosDbSettings.Throughput;
+            _collectionName = cosmosDbSettings.CollectionName;
+            _databaseName = cosmosDbSettings.DatabaseName;
             _client = client;
+            _policies = policies;
         }
 
         private async Task<Container> CreateContainer(Database database)
         {
-            var container = await database.DefineContainer(_collectionName, "/userId")
-                .WithIndexingPolicy()
-                .WithIncludedPaths()
-                    .Path("/originatingEndpoint/?")
-                    .Path("/processingEndpoint/?")
-                    .Path("/body/?")
-                    .Path("/exception/?")
-                    .Path("/exceptionType/?")
-                    .Path("/type/?")
-                    .Attach()
-                .WithExcludedPaths()
-                    .Path("/*")
-                    .Attach()
-                .Attach()
-                .CreateIfNotExistsAsync(_throughput)
-            ;
+            var container = await _policies.ResiliencePolicy.ExecuteAsync(() =>
+               database.DefineContainer(_collectionName, "/userId")
+               .WithIndexingPolicy()
+               .WithIncludedPaths()
+                   .Path("/originatingEndpoint/?")
+                   .Path("/processingEndpoint/?")
+                   .Path("/body/?")
+                   .Path("/exception/?")
+                   .Path("/exceptionType/?")
+                   .Path("/type/?")
+                   .Attach()
+               .WithExcludedPaths()
+                   .Path("/*")
+                   .Attach()
+               .Attach()
+               .CreateIfNotExistsAsync(_throughput));
 
             return container.Container;
         }
 
         private async Task<Database> CreateDatabase()
         {
-            return await _client.CreateDatabaseIfNotExistsAsync(_databaseName);
+            return await _policies.ResiliencePolicy.ExecuteAsync(() => _client.CreateDatabaseIfNotExistsAsync(_databaseName));
         }
 
         public async Task<Container> CreateContainer()
@@ -57,7 +60,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
         public async Task<FeedIterator<T>> GetItemQueryIterator<T>(QueryDefinition queryDefinition)
         {
             var container = await CreateContainer();
-            return container.GetItemQueryIterator<T>(queryDefinition);
+            return await _policies.ResiliencePolicy.ExecuteAsync(() => Task.FromResult(container.GetItemQueryIterator<T>(queryDefinition)));
         }
     }
 }

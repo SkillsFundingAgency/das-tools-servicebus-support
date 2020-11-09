@@ -15,6 +15,7 @@ using SFA.DAS.Configuration.AzureTableStorage;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
 using Microsoft.Extensions.Logging;
 using Polly.Registry;
+using SFA.DAS.Tools.Servicebus.Support.Audit;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web
 {
@@ -54,10 +55,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddOptions();
-            services.Configure<Settings>(_configuration);
-            services.AddCommands(_configuration);
+            services.AddConfiguration(_configuration);
+            services.AddCommands();
             services.AddQueries();
-            services.AddServices(_configuration);
+            services.AddServices();
             services.AddAntiforgery(options =>
             {
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
@@ -70,7 +71,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
             {
                 var policy = new AuthorizationPolicyBuilder()
                     .RequireAuthenticatedUser()
-                    .RequireRole(_configuration["RequiredRole"])
+                    .RequireRole(_configuration["UserIdentitySettings:RequiredRole"])
                     .Build();
                 options.Filters.Add(new AuthorizeFilter(policy));
                 options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());

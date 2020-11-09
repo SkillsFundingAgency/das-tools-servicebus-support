@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount
 {

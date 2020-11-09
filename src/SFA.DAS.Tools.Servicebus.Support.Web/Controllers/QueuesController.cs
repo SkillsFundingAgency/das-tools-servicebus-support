@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessageCountPerUser;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
@@ -12,12 +13,12 @@ using System.Threading.Tasks;
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
     public class QueuesController : Controller
-    {        
+    {
         private readonly IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse> _getQueuesQuery;
         private readonly IQueryHandler<GetMessageCountPerUserQuery, GetMessageCountPerUserQueryResponse> _getMessageCountPerUser;
         private readonly IQueryHandler<GetUserSessionsQuery, GetUserSessionsQueryResponse> _getUserSessionsQuery;
 
-        public QueuesController(            
+        public QueuesController(
             IQueryHandler<GetQueuesQuery, GetQueuesQueryResponse> getQueuesQuery,
             IQueryHandler<GetMessageCountPerUserQuery, GetMessageCountPerUserQueryResponse> getMessageCountPerUser,
             IQueryHandler<GetUserSessionsQuery, GetUserSessionsQueryResponse> getUserSessionsQuery)
@@ -28,9 +29,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(string sort, string order, string search, int offset, int limit)
+        public async Task<IActionResult> Index(string sort, string order, string search, int offset, int limit, bool filterEmptyQueues)
         {
-            var queuesResponse = await _getQueuesQuery.Handle(new GetQueuesQuery());
+            var queuesResponse = await _getQueuesQuery.Handle(new GetQueuesQuery { FilterEmptyQueues = filterEmptyQueues });
 
             var messageCountResponse = await _getMessageCountPerUser.Handle(new GetMessageCountPerUserQuery());
 
