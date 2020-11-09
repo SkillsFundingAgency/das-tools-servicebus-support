@@ -126,24 +126,24 @@
                 <option value="1000">1000</option>
             </select>
             <a class="govuk-link" id="btnReceiveMessages" href="#" onclick='getQueueMessages("@Model.QueueInfo.Name")' title="Get any further messages that may be on the queue">Get more</a> |
-            <form method="post" id="receiveMessagesForm" asp-action="ReceiveMessagesFromQueue">
+            <form method="post" id="receiveMessagesForm" asp-action="ReceiveMessagesFromQueue" hidden="hidden">
                 <input type="hidden" name="getQuantity" id="receiveMessagesQtyField" />
                 <input type="hidden" name="queueName" id="receiveMessagesQueueNameField" />
             </form>
 
             <a class="govuk-link" id="btnReplayMessages" href="#" onclick='replayMessages("@Model.QueueInfo.Name")' title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
-            <form method="post" id="replayMessagesForm" asp-action="ReplayMessages">
+            <form method="post" id="replayMessagesForm" asp-action="ReplayMessages" hidden="hidden">
                 <input type="hidden" name="ids" id="replayMessagesIdsField" />
                 <input type="hidden" name="queueName" id="replayMessagesQueueNameField" />
             </form>
 
             <a class="govuk-link" id="btnDeleteMessages" href="#" title="Delete the selected messages permanently">Delete selected</a> |
-            <form method="post" id="deleteMessagesForm" asp-action="DeleteMessages">
+            <form method="post" id="deleteMessagesForm" asp-action="DeleteMessages" hidden="hidden">
                 <input type="hidden" name="ids" id="deleteMessagesIdsField" />
             </form>
 
             <a class="govuk-link" id="btnReleaseSelectedMessages" href="#" onclick='releaseSelectedMessages("@Model.QueueInfo.Name")' title="Release selected messages back to the ServiceBus Queue they came from">Release selected</a> |
-            <form method="post" id="releaseSelectedMessagesForm" asp-action="ReleaseSelectedMessages">
+            <form method="post" id="releaseSelectedMessagesForm" asp-action="ReleaseSelectedMessages" hidden="hidden">
                 <input type="hidden" name="ids" id="releaseSelectedMessagesIdsField" />
                 <input type="hidden" name="queueName" id="releaseSelectedMessagesQueueNameField" />
             </form>
