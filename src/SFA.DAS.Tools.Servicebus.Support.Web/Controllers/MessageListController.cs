@@ -139,19 +139,18 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ReplayMessages(string data)
-        {
-            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
+        public async Task<IActionResult> ReplayMessages(ReplayMessagesModel model)
+        {            
             var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
             {
                 UserId = _userService.GetUserId(),
-                Ids = selectedMessages.Ids
+                Ids = model.Ids
             });
 
-            var processingQueueName = selectedMessages.GetProcessingQueueName(_settings.ErrorQueueRegex);
+            var processingQueueName = model.QueueName.GetProcessingQueueName(_settings.ErrorQueueRegex);
             await _messageService.ReplayMessages(response.Messages, processingQueueName);
 
-            return Json(string.Empty);
+            return RedirectToAction("Index");
         }
 
         [HttpPost]

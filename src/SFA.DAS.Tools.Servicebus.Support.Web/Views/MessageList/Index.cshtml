@@ -105,14 +105,12 @@
             }
         });
 
-        $("#btnReplayMessages").click(function () {
-
-            var data = { "ids": selections, "queue": $("#queueName").val() }
-
-            if (selections.length > 0) {
-                sendRequest($('#replayUrl').val(), data);
-            }
-        });
+        function replayMessages(queue) {
+            displayBusyIndicator();
+            $('#replayMessagesIdsField').val(selections);
+            $('#replayMessagesQueueNameField').val(queue);
+            $('#replayMessagesForm').submit();
+        }
 
         function getQueueMessages(queue) {
             displayBusyIndicator();
@@ -134,7 +132,6 @@
 
     <input id="baseUrl" type="hidden" value="@(Url.Action("Index", "MessageDetails"))" />
     <input id="deleteUrl" type="hidden" value="@(Url.Action("DeleteMessages", "MessageList"))" />
-    <input id="replayUrl" type="hidden" value="@(Url.Action("ReplayMessages", "MessageList"))" />
     <input id="abortUrl" type="hidden" value="@(Url.Action("AbortMessages", "MessageList"))" />
     <input id="queueName" type="hidden" value="@Model.QueueInfo.Name" />
 
@@ -174,7 +171,12 @@
                 <input type="hidden" name="queueName" id="receiveMessagesQueueNameField" />
             </form>
 
-            <a class="govuk-link" id="btnReplayMessages" href="#" title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
+            <a class="govuk-link" id="btnReplayMessages" href="#" onclick='replayMessages("@Model.QueueInfo.Name")' title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
+            <form method="post" id="replayMessagesForm" asp-action="ReplayMessages">
+                <input type="hidden" name="ids" id="replayMessagesIdsField" />
+                <input type="hidden" name="queueName" id="replayMessagesQueueNameField" />
+            </form>
+
             <a class="govuk-link" id="btnDeleteMessages" href="#" title="Delete the selected messages permanently">Delete selected</a> |
             <a class="govuk-link" id="btnAbortMessages" href="#" title="Release selected messages back to the ServiceBus Queue they came from">Release selected</a> |
             <a class="govuk-link" asp-controller="MessageList" asp-action="ReleaseMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the servicebus queue they came from">Release all</a>
