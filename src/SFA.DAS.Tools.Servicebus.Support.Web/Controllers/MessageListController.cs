@@ -95,7 +95,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 UserSession = await _userSessionService.GetUserSession()
             });
         }
-      
+
         [HttpPost]
         public async Task<IActionResult> ReceiveMessagesFromQueue(ReceiveMessagesModel model)
         {
@@ -140,7 +140,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
         [HttpPost]
         public async Task<IActionResult> ReplayMessages(ReplayMessagesModel model)
-        {            
+        {
             var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
             {
                 UserId = _userService.GetUserId(),
@@ -154,15 +154,14 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> DeleteMessages(string data)
+        public async Task<IActionResult> DeleteMessages(DeleteMessagesModel model)
         {
-            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
             await _deleteQueueMessageCommand.Handle(new BatchDeleteQueueMessagesCommand()
             {
-                Ids = selectedMessages.Ids
+                Ids = model.Ids
             });
 
-            return Json(string.Empty);
+            return RedirectToAction("Index");
         }
 
         private async Task DeleteUserSession()

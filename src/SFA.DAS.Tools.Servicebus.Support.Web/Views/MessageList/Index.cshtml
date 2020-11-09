@@ -89,11 +89,8 @@
 
             $('#deleteConfirmationModal').modal('hide');
             displayBusyIndicator();
-            var data = { "ids": selections }
-
-            if (selections.length > 0) {
-                sendRequest($('#deleteUrl').val(), data);
-            }
+            $('#deleteMessagesIdsField').val(selections);
+            $('#deleteMessagesForm').submit();
         })
 
         $("#btnAbortMessages").click(function () {
@@ -131,7 +128,6 @@
 <div>
 
     <input id="baseUrl" type="hidden" value="@(Url.Action("Index", "MessageDetails"))" />
-    <input id="deleteUrl" type="hidden" value="@(Url.Action("DeleteMessages", "MessageList"))" />
     <input id="abortUrl" type="hidden" value="@(Url.Action("AbortMessages", "MessageList"))" />
     <input id="queueName" type="hidden" value="@Model.QueueInfo.Name" />
 
@@ -178,6 +174,11 @@
             </form>
 
             <a class="govuk-link" id="btnDeleteMessages" href="#" title="Delete the selected messages permanently">Delete selected</a> |
+            <form method="post" id="deleteMessagesForm" asp-action="DeleteMessages">
+                <input type="hidden" name="ids" id="deleteMessagesIdsField" />
+                <input type="hidden" name="queueName" id="deleteMessagesQueueNameField" />
+            </form>
+
             <a class="govuk-link" id="btnAbortMessages" href="#" title="Release selected messages back to the ServiceBus Queue they came from">Release selected</a> |
             <a class="govuk-link" asp-controller="MessageList" asp-action="ReleaseMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the servicebus queue they came from">Release all</a>
         </fieldset>
