@@ -1,10 +1,4 @@
-﻿@using Microsoft.AspNetCore.Http
-@model MessageListViewModel
-
-@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "__AjaxAntiForgeryForm" }))
-{
-    @Html.AntiForgeryToken()
-}
+﻿@model MessageListViewModel
 
 @section Scripts
 {
@@ -27,32 +21,6 @@
                 });
 
             return res;
-        }
-
-        function sendRequest(url, data) {
-            displayBusyIndicator();
-
-            var form = $('#__AjaxAntiForgeryForm');
-            var token = $('input[name="__RequestVerificationToken"]', form).val();
-
-            $.ajax({
-                type: "POST",
-                url: url,
-                dataType: 'json',
-                data: {
-                    '__RequestVerificationToken': token,
-                    "data": JSON.stringify(data)
-                },
-                failure: function (response) {
-                    console.log(response.responseText);
-                },
-                error: function (response) {
-                    console.log(response.responseText);
-                }
-            })
-                .then(function () {
-                    location.reload();
-                });
         }
 
         $(function () {
@@ -93,14 +61,12 @@
             $('#deleteMessagesForm').submit();
         })
 
-        $("#btnAbortMessages").click(function () {
-
-            var data = { "ids": selections, "queue": $("#queueName").val() }
-
-            if (selections.length > 0) {
-                sendRequest($('#abortUrl').val(), data);
-            }
-        });
+        function releaseSelectedMessages(queue) {
+            displayBusyIndicator();
+            $('#releaseSelectedMessagesIdsField').val(selections);
+            $('#releaseSelectedMessagesQueueNameField').val(queue);
+            $('#releaseSelectedMessagesForm').submit();
+        }
 
         function replayMessages(queue) {
             displayBusyIndicator();
@@ -128,8 +94,6 @@
 <div>
 
     <input id="baseUrl" type="hidden" value="@(Url.Action("Index", "MessageDetails"))" />
-    <input id="abortUrl" type="hidden" value="@(Url.Action("AbortMessages", "MessageList"))" />
-    <input id="queueName" type="hidden" value="@Model.QueueInfo.Name" />
 
     <h3 class="govuk-heading-l">Queue - @Model.QueueInfo.Name</h3>
 
@@ -176,11 +140,15 @@
             <a class="govuk-link" id="btnDeleteMessages" href="#" title="Delete the selected messages permanently">Delete selected</a> |
             <form method="post" id="deleteMessagesForm" asp-action="DeleteMessages">
                 <input type="hidden" name="ids" id="deleteMessagesIdsField" />
-                <input type="hidden" name="queueName" id="deleteMessagesQueueNameField" />
             </form>
 
-            <a class="govuk-link" id="btnAbortMessages" href="#" title="Release selected messages back to the ServiceBus Queue they came from">Release selected</a> |
-            <a class="govuk-link" asp-controller="MessageList" asp-action="ReleaseMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the servicebus queue they came from">Release all</a>
+            <a class="govuk-link" id="btnReleaseSelectedMessages" href="#" onclick='releaseSelectedMessages("@Model.QueueInfo.Name")' title="Release selected messages back to the ServiceBus Queue they came from">Release selected</a> |
+            <form method="post" id="releaseSelectedMessagesForm" asp-action="ReleaseSelectedMessages">
+                <input type="hidden" name="ids" id="releaseSelectedMessagesIdsField" />
+                <input type="hidden" name="queueName" id="releaseSelectedMessagesQueueNameField" />
+            </form>
+
+            <a class="govuk-link" asp-controller="MessageList" asp-action="ReleaseAllMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the servicebus queue they came from">Release all</a>
         </fieldset>
     </div>
 

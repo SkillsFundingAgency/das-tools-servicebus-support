@@ -111,21 +111,20 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AbortMessages(string data)
+        public async Task<IActionResult> ReleaseSelectedMessages(ReleaseSelectedMessages model)
         {
-            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
             var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
             {
                 UserId = _userService.GetUserId(),
-                Ids = selectedMessages.Ids
+                Ids = model.Ids
             });
 
-            await _messageService.AbortMessages(response.Messages, selectedMessages.Queue);
+            await _messageService.AbortMessages(response.Messages, model.QueueName);
 
-            return Json(string.Empty);
+            return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> ReleaseMessages(string queue)
+        public async Task<IActionResult> ReleaseAllMessages(string queue)
         {
             var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
             {
