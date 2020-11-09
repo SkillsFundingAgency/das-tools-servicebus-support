@@ -114,14 +114,13 @@
             }
         });
 
-        $("#btnReceiveMessages").click(function () {
-
-            var data = {
-                "queue": $("#queueName").val(), "qty": $("#getQty")[0].value
-            }
-
-            sendRequest($('#receiveUrl').val(), data);
-        });
+        function getQueueMessages(queue) {
+            displayBusyIndicator();
+            var qtyValue = $('#getQty :selected').val();
+            $('#receiveMessagesQtyField').val(qtyValue);
+            $('#receiveMessagesQueueNameField').val(queue);
+            $('#receiveMessagesForm').submit();
+        }
 
     </script>
 }
@@ -138,7 +137,6 @@
     <input id="replayUrl" type="hidden" value="@(Url.Action("ReplayMessages", "MessageList"))" />
     <input id="abortUrl" type="hidden" value="@(Url.Action("AbortMessages", "MessageList"))" />
     <input id="queueName" type="hidden" value="@Model.QueueInfo.Name" />
-    <input id="receiveUrl" type="hidden" value="@(Url.Action("ReceiveMessages", "MessageList"))" />
 
     <h3 class="govuk-heading-l">Queue - @Model.QueueInfo.Name</h3>
 
@@ -170,7 +168,11 @@
                 <option value="500">500</option>
                 <option value="1000">1000</option>
             </select>
-            <a class="govuk-link" id="btnReceiveMessages" href="#" onclick="displayBusyIndicator()" title="Get any further messages that may be on the queue">Get more</a> |
+            <a class="govuk-link" id="btnReceiveMessages" href="#" onclick='getQueueMessages("@Model.QueueInfo.Name")' title="Get any further messages that may be on the queue">Get more</a> |
+            <form method="post" id="receiveMessagesForm" asp-action="ReceiveMessagesFromQueue">
+                <input type="hidden" name="getQuantity" id="receiveMessagesQtyField" />
+                <input type="hidden" name="queueName" id="receiveMessagesQueueNameField" />
+            </form>
 
             <a class="govuk-link" id="btnReplayMessages" href="#" title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
             <a class="govuk-link" id="btnDeleteMessages" href="#" title="Delete the selected messages permanently">Delete selected</a> |
