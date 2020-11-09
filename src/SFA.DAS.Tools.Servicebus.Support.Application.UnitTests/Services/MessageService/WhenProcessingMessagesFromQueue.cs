@@ -1,12 +1,8 @@
 ﻿using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
-using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
@@ -22,27 +18,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
     public class WhenProcessingMessagesFromQueue
     {
         private readonly string _queueName = "q";
-        private readonly int _batchSize = 9;
         private const int GetQty = 3;
-        private const string serviceBusConnectionString = "ServiceBusRepoSettings:ServiceBusConnectionString";
-
-        private readonly Mock<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>
-            _bulkCreateQueueMessagesCommand =
-                new Mock<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>();
-
-        private readonly Mock<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>>
-            _receiveQueueMessagesQuery =
-                new Mock<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>>();
-
-        private readonly Mock<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>>
-            _getQueueMessageCountQuery =
-                new Mock<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>>();
-
+        
         private readonly Mock<ILogger<Service.RetrieveMessagesService>>
             _iLogger =
-                new Mock<ILogger<Service.RetrieveMessagesService>>();
-
-        private readonly Mock<ITokenProvider> _tokenProvider = new Mock<ITokenProvider>();
+                new Mock<ILogger<Service.RetrieveMessagesService>>();       
 
         private readonly Mock<IUserService> _userService = new Mock<IUserService>();
 
