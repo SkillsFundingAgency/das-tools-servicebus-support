@@ -3,56 +3,23 @@
     ViewData["Title"] = "Home Page";
 }
 
-@using (Html.BeginForm(null, null, FormMethod.Post, new { id = "__AjaxAntiForgeryForm" }))
-{
-    @Html.AntiForgeryToken()
-}
-
 @section Scripts
 {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.18.0/bootstrap-table.min.js"></script>
 
     <script type="text/javascript">
 
-        function sendRequest(url, data) {
+        function getQueueMessagesLink(queue) {
             displayBusyIndicator();
-
-            var form = $('#__AjaxAntiForgeryForm');
-            var token = $('input[name="__RequestVerificationToken"]', form).val();
-
-            return $.ajax({
-                type: "POST",
-                url: url,
-                dataType: 'json',
-                data: {
-                    '__RequestVerificationToken': token,
-                    "data": JSON.stringify(data)
-                },
-                failure: function (response) {
-                    console.log(response.responseText);
-                },
-                error: function (response) {
-                    console.log(response.responseText);
-                }
-            })
-
+            var qtyValue = $('#getQty :selected').val();
+            $('#getQuantityFormField').val(qtyValue);
+            $('#queueNameFormField').val(queue);
+            $('#queueTableForm').submit();            
         }
 
         function operateFormatter(value, row, index) {
-            return '<a class="detail" href="#" onclick="displayBusyIndicator();getMessages(\'' + row.id + '\')" title ="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>';
+            return '<a class="detail" href="#" onclick="getQueueMessagesLink(\'' + row.id + '\')" title ="Retrieve messages from ServiceBus queue, this will give you sole possession">Retrieve messages</a>';
         };
-
-        function getMessages(queue) {
-            var data = {
-                "queue": queue, "qty": $("#getQty")[0].value
-            }
-
-            sendRequest($('#receiveUrl').val(), data).then(function () {
-                window.location.href = $('#messageListUrl').val();
-            });
-
-        }
-
 
         function queryParams(params) {
             params.filterEmptyQueues = $('#toggleHideEmptyQueues').is(":checked");
@@ -79,9 +46,6 @@
 }
 
 <div>
-    <input id="receiveUrl" type="hidden" value="@(Url.Action("ReceiveMessages", "MessageList"))" />
-    <input id="messageListUrl" type="hidden" value="@(Url.Action("Index", "MessageList"))" />
-
     <h1 class="govuk-heading-xl">Message queues</h1>
 
     <fieldset class="form-group">
@@ -99,9 +63,13 @@
                     <input type="checkbox" checked class="custom-control-input" id="toggleHideEmptyQueues" onchange="refreshBootstrapTable()">
                     <label class="custom-control-label" for="toggleHideEmptyQueues">Hide empty queues.</label>
                 </div>
-            </div>            
+            </div>
         </div>
     </fieldset>
+    <form method="post" id="queueTableForm" asp-action="ReceiveMessagesFromQueue" asp-controller="MessageList">
+        <input type="hidden" name="getQuantity" id="getQuantityFormField" />
+        <input type="hidden" name="queueName" id="queueNameFormField" />
+    </form>
     <table id="queueTable"
            class="govuk-table"
            data-toggle="table"
@@ -154,5 +122,4 @@
             </tr>
         </thead>
     </table>
-
 </div>

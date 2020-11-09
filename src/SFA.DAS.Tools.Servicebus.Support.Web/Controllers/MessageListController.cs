@@ -113,6 +113,20 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> ReceiveMessagesFromQueue(ReceiveMessagesModel model)
+        {
+            HttpContext.Session.SetString("queueName", model.QueueName);
+            var count = (await _getQueueMessageCountQuery.Handle(new GetQueueMessageCountQuery()
+            {
+                QueueName = model.QueueName
+            })).Count;
+
+            await _retrieveMessagesService.GetMessages(model.QueueName, count, model.GetQuantity);
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
         public async Task<IActionResult> AbortMessages(string data)
         {
             var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
