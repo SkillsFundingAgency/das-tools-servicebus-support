@@ -61,25 +61,25 @@
             $('#deleteMessagesForm').submit();
         })
 
-        function releaseSelectedMessages(queue) {
+        function releaseSelectedMessages() {
             displayBusyIndicator();
             $('#releaseSelectedMessagesIdsField').val(selections);
-            $('#releaseSelectedMessagesQueueNameField').val(queue);
+            $('#releaseSelectedMessagesQueueNameField').val('@Model.QueueInfo.Name');
             $('#releaseSelectedMessagesForm').submit();
         }
 
-        function replayMessages(queue) {
+        function replayMessages() {
             displayBusyIndicator();
             $('#replayMessagesIdsField').val(selections);
-            $('#replayMessagesQueueNameField').val(queue);
+            $('#replayMessagesQueueNameField').val('@Model.QueueInfo.Name');
             $('#replayMessagesForm').submit();
         }
 
-        function getQueueMessages(queue) {
+        function getQueueMessages() {
             displayBusyIndicator();
             var qtyValue = $('#getQty :selected').val();
             $('#receiveMessagesQtyField').val(qtyValue);
-            $('#receiveMessagesQueueNameField').val(queue);
+            $('#receiveMessagesQueueNameField').val('@Model.QueueInfo.Name');
             $('#receiveMessagesForm').submit();
         }
 
@@ -125,13 +125,13 @@
                 <option value="500">500</option>
                 <option value="1000">1000</option>
             </select>
-            <a class="govuk-link" id="btnReceiveMessages" href="#" onclick='getQueueMessages("@Model.QueueInfo.Name")' title="Get any further messages that may be on the queue">Get more</a> |
+            <a class="govuk-link" id="btnReceiveMessages" href="#" onclick="getQueueMessages()" title="Get any further messages that may be on the queue">Get more</a> |
             <form method="post" id="receiveMessagesForm" asp-action="ReceiveMessagesFromQueue" hidden="hidden">
                 <input type="hidden" name="getQuantity" id="receiveMessagesQtyField" />
                 <input type="hidden" name="queueName" id="receiveMessagesQueueNameField" />
             </form>
 
-            <a class="govuk-link" id="btnReplayMessages" href="#" onclick='replayMessages("@Model.QueueInfo.Name")' title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
+            <a class="govuk-link" id="btnReplayMessages" href="#" onclick="replayMessages()" title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
             <form method="post" id="replayMessagesForm" asp-action="ReplayMessages" hidden="hidden">
                 <input type="hidden" name="ids" id="replayMessagesIdsField" />
                 <input type="hidden" name="queueName" id="replayMessagesQueueNameField" />
@@ -142,7 +142,7 @@
                 <input type="hidden" name="ids" id="deleteMessagesIdsField" />
             </form>
 
-            <a class="govuk-link" id="btnReleaseSelectedMessages" href="#" onclick='releaseSelectedMessages("@Model.QueueInfo.Name")' title="Release selected messages back to the ServiceBus Queue they came from">Release selected</a> |
+            <a class="govuk-link" id="btnReleaseSelectedMessages" href="#" onclick="releaseSelectedMessages()" title="Release selected messages back to the ServiceBus Queue they came from">Release selected</a> |
             <form method="post" id="releaseSelectedMessagesForm" asp-action="ReleaseSelectedMessages" hidden="hidden">
                 <input type="hidden" name="ids" id="releaseSelectedMessagesIdsField" />
                 <input type="hidden" name="queueName" id="releaseSelectedMessagesQueueNameField" />

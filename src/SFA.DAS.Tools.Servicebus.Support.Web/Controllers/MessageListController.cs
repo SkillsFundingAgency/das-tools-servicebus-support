@@ -114,7 +114,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
             {
                 UserId = _userService.GetUserId(),
-                Ids = model.Ids
+                Ids = model.Ids?.Split(",")
             });
 
             await _messageService.AbortMessages(response.Messages, model.QueueName);
@@ -141,7 +141,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
             {
                 UserId = _userService.GetUserId(),
-                Ids = model.Ids
+                Ids = model.Ids?.Split(",")
             });
 
             var processingQueueName = model.QueueName.GetProcessingQueueName(_settings.ErrorQueueRegex);
@@ -155,7 +155,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         {
             await _deleteQueueMessageCommand.Handle(new BatchDeleteQueueMessagesCommand()
             {
-                Ids = model.Ids
+                Ids = model.Ids?.Split(",")
             });
 
             return RedirectToAction("Index");
