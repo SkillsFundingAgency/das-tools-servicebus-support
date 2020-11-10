@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
@@ -10,7 +9,6 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
-using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
@@ -49,7 +47,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             IOptions<ServiceBusErrorManagementSettings> settings,
             ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
             ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
-            IRetrieveMessagesService retrieveMessagesService,            
+            IRetrieveMessagesService retrieveMessagesService,
             IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse> getQueueMessageCountQuery)
         {
             _userService = userService;
@@ -59,7 +57,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             _messageService = messageService;
             _userSessionService = userSessionService;
             _settings = settings.Value;
-            _deleteQueueMessageCommand = deleteQueueMessageCommand;            
+            _deleteQueueMessageCommand = deleteQueueMessageCommand;
             _retrieveMessagesService = retrieveMessagesService;
             _getQueueMessageCountQuery = getQueueMessageCountQuery;
         }
@@ -93,39 +91,38 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                     QueueName = queueName
                 })).QueueInfo,
                 UserSession = await _userSessionService.GetUserSession()
-
             });
         }
 
-        public async Task<IActionResult> ReceiveMessages(string queue)
+        [HttpPost]
+        public async Task<IActionResult> ReceiveMessagesFromQueue(ReceiveMessagesModel model)
         {
-            HttpContext.Session.SetString("queueName", queue);
+            HttpContext.Session.SetString("queueName", model.QueueName);
             var count = (await _getQueueMessageCountQuery.Handle(new GetQueueMessageCountQuery()
             {
-                QueueName = queue
+                QueueName = model.QueueName
             })).Count;
 
-            await _retrieveMessagesService.GetMessages(queue, count);
+            await _retrieveMessagesService.GetMessages(model.QueueName, count, model.GetQuantity);
 
             return RedirectToAction("Index");
         }
 
         [HttpPost]
-        public async Task<IActionResult> AbortMessages(string data)
+        public async Task<IActionResult> ReleaseSelectedMessages(ReleaseSelectedMessages model)
         {
-            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
             var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
             {
                 UserId = _userService.GetUserId(),
-                Ids = selectedMessages.Ids
+                Ids = model.Ids?.Split(",")
             });
 
-            await _messageService.AbortMessages(response.Messages, selectedMessages.Queue);
+            await _messageService.AbortMessages(response.Messages, model.QueueName);
 
-            return Json(string.Empty);
+            return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> ReleaseMessages(string queue)
+        public async Task<IActionResult> ReleaseAllMessages(string queue)
         {
             var response = await _getMessagesQuery.Handle(new GetMessagesQuery()
             {
@@ -139,37 +136,35 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ReplayMessages(string data)
+        public async Task<IActionResult> ReplayMessages(ReplayMessagesModel model)
         {
-            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
             var response = await _getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
             {
                 UserId = _userService.GetUserId(),
-                Ids = selectedMessages.Ids
+                Ids = model.Ids?.Split(",")
             });
 
-            var processingQueueName = selectedMessages.GetProcessingQueueName(_settings.ErrorQueueRegex);
+            var processingQueueName = model.QueueName.GetProcessingQueueName(_settings.ErrorQueueRegex);
             await _messageService.ReplayMessages(response.Messages, processingQueueName);
 
-            return Json(string.Empty);
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
-        public async Task<IActionResult> DeleteMessages(string data)
+        public async Task<IActionResult> DeleteMessages(DeleteMessagesModel model)
         {
-            var selectedMessages = JsonConvert.DeserializeObject<SelectedMessages>(data);
             await _deleteQueueMessageCommand.Handle(new BatchDeleteQueueMessagesCommand()
             {
-                Ids = selectedMessages.Ids
+                Ids = model.Ids?.Split(",")
             });
 
-            return Json(string.Empty);
+            return RedirectToAction("Index");
         }
-        
+
         private async Task DeleteUserSession()
-        {            
+        {
             await _userSessionService.DeleteUserSession();
-            HttpContext.Session.Set<DateTime?>("sessionActiveUntil", null);            
+            HttpContext.Session.Set<DateTime?>("sessionActiveUntil", null);
             HttpContext.Session.SetString("queueName", string.Empty);
         }
     }

@@ -34,8 +34,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             return View(new MessageDetailViewModel
             {
-                Queue = message.Message.Body,
-                Body = message.Message.Queue,
+                Queue = message.Message.Queue,
+                Body = message.Message.Body,
                 Properties = _redactor.Redact(ConvertPropertiesToList(message)).OrderBy(x => x.Key),
                 UserProperties = _redactor.Redact(message.Message.UserProperties).OrderBy(x => x.Key)
             });

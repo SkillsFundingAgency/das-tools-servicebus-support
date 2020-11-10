@@ -1,12 +1,8 @@
 ﻿using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
-using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
-using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
@@ -22,25 +18,11 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
     public class WhenProcessingMessagesFromQueue
     {
         private readonly string _queueName = "q";
-        private const string serviceBusConnectionString = "ServiceBusRepoSettings:ServiceBusConnectionString";
-
-        private readonly Mock<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>
-            _bulkCreateQueueMessagesCommand =
-                new Mock<ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>>();
-
-        private readonly Mock<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>>
-            _receiveQueueMessagesQuery =
-                new Mock<IQueryHandler<ReceiveQueueMessagesQuery, ReceiveQueueMessagesQueryResponse>>();
-
-        private readonly Mock<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>>
-            _getQueueMessageCountQuery =
-                new Mock<IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>>();
-
+        private const int GetQuantity = 3;
+        
         private readonly Mock<ILogger<Service.RetrieveMessagesService>>
             _iLogger =
-                new Mock<ILogger<Service.RetrieveMessagesService>>();
-
-        private readonly Mock<ITokenProvider> _tokenProvider = new Mock<ITokenProvider>();
+                new Mock<ILogger<Service.RetrieveMessagesService>>();       
 
         private readonly Mock<IUserService> _userService = new Mock<IUserService>();
 
@@ -54,7 +36,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
 
         private readonly ServiceBusErrorManagementSettings serviceBusSettings = new ServiceBusErrorManagementSettings
         {
-            MaxRetrievalSize = 3,
             PeekMessageBatchSize = 9
         };
 
@@ -87,7 +68,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
                 _messageReceiverFactory.Object
             );
 
-            await sut.GetMessages(_queueName, 10);
+            await sut.GetMessages(_queueName, 10, GetQuantity);
 
             _messageReceiver.VerifySet(receiver => receiver.PrefetchCount);
             _messageReceiver.Verify(receiver => receiver.ReceiveAsync(3, It.IsAny<TimeSpan>()), Times.Once);
