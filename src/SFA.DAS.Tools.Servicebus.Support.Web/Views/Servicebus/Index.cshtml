@@ -49,22 +49,28 @@
     <h1 class="govuk-heading-xl">Message queues</h1>
 
     <fieldset class="form-group">
-        <div class="row">
-            <div class="col">
-                <label for="getQty">Get quantity</label>
-                <select name="getQty" id="getQty">
-                    <option value="250">250</option>
-                    <option value="500">500</option>
-                    <option value="1000">1000</option>
-                </select>
-            </div>
-            <div class="col">
-                <div class="custom-control custom-switch float-right">
-                    <input type="checkbox" checked class="custom-control-input" id="toggleHideEmptyQueues" onchange="refreshBootstrapTable()">
-                    <label class="custom-control-label" for="toggleHideEmptyQueues">Hide empty queues</label>
+        <div class="govuk-table__row">
+            <fieldset class="govuk-fieldset">
+                <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
+                    <h1 class="govuk-fieldset__heading">
+                        Queue options
+                    </h1>
+                </legend>
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" checked class="govuk-checkboxes__input" id="toggleHideEmptyQueues" onchange="refreshBootstrapTable()">
+                    <label class="govuk-label govuk-checkboxes__label" for="toggleHideEmptyQueues">Hide empty queues</label>
                 </div>
-            </div>
+            </fieldset>
         </div>
+        <br />
+        <div class="govuk-table__row">
+            <label class="govuk-label" for="getQty">Get quantity</label>
+            <select class="govuk-select" name="getQty" id="getQty">
+                <option value="250">250</option>
+                <option value="500">500</option>
+                <option value="1000">1000</option>
+            </select>
+        </div>        
     </fieldset>
     <form method="post" id="queueTableForm" asp-action="ReceiveMessagesFromQueue" asp-controller="MessageList">
         <input type="hidden" name="getQuantity" id="getQuantityFormField" />
