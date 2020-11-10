@@ -4,6 +4,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
 {
     public interface IRetrieveMessagesService
     {
-        Task GetMessages(string queueName, long count, int getQty);
+        Task GetMessages(string queueName, long count, int getQuantity);
     }
 }

@@ -18,7 +18,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
     public class WhenProcessingMessagesFromQueue
     {
         private readonly string _queueName = "q";
-        private const int GetQty = 3;
+        private const int GetQuantity = 3;
         
         private readonly Mock<ILogger<Service.RetrieveMessagesService>>
             _iLogger =
@@ -68,7 +68,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
                 _messageReceiverFactory.Object
             );
 
-            await sut.GetMessages(_queueName, 10, GetQty);
+            await sut.GetMessages(_queueName, 10, GetQuantity);
 
             _messageReceiver.VerifySet(receiver => receiver.PrefetchCount);
             _messageReceiver.Verify(receiver => receiver.ReceiveAsync(3, It.IsAny<TimeSpan>()), Times.Once);

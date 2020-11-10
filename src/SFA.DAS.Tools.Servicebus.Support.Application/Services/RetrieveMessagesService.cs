@@ -43,9 +43,9 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _messageReceiverFactory = messageReceiverFactory;
         }
 
-        public async Task GetMessages(string queueName, long count, int getQty)
+        public async Task GetMessages(string queueName, long count, int getQuantity)
         {
-            count = count > getQty ? getQty : count;
+            count = count > getQuantity ? getQuantity : count;
 
             CreateMessageReceiver(queueName, 250);
 
