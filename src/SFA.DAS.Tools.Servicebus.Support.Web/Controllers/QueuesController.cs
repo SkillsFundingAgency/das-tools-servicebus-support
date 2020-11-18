@@ -31,12 +31,21 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string sort, string order, string search, int offset, int limit, bool filterEmptyQueues)
         {
-            var queuesResponse = await _getQueuesQuery.Handle(new GetQueuesQuery { FilterEmptyQueues = filterEmptyQueues });
+            var queuesResponse = await _getQueuesQuery.Handle(new GetQueuesQuery());
 
             var messageCountResponse = await _getMessageCountPerUser.Handle(new GetMessageCountPerUserQuery());
 
             var userSessionResponse = await _getUserSessionsQuery.Handle(new GetUserSessionsQuery());
             var userSessions = userSessionResponse.UserSessions.ToList();
+
+
+            var returnedQueues = queuesResponse.Queues;
+
+            if (filterEmptyQueues)
+            {
+                returnedQueues = returnedQueues.Where(s => s.MessageCount > 0
+                || (messageCountResponse.QueueMessageCount.ContainsKey(s.Name) && messageCountResponse.QueueMessageCount[s.Name].Count > 0));
+            }
 
             return Json(new
             {
