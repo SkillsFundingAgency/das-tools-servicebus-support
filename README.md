@@ -15,6 +15,7 @@ das-tools-servicebus-support is a website for managing errors on Azure ServiceBu
 * A CosmosDB instance or emulator
 * Azure Service Bus instance
 * Azure Active Directory account
+* das-audit - configured using SFA.DAS.AuditApiClient_1.0 entry in table storage 
 
 ## Usage
 
