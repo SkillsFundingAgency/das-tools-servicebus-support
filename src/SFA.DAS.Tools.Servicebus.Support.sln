@@ -17,7 +17,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Tools.Servicebus.Su
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Tools.Servicebus.Support.Functions", "SFA.DAS.Tools.Servicebus.Support.Functions\SFA.DAS.Tools.Servicebus.Support.Functions.csproj", "{7190BAB0-4719-498E-8F46-AD42E09B0A5A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SFA.DAS.Tools.Servicebus.Support.Audit", "SFA.DAS.Tools.Servicebus.Support.Audit\SFA.DAS.Tools.Servicebus.Support.Audit.csproj", "{10C104D7-7976-4A3E-BCC4-B22AC34307DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Tools.Servicebus.Support.Audit", "SFA.DAS.Tools.Servicebus.Support.Audit\SFA.DAS.Tools.Servicebus.Support.Audit.csproj", "{10C104D7-7976-4A3E-BCC4-B22AC34307DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SFA.DAS.Tools.Servicebus.Support.Web.UnitTests", "SFA.DAS.Tools.Servicebus.Support.Web.UnitTests\SFA.DAS.Tools.Servicebus.Support.Web.UnitTests.csproj", "{DB9DD447-A889-4DA0-B83F-6FE30B41F00B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,6 +59,10 @@ Global
 		{10C104D7-7976-4A3E-BCC4-B22AC34307DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{10C104D7-7976-4A3E-BCC4-B22AC34307DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{10C104D7-7976-4A3E-BCC4-B22AC34307DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB9DD447-A889-4DA0-B83F-6FE30B41F00B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB9DD447-A889-4DA0-B83F-6FE30B41F00B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB9DD447-A889-4DA0-B83F-6FE30B41F00B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB9DD447-A889-4DA0-B83F-6FE30B41F00B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

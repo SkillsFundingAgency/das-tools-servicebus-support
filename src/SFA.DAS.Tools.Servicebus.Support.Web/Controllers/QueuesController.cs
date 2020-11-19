@@ -5,10 +5,12 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessageCount
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSessions;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Web.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static SFA.DAS.Tools.Servicebus.Support.Web.Models.QueueInformationModel;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
@@ -47,10 +49,10 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
                 || (messageCountResponse.QueueMessageCount.ContainsKey(s.Name) && messageCountResponse.QueueMessageCount[s.Name].Count > 0));
             }
 
-            return Json(new
+            return Json(new QueueInformationModel
             {
                 Total = returnedQueues.Count(),
-                Rows = returnedQueues.Select(q => new
+                Rows = returnedQueues.Select(q => new QueueCountInfo
                 {
                     Id = q.Name,
                     Name = q.Name,
