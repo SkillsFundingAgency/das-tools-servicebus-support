@@ -49,8 +49,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             return Json(new
             {
-                Total = queuesResponse.Queues.Count(),
-                Rows = queuesResponse.Queues.Select(q => new
+                Total = returnedQueues.Count(),
+                Rows = returnedQueues.Select(q => new
                 {
                     Id = q.Name,
                     Name = q.Name,
