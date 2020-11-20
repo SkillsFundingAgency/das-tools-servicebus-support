@@ -5,10 +5,12 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessageCount
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSessions;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Web.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static SFA.DAS.Tools.Servicebus.Support.Web.Models.QueueInformationModel;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 {
@@ -31,17 +33,26 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string sort, string order, string search, int offset, int limit, bool filterEmptyQueues)
         {
-            var queuesResponse = await _getQueuesQuery.Handle(new GetQueuesQuery { FilterEmptyQueues = filterEmptyQueues });
+            var queuesResponse = await _getQueuesQuery.Handle(new GetQueuesQuery());
 
             var messageCountResponse = await _getMessageCountPerUser.Handle(new GetMessageCountPerUserQuery());
 
             var userSessionResponse = await _getUserSessionsQuery.Handle(new GetUserSessionsQuery());
             var userSessions = userSessionResponse.UserSessions.ToList();
 
-            return Json(new
+
+            var returnedQueues = queuesResponse.Queues;
+
+            if (filterEmptyQueues)
             {
-                Total = queuesResponse.Queues.Count(),
-                Rows = queuesResponse.Queues.Select(q => new
+                returnedQueues = returnedQueues.Where(s => s.MessageCount > 0
+                || (messageCountResponse.QueueMessageCount.ContainsKey(s.Name) && messageCountResponse.QueueMessageCount[s.Name].Count > 0));
+            }
+
+            return Json(new QueueInformationModel
+            {
+                Total = returnedQueues.Count(),
+                Rows = returnedQueues.Select(q => new QueueCountInfo
                 {
                     Id = q.Name,
                     Name = q.Name,

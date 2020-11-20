@@ -17,11 +17,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues
         {
             var queues = await _asbService.GetErrorMessageQueuesAsync();
 
-            if (query.FilterEmptyQueues)
-            {
-                queues = queues?.Where(s => s.MessageCount != 0);
-            }
-
             return new GetQueuesQueryResponse()
             {
                 Queues = queues

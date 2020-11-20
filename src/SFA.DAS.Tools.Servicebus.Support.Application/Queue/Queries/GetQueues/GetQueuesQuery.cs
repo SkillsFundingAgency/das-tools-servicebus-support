@@ -4,6 +4,5 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues
 {
     public class GetQueuesQuery
     {
-        public bool FilterEmptyQueues { get; set; }
     }
 }
