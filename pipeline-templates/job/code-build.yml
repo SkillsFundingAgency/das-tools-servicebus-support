@@ -48,4 +48,4 @@ jobs:
       displayName: Publish Artifact
       inputs:
         targetPath: $(build.artifactstagingdirectory)/publish
-        artifactName: ToolsSupportArtifacts
+        artifactName: ToolsServiceBusSupportArtifacts
