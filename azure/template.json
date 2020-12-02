@@ -14,6 +14,37 @@
                 "description": "The name of the service."
             }
         },
+        "sharedEnvResourceGroup": {
+            "type": "string"
+        },
+        "sharedFrontEndAppServicePlanName": {
+            "type": "string"
+        },
+        "sharedFrontEndSubnetResourceId": {
+            "type": "string"
+        },
+        "frontEndAccessRestrictions": {
+            "type": "array"
+        },
+        "customHostname": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "baseUrl": {
+            "type": "string"
+        },
+        "cdnUrl": {
+            "type": "string"
+        },
+        "keyvaultCertificateName": {
+            "type": "string"
+        },
+        "sharedKeyVaultName": {
+            "type": "string"
+        },
+        "sharedManagementResourceGroup": {
+            "type": "string"
+        },        
         "cosmosDbIpRangeFilter": {
             "type": "string",
             "defaultValue": ""
@@ -25,15 +56,12 @@
         "resourceGroupLocation": {
             "type": "string"
         },
-        "sharedEnvResourceGroup": {
-            "type": "string"
-        },
         "sharedServiceBusName": {
             "type": "string"
         },
         "loggingRedisConnectionString": {
             "type": "securestring"
-        },
+        },      
         "configurationStorageConnectionString": {
             "type": "securestring"
         },
@@ -44,22 +72,34 @@
             "type": "string"
         },
         "nServiceBusLicense": {
-            "type": "string"
-        },
-        "configNames": {
-            "type": "string"
+            "type": "securestring"
         },
         "cleanExpiredUserSessionsFunctionTimer": {
             "type": "string"
+        },
+        "azureAdConfigurationClientId": {
+            "type": "string"
+        },
+        "azureAdConfigurationClientSecret": {
+            "type": "securestring"
+        },
+        "azureAdConfigurationAuthority": {
+            "type": "string"
+        },
+        "requiredRole": {
+            "type": "string"
+        },
+        "redisConnectionString": {
+            "type": "securestring"
         }
     },
     "variables": {
         "deploymentUrlBase": "https://raw.githubusercontent.com/SkillsFundingAgency/das-platform-building-blocks/master/templates/",
         "resourceNamePrefix": "[toLower(concat('das-', parameters('resourceEnvironmentName'),'-', parameters('serviceName')))]",
         "resourceGroupName": "[concat(variables('resourceNamePrefix'), '-rg')]",
-        "cosmosAccountName": "[concat(variables('resourceNamePrefix'), '-cdb')]",
-        "userManagedIdentityName": "[concat(variables('resourceNamePrefix'), '-umi')]",
+        "cosmosAccountName": "[concat(variables('resourceNamePrefix'), '-cdb')]",        
         "consumptionPlanName": "[concat(variables('resourceNamePrefix'),'-asp')]",
+        "appServiceName": "[concat(variables('resourceNamePrefix'), '-as')]",
         "functionAppName": "[concat(variables('resourceNamePrefix'), '-fa')]"
     },
     "resources": [
@@ -103,45 +143,135 @@
         },
         {
             "apiVersion": "2020-06-01",
-            "name": "[variables('userManagedIdentityName')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Resources/resourceGroups/', variables('resourceGroupName'))]"
-            ],
+            "name": "app-service-certificate",
+            "resourceGroup": "[parameters('sharedEnvResourceGroup')]",
             "type": "Microsoft.Resources/deployments",
-            "resourceGroup": "[variables('resourceGroupName')]",
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[concat(variables('deploymentUrlBase'),'user-assigned-identity.json')]",
+                    "uri": "[concat(variables('deploymentUrlBase'),'app-service-certificate.json')]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
-                    "userAssignedIdentityName": {
-                        "value": "[variables('userManagedIdentityName')]"
+                    "keyVaultCertificateName": {
+                        "value": "[parameters('keyvaultCertificateName')]"
+                    },
+                    "keyVaultName": {
+                        "value": "[parameters('sharedKeyVaultName')]"
+                    },
+                    "keyVaultResourceGroup": {
+                        "value": "[parameters('sharedManagementResourceGroup')]"
                     }
                 }
             }
         },
         {
             "apiVersion": "2020-06-01",
-            "name": "[concat(variables('userManagedIdentityName'),'-role-assignment')]",
+            "name": "app-service-app-insights",
+            "resourceGroup": "[variables('resourceGroupName')]",
             "type": "Microsoft.Resources/deployments",
-            "resourceGroup": "[parameters('sharedEnvResourceGroup')]",
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
-                    "uri": "[concat(variables('deploymentUrlBase'),'role-assignments/role-assignment-service-bus.json')]",
+                    "uri": "[concat(variables('deploymentUrlBase'),'application-insights.json')]",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
-                    "principalId": {
-                        "value": "[reference(variables('userManagedIdentityName')).outputs.objectId.value]"
+                    "appInsightsName": {
+                        "value": "[variables('appServiceName')]"
                     },
-                    "assignmentType": {
-                        "value": "ServiceBusOwner"
+                    "attachedService": {
+                        "value": "[variables('appServiceName')]"
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2020-06-01",
+            "name": "app-service",
+            "resourceGroup": "[variables('resourceGroupName')]",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('deploymentUrlBase'),'app-service-v2.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "appServiceName": {
+                        "value": "[variables('appServiceName')]"
                     },
-                    "resourceName": {
-                        "value": "[parameters('sharedServiceBusName')]"
+                    "appServicePlanName": {
+                        "value": "[parameters('sharedFrontEndAppServicePlanName')]"
+                    },
+                    "appServicePlanResourceGroup": {
+                        "value": "[parameters('sharedEnvResourceGroup')]"
+                    },
+                    "subnetResourceId": {
+                        "value": "[parameters('sharedFrontEndSubnetResourceId')]"
+                    },
+                    "appServiceAppSettings": {
+                        "value": {
+                            "array": [
+                                {
+                                    "name": "LoggingRedisConnectionString",
+                                    "value": "[parameters('loggingRedisConnectionString')]"
+                                },
+                                {
+                                    "name": "EnvironmentName",
+                                    "value": "[parameters('environmentName')]"
+                                },
+                                {
+                                    "name": "ConfigNames",
+                                    "value": "SFA.DAS.Tools.Servicebus.Support,SFA.DAS.AuditApiClient"
+                                },
+                                {
+                                    "name": "ConfigurationStorageConnectionString",
+                                    "value": "[parameters('configurationStorageConnectionString')]"
+                                },
+                                {
+                                    "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                                    "value": "[reference('app-service-app-insights').outputs.InstrumentationKey.value]"
+                                },
+                                {
+                                    "name": "Cdn:Url",
+                                    "value": "[parameters('cdnUrl')]"
+                                },
+                                {
+                                    "name": "BaseUrl",
+                                    "value": "[parameters('baseUrl')]"
+                                },
+                                {
+                                    "name": "AzureAdConfiguration:ClientId",
+                                    "value": "[parameters('azureAdConfigurationClientId')]"
+                                },
+                                {
+                                    "name": "AzureAdConfiguration:ClientSecret",
+                                    "value": "[parameters('azureAdConfigurationClientSecret')]"
+                                },
+                                {
+                                    "name": "AzureAdConfiguration:Authority",
+                                    "value": "[parameters('azureAdConfigurationAuthority')]"
+                                },
+                                {
+                                    "name": "RequiredRole",
+                                    "value": "[parameters('requiredRole')]"
+                                },
+                                {
+                                    "name": "RedisConnectionString",
+                                    "value": "[parameters('redisConnectionString')]"
+                                }
+                            ]
+                        }
+                    },
+                    "customHostName": {
+                        "value": "[parameters('customHostname')]"
+                    },
+                    "certificateThumbprint": {
+                        "value": "[reference('app-service-certificate').outputs.certificateThumbprint.value]"
+                    },
+                    "ipSecurityRestrictions": {
+                        "value": "[parameters('frontEndAccessRestrictions')]"
                     }
                 }
             }
@@ -219,7 +349,7 @@
                                 },
                                 {
                                     "name": "ConfigNames",
-                                    "value": "[parameters('configNames')]"
+                                    "value": "SFA.DAS.Tools.Servicebus.Support"
                                 },
                                 {
                                     "name": "EnvironmentName",
@@ -264,7 +394,35 @@
             ]
         },
         {
-            "apiVersion": "2017-05-10",
+            "apiVersion": "2020-06-01",
+            "name": "[concat('app-service-role-assignment-', copyIndex())]",
+            "type": "Microsoft.Resources/deployments",
+            "resourceGroup": "[parameters('sharedEnvResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('deploymentUrlBase'),'role-assignments/role-assignment-service-bus.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "principalId": {
+                        "value": "[createArray(reference('app-service').outputs.managedServiceIdentityId.value, reference('app-service').outputs.stagingManagedServiceIdentityId.value)[copyIndex()]]"
+                    },
+                    "assignmentType": {
+                        "value": "ServiceBusOwner"
+                    },
+                    "resourceName": {
+                        "value": "[parameters('sharedServiceBusName')]"
+                    }
+                }
+            },
+            "copy": {
+                "name": "role-assignments",
+                "count": 2
+            }
+        },        
+        {
+            "apiVersion": "2020-06-01",
             "name": "function-app-sb-role-assignment",
             "type": "Microsoft.Resources/deployments",
             "resourceGroup": "[parameters('sharedEnvResourceGroup')]",
@@ -286,9 +444,7 @@
                     }
                 }
             },
-            "dependsOn": [
-                "function-app-tools-sbus"
-            ]
+            "dependsOn": []
         }
     ],
     "outputs": {
@@ -300,13 +456,9 @@
             "type": "string",
             "value": "[variables('cosmosAccountName')]"
         },
-        "UserManagedIdentityName": {
+        "AppServiceName": {
             "type": "string",
-            "value": "[variables('userManagedIdentityName')]"
-        },
-        "UserManagedIdentityClientId": {
-            "type": "string",
-            "value": "[reference(variables('userManagedIdentityName')).outputs.clientId.value]"
+            "value": "[variables('appServiceName')]"
         },
         "FunctionAppName": {
             "type": "string",
