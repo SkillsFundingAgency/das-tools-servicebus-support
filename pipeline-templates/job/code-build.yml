@@ -25,7 +25,7 @@ jobs:
       inputs:
         command: publish
         publishWebProjects: false
-        projects: src/SFA.DAS.Tools.Servicebus.Web.Functions/SFA.DAS.Tools.Servicebus.Web.Functions.csproj
+        projects: src/SFA.DAS.Tools.Servicebus.Support.Web/SFA.DAS.Tools.Servicebus.Support.Web.csproj
         arguments: --configuration $(buildConfiguration) --output $(build.artifactstagingdirectory)/publish --no-restore --no-build
 
     - task: DotNetCoreCLI@2
@@ -48,4 +48,4 @@ jobs:
       displayName: Publish Artifact
       inputs:
         targetPath: $(build.artifactstagingdirectory)/publish
-        artifactName: ToolsServiceBusArtifacts
+        artifactName: ToolsSupportArtifacts
