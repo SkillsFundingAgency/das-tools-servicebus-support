@@ -23,6 +23,11 @@ resources:
     name: SkillsFundingAgency/das-platform-automation
     ref: refs/tags/4.2.2
     endpoint: GitHub (SFA)
+  pipelines:
+  - pipeline: das-employer-config
+    project: Digital Apprenticeship Service
+    source: das-employer-config
+    branch: master    
 
 pr: none
 
