@@ -2,7 +2,7 @@ trigger:
   batch: false
   branches:
     include:
-      - QUAL-645-DirectAADLogin
+      - master
   paths:
     include:
       - azure/*
