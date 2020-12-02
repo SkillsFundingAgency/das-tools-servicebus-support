@@ -1,5 +1,5 @@
 trigger:
-  batch: true
+  batch: false
   branches:
     include:
       - QUAL-645-DirectAADLogin
@@ -53,6 +53,7 @@ stages:
       Environment: DEV
       TemplatePath: $(Pipeline.Workspace)/ToolsServiceBusArtifacts/azure/template.json
       ParametersPath: $(Pipeline.Workspace)/ToolsServiceBusArtifacts/azure/template.parameters.json
+      ConfigSchemaPath: $(Pipeline.Workspace)/das-employer-config/Configuration/das-tools-servicebus-support
       TemplateSecrets:
         LoggingRedisConnectionString: $(LoggingRedisConnectionString)
         ConfigurationStorageConnectionString: $(ConfigurationStorageConnectionString)
