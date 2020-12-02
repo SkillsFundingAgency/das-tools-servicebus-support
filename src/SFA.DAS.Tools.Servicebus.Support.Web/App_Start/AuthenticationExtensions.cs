@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using SFA.DAS.Tools.Servicebus.Support.Web.Configuration;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web
 {
@@ -11,33 +14,27 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
     {
         public static IServiceCollection AddAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
+            var azureAdConfiguration = new AzureAdConfiguration();
+            configuration.GetSection("AzureAdConfiguration").Bind(azureAdConfiguration);
+
             services.AddAuthentication(options =>
                 {
-                    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+                    options.DefaultAuthenticateScheme = OpenIdConnectDefaults.AuthenticationScheme;
                     options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                })
-                .AddCookie(options =>
+                }).AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
                 {
-                    options.LogoutPath = new PathString("/Account/Logout");
+                    options.Authority = azureAdConfiguration.Authority;
+                    options.ClientId = azureAdConfiguration.ClientId;
+                    options.ClientSecret = azureAdConfiguration.ClientSecret;
+                    options.ResponseType = OpenIdConnectResponseType.Code;
+                }).AddCookie(options =>
+                { 
                     options.AccessDeniedPath = new PathString("/Error/403");
                     options.ExpireTimeSpan = TimeSpan.FromHours(1);
-                    options.Cookie.Name = "SFA.DAS.ToolService.Web.Auth";
+                    options.Cookie.Name = "SFA.DAS.ToolServicebus.Support.Web.Auth";
                     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                     options.SlidingExpiration = true;
-                    options.Cookie.SameSite = SameSiteMode.None;
-                    options.CookieManager = new ChunkingCookieManager() { ChunkSize = 3000 }; options.Events = new CookieAuthenticationEvents()
-                    {
-                        OnRedirectToLogin = (context) =>
-                        {
-#if DEBUG
-                            context.HttpContext.Response.Redirect($"https://{configuration["BaseUrl"]}/Account/login?returnUrl=https://localhost:5011/servicebus");
-#else
-                            context.HttpContext.Response.Redirect($"https://{configuration["BaseUrl"]}/Account/login?returnUrl=/servicebus");
-#endif
-                            return Task.CompletedTask;
-                        }
-                    };
                 });
 
             return services;
