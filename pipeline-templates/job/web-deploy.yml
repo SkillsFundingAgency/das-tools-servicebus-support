@@ -5,7 +5,7 @@ parameters:
 
 jobs:
 - deployment: DeployWebApp
-  dependsOn: DeployInfrastructure  
+  dependsOn: DeployInfrastructure
   variables:
     ResourceGroupName: $[dependencies.DeployInfrastructure.outputs['DeployInfrastructure.ArmOutputs.ResourceGroupName']]
     AppServiceName: $[dependencies.DeployInfrastructure.outputs['DeployInfrastructure.ArmOutputs.AppServiceName']]

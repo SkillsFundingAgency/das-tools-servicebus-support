@@ -16,7 +16,7 @@ resources:
   - repository: das-platform-building-blocks
     type: github
     name: SkillsFundingAgency/das-platform-building-blocks
-    ref: refs/tags/0.2.6
+    ref: refs/heads/add-function-app-deployment
     endpoint: GitHub (SFA)
   - repository: das-platform-automation
     type: github
@@ -70,5 +70,8 @@ stages:
       DeploymentApprovals: DEV
       ServiceConnection: SFA-DAS-DevTest-ARM
       DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/SFA.DAS.Tools.Servicebus.Support.Web.zip
-
-  ## TO DO DEPLOY FUNCTION APP  - NEED TO CREATE BULDING BLOCKS
+  - template: pipeline-templates/job/function-deploy.yml
+    parameters:
+      DeploymentApprovals: DEV
+      ServiceConnection: SFA-DAS-DevTest-ARM
+      DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/SFA.DAS.Tools.Servicebus.Support.Functions.zip
