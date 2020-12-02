@@ -51,8 +51,8 @@ stages:
       SubscriptionId: $(SubscriptionId)
       Location: $(ResourceGroupLocation)
       Environment: DEV
-      TemplatePath: $(Pipeline.Workspace)/ToolsServiceBusArtifacts/azure/template.json
-      ParametersPath: $(Pipeline.Workspace)/ToolsServiceBusArtifacts/azure/template.parameters.json
+      TemplatePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/azure/template.json
+      ParametersPath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/azure/template.parameters.json
       ConfigSchemaPath: $(Pipeline.Workspace)/das-employer-config/Configuration/das-tools-servicebus-support
       TemplateSecrets:
         LoggingRedisConnectionString: $(LoggingRedisConnectionString)
@@ -63,6 +63,6 @@ stages:
     parameters:
       DeploymentApprovals: DEV
       ServiceConnection: SFA-DAS-DevTest-ARM
-      DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusArtifacts/SFA.DAS.Tools.Servicebus.Support.Web.csproj
+      DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/SFA.DAS.Tools.Servicebus.Support.Web.zip
 
   ## TO DO DEPLOY FUNCTION APP  - NEED TO CREATE BULDING BLOCKS
