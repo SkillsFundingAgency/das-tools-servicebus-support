@@ -1,0 +1,21 @@
+parameters:  
+  DeploymentApprovals:
+  ServiceConnection:
+  DeploymentPackagePath:
+
+jobs:
+- deployment: DeployFunctionApp
+  dependsOn: DeployInfrastructure
+  variables:
+    ResourceGroupName: $[dependencies.DeployInfrastructure.outputs['DeployInfrastructure.ArmOutputs.ResourceGroupName']]
+    AppServiceName: $[dependencies.DeployInfrastructure.outputs['DeployInfrastructure.ArmOutputs.FunctionAppName']]
+  environment: ${{ parameters.DeploymentApprovals }}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - template: azure-pipelines-templates/deploy/step/function-deploy.yml@das-platform-building-blocks
+          parameters:
+            ServiceConnection: ${{ parameters.ServiceConnection }}
+            AppServiceName: $(FunctionApp)
+            DeploymentPackagePath: ${{ parameters.DeploymentPackagePath }}
