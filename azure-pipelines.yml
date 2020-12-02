@@ -59,6 +59,7 @@ stages:
         ConfigurationStorageConnectionString: $(ConfigurationStorageConnectionString)
         SharedStorageAccountConnectionString: $(SharedStorageAccountConnectionString)
         AzureAdConfigurationClientSecret: $(AzureAdConfigurationClientSecret)
+        NServiceBusLicense: $(NServiceBusLicense)
   - template: pipeline-templates/job/web-deploy.yml
     parameters:
       DeploymentApprovals: DEV
