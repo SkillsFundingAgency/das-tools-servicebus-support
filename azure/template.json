@@ -75,9 +75,6 @@
         "nServiceBusLicense": {
             "type": "securestring"
         },
-        "configNames": {
-            "type": "string"
-        },
         "cleanExpiredUserSessionsFunctionTimer": {
             "type": "string"
         },
@@ -224,7 +221,7 @@
                                 },
                                 {
                                     "name": "ConfigNames",
-                                    "value": "[parameters('configNames')]"
+                                    "value": "SFA.DAS.Tools.Servicebus.Support,SFA.DAS.AuditApiClient"
                                 },
                                 {
                                     "name": "ConfigurationStorageConnectionString",
@@ -346,7 +343,7 @@
                                 },
                                 {
                                     "name": "ConfigNames",
-                                    "value": "[parameters('configNames')]"
+                                    "value": "SFA.DAS.Tools.Servicebus.Support"
                                 },
                                 {
                                     "name": "EnvironmentName",
