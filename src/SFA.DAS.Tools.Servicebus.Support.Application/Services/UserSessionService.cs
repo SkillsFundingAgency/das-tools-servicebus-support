@@ -4,6 +4,7 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSess
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using System;
@@ -17,14 +18,14 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
         private readonly IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> _getUserSessionQuery;
         private readonly ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> _deleteUserSessionCommand;
         private readonly IUserService _userService;
-        private readonly IConfiguration _config;
+        private readonly int _userSessionExpiryHours;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public UserSessionService(ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse> upsertUserSessionCommand,
             IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> getUserSessionQuery,
             ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> deleteUserSessionCommand,
             IUserService userService,
-            IConfiguration config,
+            UserIdentitySettings config,
             IHttpContextAccessor httpContextAccessor
             )
         {
@@ -32,7 +33,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _getUserSessionQuery = getUserSessionQuery;
             _deleteUserSessionCommand = deleteUserSessionCommand;
             _userService = userService;
-            _config = config;
+            _userSessionExpiryHours = config.UserSessionExpiryHours <= 0 ? 24 : config.UserSessionExpiryHours;
             _httpContextAccessor = httpContextAccessor;
         }        
 
@@ -48,7 +49,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
                     Id = userSession?.Id ?? Guid.NewGuid().ToString(),
                     UserId = userSession?.UserId ?? _userService.GetUserId(),
                     UserName = userSession?.UserName ?? _userService.GetName(),
-                    ExpiryDateUtc = DateTime.UtcNow.AddHours(_config.GetValue<int>("UserSessionExpiryHours")), 
+                    ExpiryDateUtc = DateTime.UtcNow.AddHours(_userSessionExpiryHours), 
                     Queue = queue
                 }
             });
