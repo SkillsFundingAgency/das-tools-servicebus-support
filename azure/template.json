@@ -89,6 +89,9 @@
         },
         "requiredRole": {
             "type": "string"
+        },
+        "redisConnectionString": {
+            "type": "securestring"
         }
     },
     "variables": {
@@ -254,6 +257,10 @@
                                 {
                                     "name": "RequiredRole",
                                     "value": "[parameters('requiredRole')]"
+                                },
+                                {
+                                    "name": "RedisConnectionString",
+                                    "value": "[parameters('redisConnectionString')]"
                                 }
                             ]
                         }
