@@ -65,6 +65,7 @@ stages:
         SharedStorageAccountConnectionString: $(SharedStorageAccountConnectionString)
         AzureAdConfigurationClientSecret: $(AzureAdConfigurationClientSecret)
         NServiceBusLicense: $(NServiceBusLicense)
+        RedisConnectionString: $(DefaultSessionRedisConnectionString)
   - template: pipeline-templates/job/web-deploy.yml
     parameters:
       DeploymentApprovals: DEV
@@ -101,6 +102,7 @@ stages:
         SharedStorageAccountConnectionString: $(SharedStorageAccountConnectionString)
         AzureAdConfigurationClientSecret: $(AzureAdConfigurationClientSecret)
         NServiceBusLicense: $(NServiceBusLicense)
+        RedisConnectionString: $(DefaultSessionRedisConnectionString)
   - template: pipeline-templates/job/web-deploy.yml
     parameters:
       DeploymentApprovals: DEV
