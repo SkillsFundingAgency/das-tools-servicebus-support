@@ -5,10 +5,11 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 using System;
+using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
 {
-    public class KeepUserSessionActiveFilter : IActionFilter
+    public class KeepUserSessionActiveFilter : IAsyncActionFilter
     {
         private readonly IUserSessionService _userSessionService;
         private readonly int _userSessionRefreshIntervalMinutes;
@@ -19,25 +20,26 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             _userSessionRefreshIntervalMinutes = userIdentitySettings.UserRefreshSessionIntervalMinutes;
         }
 
-        public void OnActionExecuted(ActionExecutedContext context)
-        {
-            
-        }
 
-        public void OnActionExecuting(ActionExecutingContext context)
+        public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             var sessionActiveUntil = context.HttpContext.Session.Get<DateTime?>("sessionActiveUntil");
-
             if (!sessionActiveUntil.HasValue || sessionActiveUntil < DateTime.UtcNow)
-            {                
-                var queue = context.HttpContext.Session.GetString("queueName");
-                if (!string.IsNullOrEmpty(queue))
+            {
+                var userSession = await _userSessionService.GetUserSession();
+                if(userSession != null)
                 {
-                    _userSessionService.UpsertUserSession(queue).Wait();
+                    // Update Session Expiry time once within the sessionActive window
+                    await _userSessionService.UpsertUserSession(userSession.Queue);
+
+                    // Set sessionActive window to prevent constant updating
                     var sessionExpiry = DateTime.UtcNow.AddMinutes(_userSessionRefreshIntervalMinutes);
                     context.HttpContext.Session.Set("sessionActiveUntil", sessionExpiry);
                 }
+
             }
-        }            
+
+            await next();
+        }
     }
 }
