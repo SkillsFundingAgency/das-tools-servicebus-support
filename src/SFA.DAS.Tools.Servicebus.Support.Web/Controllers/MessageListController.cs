@@ -81,7 +81,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
             }
 
             var queueName = response.Messages.GetQueueName();
-            HttpContext.Session.SetString("queueName", queueName);
 
             return View(new MessageListViewModel()
             {
@@ -97,7 +96,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ReceiveMessagesFromQueue(ReceiveMessagesModel model)
         {
-            HttpContext.Session.SetString("queueName", model.QueueName);
             var count = (await _getQueueMessageCountQuery.Handle(new GetQueueMessageCountQuery()
             {
                 QueueName = model.QueueName
@@ -105,6 +103,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
 
             await _retrieveMessagesService.GetMessages(model.QueueName, count, model.GetQuantity);
 
+            // Will always update session on receiving messages but removes reliance on HttpContext Session
+            await _userSessionService.UpsertUserSession(model.QueueName);
             return RedirectToAction("Index");
         }
 
@@ -165,7 +165,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
         {
             await _userSessionService.DeleteUserSession();
             HttpContext.Session.Set<DateTime?>("sessionActiveUntil", null);
-            HttpContext.Session.SetString("queueName", string.Empty);
         }
     }
 }
