@@ -35,26 +35,27 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
             _userService = userService;
             _userSessionExpiryHours = config.UserSessionExpiryHours <= 0 ? 24 : config.UserSessionExpiryHours;
             _httpContextAccessor = httpContextAccessor;
-        }        
+        }
 
         public async Task<UserSession> UpsertUserSession(string queue)
         {
-            var currentSession = _httpContextAccessor.HttpContext.Session.Get<UserSession>("userSession");
-            var userSession = currentSession ?? await GetUserSession();                                               
+            var userSession = await GetUserSession();
+
+            if (userSession != null)
+            {
+                // Update Expiry
+                userSession.ExpiryDateUtc = DateTime.UtcNow.AddHours(_userSessionExpiryHours);
+            }
+            else
+            {
+                // Create new session
+                userSession = CreateUserSession(queue);
+            }
 
             var result = await _upsertUserSessionCommand.Handle(new UpsertUserSessionCommand()
             {
-                UserSession = new Domain.UserSession
-                {
-                    Id = userSession?.Id ?? Guid.NewGuid().ToString(),
-                    UserId = userSession?.UserId ?? _userService.GetUserId(),
-                    UserName = userSession?.UserName ?? _userService.GetName(),
-                    ExpiryDateUtc = DateTime.UtcNow.AddHours(_userSessionExpiryHours), 
-                    Queue = queue
-                }
+                UserSession = userSession
             });
-
-            _httpContextAccessor.HttpContext.Session.Set("userSession", result.UserSession);
 
             return result.UserSession;
         }
@@ -83,5 +84,18 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
 
             return result.UserSession;
         }
+
+        private UserSession CreateUserSession(string queueName)
+        {
+            return new UserSession
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserId = _userService.GetUserId(),
+                UserName = _userService.GetName(),
+                ExpiryDateUtc = DateTime.UtcNow.AddHours(_userSessionExpiryHours),
+                Queue = queueName
+            };
+        }
+
     }
 }
