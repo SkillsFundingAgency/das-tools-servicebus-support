@@ -89,7 +89,7 @@ stages:
   jobs:
   - template: azure-pipelines-templates/deploy/job/arm-deploy.yml@das-platform-building-blocks
     parameters:
-      ServiceConnection: SFA-DIG-PreProd (ARM)
+      ServiceConnection: SFA-DIG-PreProd-ARM
       SubscriptionId: $(SubscriptionId)
       Location: $(ResourceGroupLocation)
       Environment: DEV
@@ -106,12 +106,12 @@ stages:
   - template: pipeline-templates/job/web-deploy.yml
     parameters:
       DeploymentApprovals: DEV
-      ServiceConnection: SFA-DIG-PreProd (ARM)
+      ServiceConnection: SFA-DIG-PreProd-ARM
       DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/SFA.DAS.Tools.Servicebus.Support.Web.zip
   - template: pipeline-templates/job/function-deploy.yml
     parameters:
       DeploymentApprovals: DEV
-      ServiceConnection: SFA-DIG-PreProd (ARM)
+      ServiceConnection: SFA-DIG-PreProd-ARM
       DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/SFA.DAS.Tools.Servicebus.Support.Functions.zip
 
 - stage: Deploy_PROD
