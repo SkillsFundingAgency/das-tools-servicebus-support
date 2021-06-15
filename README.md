@@ -24,9 +24,9 @@ The ServiceBus Utility is a combination of Website and background processor that
 
 Depending on the action performed by the user the messages will follow one of three paths. In the event that the user Aborts the process, the messages are moved back to the error queue they came from, if the user replays the messages they will be placed back onto the "processing queue" they were on prior to ending up in the error queue and will be removed from the CosmosDB. If the user deletes the messages then they will be removed from the CosmosDB and will be gone forever.
 
-# 🚀 Installation
+## 🚀 Installation
 
-## Pre-Requisites
+### Pre-Requisites
 
 * A clone of this repository
 * A code editor that supports Azure functions and .NetCore 3.1
@@ -35,7 +35,7 @@ Depending on the action performed by the user the messages will follow one of th
 * An Azure Active Directory account with the appropriate roles as per the [config](https://github.com/SkillsFundingAgency/das-employer-config/blob/master/das-tools-servicebus-support/SFA.DAS.Tools.Servicebus.Support.json)
 * The [das-audit](https://github.com/SkillsFundingAgency/das-audit) API available either running locally or accessible in an Azure tenancy    
 
-## Config
+### Config
 
 This utility uses the standard Apprenticeship Service configuration. All configuration can be found in the [das-employer-config repository](https://github.com/SkillsFundingAgency/das-employer-config).
 
@@ -140,11 +140,11 @@ Creating an AAD Account in an Azure tenant:
 
 </details>
 
-# 🔗 External Dependencies
+## 🔗 External Dependencies
 
 * This utility uses the [das-audit](https://github.com/SkillsFundingAgency/das-audit) Api to log changes
 
-# Key Technologies
+## Technologies
 
 * .NetCore 3.1
 * Azure Functions V3
@@ -156,6 +156,6 @@ Creating an AAD Account in an Azure tenant:
 * Moq
 * FluentAssertions
 
-# 🐛 Known Issues
+## 🐛 Known Issues
 
 There are no issues known at this time
