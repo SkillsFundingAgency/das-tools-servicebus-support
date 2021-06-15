@@ -39,13 +39,12 @@ Depending on the action performed by the user the messages will follow one of th
 
 This utility uses the standard Apprenticeship Service configuration. All configuration can be found in the [das-employer-config repository](https://github.com/SkillsFundingAgency/das-employer-config).
 
-* An Azure Active Directory account with the appropriate role (See the [das-employer-config](https://github.com/SkillsFundingAgency/das-employer-config/blob/master/das-tools-servicebus-support/SFA.DAS.Tools.Servicebus.Support.json) for details)
 * A connection string for either the Apprenticeship Services ASB namespace or a namespace you own for development
 * A CosmosDB connection string for either the Apprenticeship Service instance CosmosDB or a CosmosDB you own for development (you can use the emulator)
 * Configure the [das-audit](https://github.com/SkillsFundingAgency/das-audit) project as per [das-employer-config](https://github.com/SkillsFundingAgency/das-employer-config/blob/master/das-audit/SFA.DAS.AuditApiClient.json)
 * Add an appsettings.Development.json file
     * Add your connection strings for CosmosDB and ASB to the relevant sections of the file
-* The CosmosDB will be created automatically if it does not already exist and the credentials you are connected with have the appropriate rights within the Azure tenant otherwise it will need to be created manually using the details in the config below.
+* The CosmosDB will be created automatically if it does not already exist and the credentials you are connected with have the appropriate rights within the Azure tenant otherwise it will need to be created manually using the details in the config below under `CosmosDbSettings`.
 
 AppSettings.Development.json file
 ```json
@@ -88,7 +87,7 @@ Data:
     "NameClaim": "name"
   },
   "ServiceBusSettings":{
-    "ServiceBusConnectionString": "Endpoint=sb://xxxx.servicebus.windows.net/",
+    "ServiceBusConnectionString": "",
     "QueueSelectionRegex": "[-,_]+error",
     "PeekMessageBatchSize": 10,
     "MaxRetrievalSize": 250,
@@ -98,8 +97,8 @@ Data:
     ]
   },
   "CosmosDbSettings":{
-    "Url": "https://xxxx.documents.azure.com:443/",
-    "AuthKey": "xxxx",
+    "Url": "",
+    "AuthKey": "",
     "DatabaseName": "QueueExplorer",
     "CollectionName": "Session",
     "Throughput": 400,
