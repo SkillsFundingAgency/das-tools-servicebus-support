@@ -80,4 +80,4 @@ Creating an AAD Account in an Azure tenant:
 
 # 🐛 Known Issues
 
-There are no issues are known at this time
+There are no issues known at this time
