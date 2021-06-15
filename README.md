@@ -45,6 +45,7 @@ Depending on the action performed by the user the messages will follow one of th
 * A CosmosDB instance or emulator
 * An Azure Service Bus instance
 * An Azure Active Directory account with the appropriate roles as per the [config](https://github.com/SkillsFundingAgency/das-employer-config/blob/master/das-tools-servicebus-support/SFA.DAS.Tools.Servicebus.Support.json)
+* The [das-audit](https://github.com/SkillsFundingAgency/das-audit) API available either running locally or accessible in an Azure tenancy    
 
 ## Config
 
@@ -56,6 +57,7 @@ Required configuration is:
 * A CosmosDB connection string for either the Apprenticeship Service instance CosmosDB or a CosmosDB you own for development (you can use the emulator)
 * Add an appsettings.Development.json file
 * Add your connection strings for CosmosDB and ASB to the relevant sections
+* Configure the [das-audit](https://github.com/SkillsFundingAgency/das-audit) project as per [das-employer-config](https://github.com/SkillsFundingAgency/das-employer-config/blob/master/das-audit/SFA.DAS.AuditApiClient.json)
 
 <details><summary><b>Show AAD instructions</b></summary>
 
@@ -74,7 +76,7 @@ Creating an AAD Account in an Azure tenant:
 
 # 🔗 External Dependencies
 
-This project has no external dependencies
+* This utility uses the [das-audit](https://github.com/SkillsFundingAgency/das-audit) Api to log changes
 
 # 🐛 Known Issues
 
