@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Azure.ServiceBus.Management;
@@ -6,12 +11,6 @@ using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus
 {
@@ -22,7 +21,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus
         private readonly ServiceBusConnectionStringBuilder _sbConnectionStringBuilder;
         private readonly ManagementClient _managementClient;
         private readonly IUserService _userService;
-        private readonly string _regexString;
         private volatile IMessageReceiver _messageReceiver;
         private readonly object _padlock = new object();
         private readonly IServiceBusPolicies _policies;
@@ -33,7 +31,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus
             IServiceBusPolicies serviceBusPolicies)
         {
             _logger = logger ?? throw new Exception("logger is null");
-            _regexString = serviceBusSettings.QueueSelectionRegex;
             _userService = userService;
             _policies = serviceBusPolicies;
 
@@ -43,18 +40,16 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus
                 ? new ManagementClient(_sbConnectionStringBuilder) : new ManagementClient(_sbConnectionStringBuilder, _tokenProvider);
         }
 
-        public async Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync()
+        public async Task<IEnumerable<QueueInfo>> GetMessageQueuesAsync(int skipCount = 0, int takeCount = 100)
         {
-            IEnumerable<QueueRuntimeInfo> errorQueues = new List<QueueRuntimeInfo>();
-
-            await _policies.ResiliencePolicy.ExecuteAsync(async token =>
+            var queues = await _policies.ResiliencePolicy.ExecuteAsync(async token =>
             {
-                var queuesDetails = await _managementClient.GetQueuesRuntimeInfoAsync(cancellationToken: token).ConfigureAwait(false);
-                var queueSelectionRegex = new Regex(_regexString);
-                errorQueues = queuesDetails.Where(q => queueSelectionRegex.IsMatch(q.Path));
+                return await _managementClient.GetQueuesRuntimeInfoAsync(takeCount, skipCount, cancellationToken: token).ConfigureAwait(false);
+
+
             }, new CancellationToken());
 
-            return errorQueues?.Select(queue => new QueueInfo()
+            return queues?.Select(queue => new QueueInfo()
             {
                 Name = queue.Path,
                 MessageCount = queue.MessageCountDetails.ActiveMessageCount
