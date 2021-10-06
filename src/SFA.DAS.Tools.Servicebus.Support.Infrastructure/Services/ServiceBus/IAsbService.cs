@@ -1,14 +1,12 @@
-﻿using System;
-using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Azure.ServiceBus.Core;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus
 {
     public interface IAsbService
     {
-        Task<IEnumerable<QueueInfo>> GetErrorMessageQueuesAsync();
+        Task<IEnumerable<QueueInfo>> GetMessageQueuesAsync(int skipCount = 0, int takeCount = 100);
         Task<QueueInfo> GetQueueDetailsAsync(string name);
         Task<IEnumerable<QueueMessage>> PeekMessagesAsync(string queueName, int qty);
         Task<IEnumerable<QueueMessage>> ReceiveMessagesAsync(string queueName, int qty);
