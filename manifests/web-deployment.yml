@@ -47,7 +47,7 @@ spec:
       - env:
         - name: ServiceBusRepoSettings__EnvName
           value: {{EnvironmentName}}
-        image: {{WebImage}}
+        image: {{PublicAcrName}}.azurecr.io/{{ContainerImageName}}:{{Build.BuildNumber}}
         imagePullPolicy: IfNotPresent
         name: das-tools-servicebus-support
         ports:
