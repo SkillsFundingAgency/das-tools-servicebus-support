@@ -52,7 +52,7 @@ stages:
         ServiceConnection: SFA-DIG-Prod-ARM
         ImageName: $(ContainerImageName)
         BranchToCreateLatestTag: master
-        
+
     - task: CopyFiles@2
       displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
       inputs:
@@ -70,37 +70,37 @@ stages:
   jobs:
   - job: build_function
     steps:
-      - template: azure-pipelines-templates/build/step/gitversion.yml@das-platform-building-blocks
+    - template: azure-pipelines-templates/build/step/gitversion.yml@das-platform-building-blocks
 
-      - task: DotNetCoreCLI@2
-        displayName: Restore
-        inputs:
-          command: restore
-          projects: 'src/SFA.DAS.Tools.Servicebus.Support.Functions/SFA.DAS.Tools.Servicebus.Support.Functions.csproj'
-          noCache: true
+    - task: DotNetCoreCLI@2
+      displayName: Restore
+      inputs:
+        command: restore
+        projects: 'src/SFA.DAS.Tools.Servicebus.Support.Functions/SFA.DAS.Tools.Servicebus.Support.Functions.csproj'
+        noCache: true
 
-      - task: DotNetCoreCLI@2
-        displayName: Build
-        inputs:
-          projects: 'src/SFA.DAS.Tools.Servicebus.Support.Functions/SFA.DAS.Tools.Servicebus.Support.Functions.csproj'
-          arguments: '--configuration $(buildConfiguration) --no-restore'
+    - task: DotNetCoreCLI@2
+      displayName: Build
+      inputs:
+        projects: 'src/SFA.DAS.Tools.Servicebus.Support.Functions/SFA.DAS.Tools.Servicebus.Support.Functions.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
 
-      - task: DotNetCoreCLI@2
-        displayName: Test
-        inputs:
-          command: test
-          projects: '**/*.UnitTests.csproj'
-          arguments: '--configuration $(buildConfiguration) --no-build'
+    - task: DotNetCoreCLI@2
+      displayName: Test
+      inputs:
+        command: test
+        projects: '**/*.UnitTests.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-build'
 
-      - task: DotNetCoreCLI@2
-        displayName: 'Publish Work Function App'
-        inputs:
-          command: publish
-          publishWebProjects: false
-          projects: 'src/SFA.DAS.Tools.Servicebus.Support.Functions/SFA.DAS.Tools.Servicebus.Support.Functions.csproj'
-          arguments: '--configuration $(buildConfiguration) --output $(build.artifactstagingdirectory)/publish --no-restore --no-build'
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish Work Function App'
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: 'src/SFA.DAS.Tools.Servicebus.Support.Functions/SFA.DAS.Tools.Servicebus.Support.Functions.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(build.artifactstagingdirectory)/publish --no-restore --no-build'
 
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publish Artifact'
-        inputs:
-          pathtoPublish: '$(build.artifactstagingdirectory)/publish'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact'
+      inputs:
+        pathtoPublish: '$(build.artifactstagingdirectory)/publish'
