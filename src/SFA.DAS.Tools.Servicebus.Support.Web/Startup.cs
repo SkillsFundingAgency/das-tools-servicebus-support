@@ -154,7 +154,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "servicebus/{controller=Servicebus}/{action=Index}/{id?}");
+                    pattern: "{controller=Servicebus}/{action=Index}/{id?}");
             });
         }
     }
