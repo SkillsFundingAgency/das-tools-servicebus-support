@@ -393,11 +393,7 @@
                         }
                     }
                 }
-            },
-            "dependsOn": [
-                "consumption-plan",
-                "function-app-insights"
-            ]
+            }
         },
         {
             "apiVersion": "2020-06-01",
@@ -449,8 +445,7 @@
                         "value": "[parameters('sharedServiceBusName')]"
                     }
                 }
-            },
-            "dependsOn": []
+            }
         }
     ],
     "outputs": {
