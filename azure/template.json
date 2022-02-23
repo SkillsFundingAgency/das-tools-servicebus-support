@@ -44,7 +44,11 @@
         },
         "sharedManagementResourceGroup": {
             "type": "string"
-        },        
+        },
+        "cosmosDbSubnetResourceIdList": {
+            "type": "array",
+            "defaultValue": []
+        },
         "cosmosDbIpRangeFilter": {
             "type": "string",
             "defaultValue": ""
@@ -61,7 +65,7 @@
         },
         "loggingRedisConnectionString": {
             "type": "securestring"
-        },      
+        },
         "configurationStorageConnectionString": {
             "type": "securestring"
         },
@@ -91,13 +95,16 @@
         },
         "redisConnectionString": {
             "type": "securestring"
+        },
+        "logAnalyticsWorkspaceName": {
+            "type": "string"
         }
     },
     "variables": {
         "deploymentUrlBase": "https://raw.githubusercontent.com/SkillsFundingAgency/das-platform-building-blocks/master/templates/",
         "resourceNamePrefix": "[toLower(concat('das-', parameters('resourceEnvironmentName'),'-', parameters('serviceName')))]",
         "resourceGroupName": "[concat(variables('resourceNamePrefix'), '-rg')]",
-        "cosmosAccountName": "[concat(variables('resourceNamePrefix'), '-cdb')]",        
+        "cosmosAccountName": "[concat(variables('resourceNamePrefix'), '-cdb')]",
         "consumptionPlanName": "[concat(variables('resourceNamePrefix'),'-asp')]",
         "appServiceName": "[concat(variables('resourceNamePrefix'), '-as')]",
         "functionAppName": "[concat(variables('resourceNamePrefix'), '-fa')]"
@@ -135,8 +142,17 @@
                     "defaultConsistencyLevel": {
                         "value": "Strong"
                     },
+                    "subnetResourceIdList": {
+                        "value": "[parameters('cosmosDbSubnetResourceIdList')]"
+                    },
                     "ipRangeFilter": {
                         "value": "[parameters('cosmosDbIpRangeFilter')]"
+                    },
+                    "logAnalyticsWorkspaceName": {
+                        "value": "[parameters('logAnalyticsWorkspaceName')]"
+                    },
+                    "logAnalyticsWorkspaceResourceGroupName": {
+                        "value": "[parameters('sharedManagementResourceGroup')]"
                     }
                 }
             }
@@ -420,7 +436,7 @@
                 "name": "role-assignments",
                 "count": 2
             }
-        },        
+        },
         {
             "apiVersion": "2020-06-01",
             "name": "function-app-sb-role-assignment",

@@ -2,7 +2,7 @@ jobs:
 - job: CodeBuild
   displayName: Code Build
   pool:
-    name: DAS - Continuous Integration
+    name: DAS - Continuous Integration Agents
   variables:
     - group: Prod Management Resources
     - name: buildConfiguration
