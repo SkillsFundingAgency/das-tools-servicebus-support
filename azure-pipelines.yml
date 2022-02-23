@@ -33,7 +33,7 @@ pr: none
 
 variables:
 - group: Release Management Resources
-- group: Wildcard Cert Variables v2
+- group: RELEASE das-tools-servicebus-support
 
 stages:
 - stage: Build
