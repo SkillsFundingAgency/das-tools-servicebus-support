@@ -3,12 +3,6 @@ trigger:
   branches:
     include:
       - master
-  paths:
-    include:
-      - azure/*
-      - src/*
-      - pipeline-templates/*
-      - azure-pipelines.yml
 
 resources:
   repositories:
