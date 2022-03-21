@@ -23,8 +23,6 @@ resources:
     source: das-employer-config
     branch: master    
 
-pr: none
-
 variables:
 - group: Release Management Resources
 - group: RELEASE das-tools-servicebus-support
