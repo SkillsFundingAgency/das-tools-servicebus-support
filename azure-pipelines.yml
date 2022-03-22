@@ -1,14 +1,8 @@
 trigger:
-  batch: false
+  batch: true
   branches:
     include:
-      - master
-  paths:
-    include:
-      - azure/*
-      - src/*
-      - pipeline-templates/*
-      - azure-pipelines.yml
+      - "master"
 
 resources:
   repositories:
@@ -16,7 +10,7 @@ resources:
   - repository: das-platform-building-blocks
     type: github
     name: SkillsFundingAgency/das-platform-building-blocks
-    ref: refs/tags/0.4.23
+    ref: refs/tags/0.4.37
     endpoint: SkillsFundingAgency
   - repository: das-platform-automation
     type: github
@@ -28,8 +22,6 @@ resources:
     project: Digital Apprenticeship Service
     source: das-employer-config
     branch: master    
-
-pr: none
 
 variables:
 - group: Release Management Resources
