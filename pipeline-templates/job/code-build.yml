@@ -5,6 +5,7 @@ jobs:
     name: DAS - Continuous Integration Agents
   variables:
     - group: Prod Management Resources
+    - group: BUILD Management Resources
     - name: buildConfiguration
       value: release
   workspace:
