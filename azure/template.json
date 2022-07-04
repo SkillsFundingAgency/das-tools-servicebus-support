@@ -104,6 +104,10 @@
         },
         "logAnalyticsWorkspaceName": {
             "type": "string"
+        },
+        "utcValue": {
+            "type": "string",
+            "defaultValue": "[utcNow()]"
         }
     },
     "variables": {
@@ -125,7 +129,7 @@
         },
         {
             "apiVersion": "2020-06-01",
-            "name": "[variables('cosmosAccountName')]",
+            "name": "[concat(variables('cosmosAccountName'), '-', parameters('utcValue'))]",
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/resourceGroups/', variables('resourceGroupName'))]"
             ],
@@ -164,7 +168,7 @@
         },
         {
             "apiVersion": "2020-06-01",
-            "name": "app-service-certificate",
+            "name": "[concat('app-service-certificate-', parameters('utcValue'))]",
             "resourceGroup": "[parameters('sharedEnvResourceGroup')]",
             "type": "Microsoft.Resources/deployments",
             "properties": {
@@ -188,7 +192,7 @@
         },
         {
             "apiVersion": "2020-06-01",
-            "name": "app-service-app-insights",
+            "name": "[concat('app-service-app-insights-', parameters('utcValue'))]",
             "resourceGroup": "[variables('resourceGroupName')]",
             "type": "Microsoft.Resources/deployments",
             "properties": {
@@ -209,7 +213,7 @@
         },
         {
             "apiVersion": "2020-06-01",
-            "name": "app-service",
+            "name": "[concat('app-service-', parameters('utcValue'))]",
             "resourceGroup": "[variables('resourceGroupName')]",
             "type": "Microsoft.Resources/deployments",
             "properties": {
@@ -252,7 +256,7 @@
                                 },
                                 {
                                     "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                                    "value": "[reference('app-service-app-insights').outputs.InstrumentationKey.value]"
+                                    "value": "[reference(concat('app-service-app-insights-', parameters('utcValue'))).outputs.InstrumentationKey.value]"
                                 },
                                 {
                                     "name": "Cdn:Url",
@@ -289,7 +293,7 @@
                         "value": "[parameters('customHostname')]"
                     },
                     "certificateThumbprint": {
-                        "value": "[reference('app-service-certificate').outputs.certificateThumbprint.value]"
+                        "value": "[reference(concat('app-service-certificate-', parameters('utcValue'))).outputs.certificateThumbprint.value]"
                     },
                     "ipSecurityRestrictions": {
                         "value": "[parameters('frontEndAccessRestrictions')]"
@@ -299,7 +303,7 @@
         },
         {
             "apiVersion": "2020-06-01",
-            "name": "function-app-insights",
+            "name": "[concat('function-app-insights-', parameters('utcValue'))]",
             "type": "Microsoft.Resources/deployments",
             "resourceGroup": "[variables('resourceGroupName')]",
             "properties": {
@@ -320,7 +324,7 @@
         },
         {
             "apiVersion": "2020-06-01",
-            "name": "function-app-tools-sbus",
+            "name": "[concat('function-app-tools-sbus-', parameters('utcValue'))]",
             "type": "Microsoft.Resources/deployments",
             "resourceGroup": "[variables('resourceGroupName')]",
             "properties": {
@@ -371,7 +375,7 @@
                                 },
                                 {
                                     "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                                    "value": "[reference('function-app-insights').outputs.InstrumentationKey.value]"
+                                    "value": "[reference(concat('function-app-insights-', parameters('utcValue'))).outputs.InstrumentationKey.value]"
                                 },
                                 {
                                     "name": "FUNCTIONS_EXTENSION_VERSION",
@@ -397,7 +401,7 @@
         },
         {
             "apiVersion": "2020-06-01",
-            "name": "[concat('app-service-role-assignment-', copyIndex())]",
+            "name": "[concat('app-service-role-assignment-', parameters('utcValue'), '-', copyIndex())]",
             "type": "Microsoft.Resources/deployments",
             "resourceGroup": "[parameters('sharedEnvResourceGroup')]",
             "properties": {
@@ -408,7 +412,7 @@
                 },
                 "parameters": {
                     "principalId": {
-                        "value": "[createArray(reference('app-service').outputs.managedServiceIdentityId.value, reference('app-service').outputs.stagingManagedServiceIdentityId.value)[copyIndex()]]"
+                        "value": "[createArray(reference(concat('app-service-', parameters('utcValue'))).outputs.managedServiceIdentityId.value, reference(concat('app-service-', parameters('utcValue'))).outputs.stagingManagedServiceIdentityId.value)[copyIndex()]]"
                     },
                     "assignmentType": {
                         "value": "ServiceBusOwner"
@@ -425,7 +429,7 @@
         },
         {
             "apiVersion": "2020-06-01",
-            "name": "function-app-sb-role-assignment",
+            "name": "[concat('function-app-sb-role-assignment-', parameters('utcValue'))]",
             "type": "Microsoft.Resources/deployments",
             "resourceGroup": "[parameters('sharedEnvResourceGroup')]",
             "properties": {
@@ -436,7 +440,7 @@
                 },
                 "parameters": {
                     "principalId": {
-                        "value": "[reference('function-app-tools-sbus').outputs.managedServiceIdentityId.value]"
+                        "value": "[reference(concat('function-app-tools-sbus-', parameters('utcValue'))).outputs.managedServiceIdentityId.value]"
                     },
                     "assignmentType": {
                         "value": "ServiceBusSender"
