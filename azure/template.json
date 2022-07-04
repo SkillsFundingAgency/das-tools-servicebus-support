@@ -256,7 +256,7 @@
                                 },
                                 {
                                     "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                                    "value": "[reference('app-service-app-insights').outputs.InstrumentationKey.value]"
+                                    "value": "[reference(concat('app-service-app-insights-', parameters('utcValue'))).outputs.InstrumentationKey.value]"
                                 },
                                 {
                                     "name": "Cdn:Url",
@@ -293,7 +293,7 @@
                         "value": "[parameters('customHostname')]"
                     },
                     "certificateThumbprint": {
-                        "value": "[reference('app-service-certificate').outputs.certificateThumbprint.value]"
+                        "value": "[reference(concat('app-service-certificate-', parameters('utcValue'))).outputs.certificateThumbprint.value]"
                     },
                     "ipSecurityRestrictions": {
                         "value": "[parameters('frontEndAccessRestrictions')]"
@@ -375,7 +375,7 @@
                                 },
                                 {
                                     "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                                    "value": "[reference('function-app-insights').outputs.InstrumentationKey.value]"
+                                    "value": "[reference(concat('function-app-insights-', parameters('utcValue'))).outputs.InstrumentationKey.value]"
                                 },
                                 {
                                     "name": "FUNCTIONS_EXTENSION_VERSION",
@@ -412,7 +412,7 @@
                 },
                 "parameters": {
                     "principalId": {
-                        "value": "[createArray(reference('app-service').outputs.managedServiceIdentityId.value, reference('app-service').outputs.stagingManagedServiceIdentityId.value)[copyIndex()]]"
+                        "value": "[createArray(reference(concat('app-service-', parameters('utcValue'))).outputs.managedServiceIdentityId.value, reference(concat('app-service-', parameters('utcValue'))).outputs.stagingManagedServiceIdentityId.value)[copyIndex()]]"
                     },
                     "assignmentType": {
                         "value": "ServiceBusOwner"
@@ -440,7 +440,7 @@
                 },
                 "parameters": {
                     "principalId": {
-                        "value": "[reference('function-app-tools-sbus').outputs.managedServiceIdentityId.value]"
+                        "value": "[reference(concat('function-app-tools-sbus-', parameters('utcValue'))).outputs.managedServiceIdentityId.value]"
                     },
                     "assignmentType": {
                         "value": "ServiceBusSender"
