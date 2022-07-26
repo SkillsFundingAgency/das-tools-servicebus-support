@@ -108,6 +108,9 @@
         "utcValue": {
             "type": "string",
             "defaultValue": "[utcNow()]"
+        },
+        "workerAccessRestrictions": {
+            "type": "array"
         }
     },
     "variables": {
@@ -345,6 +348,9 @@
                     },
                     "subnetResourceId": {
                         "value": "[parameters('sharedWorkerSubnetResourceId')]"
+                    },
+                    "ipSecurityRestrictions": {
+                        "value": "[parameters('workerAccessRestrictions')]"
                     },
                     "functionAppAppSettings": {
                         "value": {
