@@ -11,6 +11,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
         public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<ServiceBusErrorManagementSettings>(configuration.GetSection(ServiceBusErrorManagementSettings.ServiceBusErrorManagementSettingsKey));
+            services.Configure<AuditApiConfiguration>(configuration.GetSection(AuditApiConfiguration.AuditApiSettingsKey));
             services.Configure<UserIdentitySettings>(configuration.GetSection(UserIdentitySettings.UserIdentitySettingsKey));
             services.Configure<CosmosDbSettings>(configuration.GetSection(CosmosDbSettings.CosmosDbSettingsKey));
             
@@ -18,16 +19,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<CosmosDbSettings>>().Value);
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<UserIdentitySettings>>().Value);
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServiceBusErrorManagementSettings>>().Value);
-
-            // Could clash with other Apis, the table storage is all put together
-            services.AddTransient<IAuditApiConfiguration>(s => new AuditApiConfiguration
-            {
-                ApiBaseUrl = configuration.GetValue<string>("ApiBaseUrl"),
-                ClientId = configuration.GetValue<string>("ClientId"),
-                ClientSecret = configuration.GetValue<string>("ClientSecret"),
-                IdentifierUri = configuration.GetValue<string>("IdentifierUri"),
-                Tenant = configuration.GetValue<string>("Tenant")
-            });
+            services.AddTransient<IAuditApiConfiguration>(resolver => resolver.GetRequiredService<IOptions<AuditApiConfiguration>>().Value);
 
             return services;
         }
