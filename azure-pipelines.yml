@@ -10,12 +10,12 @@ resources:
   - repository: das-platform-building-blocks
     type: github
     name: SkillsFundingAgency/das-platform-building-blocks
-    ref: refs/tags/0.4.63
+    ref: refs/tags/2.1.0
     endpoint: SkillsFundingAgency
   - repository: das-platform-automation
     type: github
     name: SkillsFundingAgency/das-platform-automation
-    ref: refs/tags/5.0.6
+    ref: refs/tags/5.1.4
     endpoint: SkillsFundingAgency
   pipelines:
   - pipeline: das-employer-config
@@ -24,6 +24,10 @@ resources:
     branch: master    
 
 variables:
+- name: SolutionBaseName
+  value: SFA.DAS.Tools.Servicebus.Support
+- name: BuildConfiguration
+  value: release
 - group: Release Management Resources
 - group: RELEASE das-tools-servicebus-support
 
@@ -31,6 +35,9 @@ stages:
 - stage: Build
   jobs:
   - template: pipeline-templates/job/code-build.yml
+    parameters:
+      SolutionBaseName: $(SolutionBaseName)
+      BuildConfiguration: $(BuildConfiguration)
 
 - stage: Deploy_TEST
   dependsOn: Build
@@ -42,32 +49,11 @@ stages:
   - group: TEST DevTest Shared Resources
   - group: TEST das-tools-servicebus-support
   jobs:
-  - template: azure-pipelines-templates/deploy/job/arm-deploy.yml@das-platform-building-blocks
+  - template: pipeline-templates/job/deploy.yml
     parameters:
+      Environment: TEST
+      SolutionBaseName: $(SolutionBaseName)
       ServiceConnection: SFA-DAS-DevTest-ARM
-      SubscriptionId: $(SubscriptionId)
-      Location: $(ResourceGroupLocation)
-      Environment: DEV
-      TemplatePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/azure/template.json
-      ParametersPath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/azure/template.parameters.json
-      ConfigSchemaPath: $(Pipeline.Workspace)/das-employer-config/Configuration/das-tools-servicebus-support
-      TemplateSecrets:
-        LoggingRedisConnectionString: $(LoggingRedisConnectionString)
-        ConfigurationStorageConnectionString: $(ConfigurationStorageConnectionString)
-        SharedStorageAccountConnectionString: $(SharedStorageAccountConnectionString)
-        AzureAdConfigurationClientSecret: $(AzureAdConfigurationClientSecret)
-        NServiceBusLicense: $(NServiceBusLicense)
-        RedisConnectionString: $(DefaultSessionRedisConnectionString)
-  - template: pipeline-templates/job/web-deploy.yml
-    parameters:
-      DeploymentApprovals: DEV
-      ServiceConnection: SFA-DAS-DevTest-ARM
-      DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/SFA.DAS.Tools.Servicebus.Support.Web.zip
-  - template: pipeline-templates/job/function-deploy.yml
-    parameters:
-      DeploymentApprovals: DEV
-      ServiceConnection: SFA-DAS-DevTest-ARM
-      DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/SFA.DAS.Tools.Servicebus.Support.Functions.zip
 
 - stage: Deploy_PP
   dependsOn: Build
@@ -79,32 +65,11 @@ stages:
   - group: PreProd Shared Resources
   - group: PREPROD das-tools-servicebus-support
   jobs:
-  - template: azure-pipelines-templates/deploy/job/arm-deploy.yml@das-platform-building-blocks
+  - template: pipeline-templates/job/deploy.yml
     parameters:
-      ServiceConnection: SFA-DIG-PreProd-ARM
-      SubscriptionId: $(SubscriptionId)
-      Location: $(ResourceGroupLocation)
       Environment: PP
-      TemplatePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/azure/template.json
-      ParametersPath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/azure/template.parameters.json
-      ConfigSchemaPath: $(Pipeline.Workspace)/das-employer-config/Configuration/das-tools-servicebus-support
-      TemplateSecrets:
-        LoggingRedisConnectionString: $(LoggingRedisConnectionString)
-        ConfigurationStorageConnectionString: $(ConfigurationStorageConnectionString)
-        SharedStorageAccountConnectionString: $(SharedStorageAccountConnectionString)
-        AzureAdConfigurationClientSecret: $(AzureAdConfigurationClientSecret)
-        NServiceBusLicense: $(NServiceBusLicense)
-        RedisConnectionString: $(DefaultSessionRedisConnectionString)
-  - template: pipeline-templates/job/web-deploy.yml
-    parameters:
-      DeploymentApprovals: PP
+      SolutionBaseName: $(SolutionBaseName)
       ServiceConnection: SFA-DIG-PreProd-ARM
-      DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/SFA.DAS.Tools.Servicebus.Support.Web.zip
-  - template: pipeline-templates/job/function-deploy.yml
-    parameters:
-      DeploymentApprovals: PP
-      ServiceConnection: SFA-DIG-PreProd-ARM
-      DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/SFA.DAS.Tools.Servicebus.Support.Functions.zip
 
 - stage: Deploy_PROD
   dependsOn: Build
@@ -116,29 +81,8 @@ stages:
   - group: Prod Shared Resources
   - group: PROD das-tools-servicebus-support
   jobs:
-  - template: azure-pipelines-templates/deploy/job/arm-deploy.yml@das-platform-building-blocks
+  - template: pipeline-templates/job/deploy.yml
     parameters:
-      ServiceConnection: SFA-DIG-Prod-ARM
-      SubscriptionId: $(SubscriptionId)
-      Location: $(ResourceGroupLocation)
       Environment: PROD
-      TemplatePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/azure/template.json
-      ParametersPath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/azure/template.parameters.json
-      ConfigSchemaPath: $(Pipeline.Workspace)/das-employer-config/Configuration/das-tools-servicebus-support
-      TemplateSecrets:
-        LoggingRedisConnectionString: $(LoggingRedisConnectionString)
-        ConfigurationStorageConnectionString: $(ConfigurationStorageConnectionString)
-        SharedStorageAccountConnectionString: $(SharedStorageAccountConnectionString)
-        AzureAdConfigurationClientSecret: $(AzureAdConfigurationClientSecret)
-        NServiceBusLicense: $(NServiceBusLicense)
-        RedisConnectionString: $(DefaultSessionRedisConnectionString)
-  - template: pipeline-templates/job/web-deploy.yml
-    parameters:
-      DeploymentApprovals: PROD
+      SolutionBaseName: $(SolutionBaseName)
       ServiceConnection: SFA-DIG-Prod-ARM
-      DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/SFA.DAS.Tools.Servicebus.Support.Web.zip
-  - template: pipeline-templates/job/function-deploy.yml
-    parameters:
-      DeploymentApprovals: PROD
-      ServiceConnection: SFA-DIG-Prod-ARM
-      DeploymentPackagePath: $(Pipeline.Workspace)/ToolsServiceBusSupportArtifacts/SFA.DAS.Tools.Servicebus.Support.Functions.zip
