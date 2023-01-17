@@ -1,11 +1,12 @@
-﻿using FluentAssertions;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Azure.ServiceBus;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.MessageService
 {
@@ -61,14 +62,14 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
             }
 
             var sut = new BatchSendMessageStrategy();
-            var count = 0;
+            var bag = new ConcurrentBag<int>();
 
             await sut.Execute(messages, async (messages) =>
             {
-                count++;
+                bag.Add(1);
             });
 
-            count.Should().Be(batchCount);
+            bag.Count.Should().Be(batchCount);
         }
     }
 }

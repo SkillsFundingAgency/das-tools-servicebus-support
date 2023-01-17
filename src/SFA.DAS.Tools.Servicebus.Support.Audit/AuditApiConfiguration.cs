@@ -2,6 +2,7 @@
 {
     public class AuditApiConfiguration : IAuditApiConfiguration
     {
+        public const string AuditApiSettingsKey = "AuditApiSettings";
         public string ApiBaseUrl { get; set; }
         /// <summary>
         /// The clientId configured in Azure AD
