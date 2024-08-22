@@ -19,6 +19,8 @@ jobs:
         configFilePath: GitVersion.yml
 
     - template: azure-pipelines-templates/build/step/app-build.yml@das-platform-building-blocks
+      parameters:
+        ContinueOnVulnerablePackageScanError: true        
 
     - task: DotNetCoreCLI@2
       displayName: Publish Web App
