@@ -20,12 +20,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             var envName = config["EnvironmentName"];
             var storageConnStr = config["ConfigurationStorageConnectionString"];
 
-            configBuilder
-                .SetBasePath(environment.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: true)
-                .AddJsonFile("local.settings.json", optional: true)
-                .AddEnvironmentVariables();
-
             if (!string.IsNullOrWhiteSpace(storageConnStr))
             {
                 configBuilder.AddAzureTableStorage(options =>
