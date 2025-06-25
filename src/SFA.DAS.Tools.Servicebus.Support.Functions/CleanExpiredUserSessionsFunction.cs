@@ -38,7 +38,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
         }
 
         [Function("CleanExpiredUserSessionsFunction")]
-        public async Task Run([TimerTrigger("%CleanExpiredUserSessionsFunctionTimer%", RunOnStartup = false)] TimerInfo myTimer)
+        public async Task Run([TimerTrigger("%CleanExpiredUserSessionsFunctionTimer%", RunOnStartup = true)] TimerInfo myTimer)
         {
             try
             {

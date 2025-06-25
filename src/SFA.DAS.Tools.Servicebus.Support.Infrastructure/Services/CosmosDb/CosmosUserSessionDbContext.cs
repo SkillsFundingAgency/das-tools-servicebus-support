@@ -51,7 +51,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb
             var container = await _cosmosInfrastructure.CreateContainer();
 
             return await _policies.ResiliencePolicy.ExecuteAsync(() => IterateUserSessionResults(container.GetItemLinqQueryable<UserSession>()
-                .Where(s => s.ExpiryDateUtc < DateTime.UtcNow.AddDays(3))
+                .Where(s => s.ExpiryDateUtc < DateTime.UtcNow)
                 .ToFeedIterator()));
         }
 

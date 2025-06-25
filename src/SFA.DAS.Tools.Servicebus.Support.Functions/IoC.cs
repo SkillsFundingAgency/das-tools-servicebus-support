@@ -65,6 +65,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             services.AddTransient<IAuditMessageBuilder, ChangedByMessageBuilder>();
             services.AddTransient<IAuditService, AuditService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.Configure<AuditApiConfiguration>(configuration.GetSection(AuditApiConfiguration.AuditApiSettingsKey));
+            services.AddTransient<IAuditApiConfiguration>(resolver => resolver.GetRequiredService<IOptions<AuditApiConfiguration>>().Value);
             return services;
         }
     }

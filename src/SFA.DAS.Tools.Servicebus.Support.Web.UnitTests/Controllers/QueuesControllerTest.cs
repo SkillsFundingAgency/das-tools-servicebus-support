@@ -102,7 +102,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.UnitTests.Controllers
             var queueInfoModel = result.Should().BeOfType<JsonResult>().Which.Value.Should().BeOfType<QueueInformationModel>().Which;
 
             queueInfoModel.Total.Should().Be(4);
-            queueInfoModel.Rows.Should().BeEquivalentTo(
+            queueInfoModel.Rows.Should().BeEquivalentTo(new[]
+                {
                 new QueueInformationModel.QueueCountInfo
                 {
                     Id = "TestQueue1",
@@ -130,7 +131,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.UnitTests.Controllers
                     MessageCount = 0,
                     MessageCountInvestigation = "0",
                     Name = "TestQueue4"
-                });
+                }});
         }
 
         [Test]
@@ -146,7 +147,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.UnitTests.Controllers
             var queueInfoModel = result.Should().BeOfType<JsonResult>().Which.Value.Should().BeOfType<QueueInformationModel>().Which;
 
             queueInfoModel.Total.Should().Be(3);
-            queueInfoModel.Rows.Should().BeEquivalentTo(
+            queueInfoModel.Rows.Should().BeEquivalentTo(new[]
+            {
                 new QueueInformationModel.QueueCountInfo
                 {
                     Id = "TestQueue1",
@@ -167,7 +169,8 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web.UnitTests.Controllers
                     MessageCount = 0,
                     MessageCountInvestigation = "30 (UserD_Username)",
                     Name = "TestQueue3"
-                });
+                }
+            });
         }
 
     }
