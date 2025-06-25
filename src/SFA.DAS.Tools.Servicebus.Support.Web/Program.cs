@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
-using NLog.Web;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web
 {
@@ -16,6 +15,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                }).UseNLog();
+                });
     }
 }

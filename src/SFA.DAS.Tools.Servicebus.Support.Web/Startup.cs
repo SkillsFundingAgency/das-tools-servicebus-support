@@ -12,10 +12,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using SFA.DAS.Configuration.AzureTableStorage;
-using SFA.DAS.Tools.Servicebus.Support.Domain;
-using Microsoft.Extensions.Logging;
-using Polly.Registry;
-using SFA.DAS.Tools.Servicebus.Support.Audit;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Web
 {
@@ -49,7 +45,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
             }
 
             _configuration = builder.Build();
-        }        
+        }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -82,7 +78,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Web
                 options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
             });
 
-            services.AddApplicationInsightsTelemetry(_configuration["APPINSIGHTS_INSTRUMENTATIONKEY"]);
+            services.AddOpenTelemetryRegistration(_configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]!);
             services.AddDistributedCache(_configuration, _env);
 
             services.AddSession(options =>
