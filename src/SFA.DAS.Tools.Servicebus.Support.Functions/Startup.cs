@@ -13,7 +13,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             var sp = builder.Services.BuildServiceProvider();
             var configurationService = sp.GetService<IConfiguration>();
 
-            // If you have custom services, keep this!
             builder.Services.AddServices(configurationService);
         }
     }
