@@ -439,7 +439,7 @@
                                 },
                                 {
                                     "name": "FUNCTIONS_EXTENSION_VERSION",
-                                    "value": "~3"
+                                    "value": "~4"
                                 },
                                 {
                                     "name": "AppName",
@@ -447,7 +447,7 @@
                                 },
                                 {
                                     "name": "FUNCTIONS_WORKER_RUNTIME",
-                                    "value": "dotnet"
+                                    "value": "dotnet-isolated"
                                 },
                                 {
                                     "name": "CleanExpiredUserSessionsFunctionTimer",

@@ -14,11 +14,13 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMes
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Audit;
-using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
+using SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders;
+using SFA.DAS.Tools.Servicebus.Support.Audit.MesssageBuilders;
+using Microsoft.AspNetCore.Http;
 
 namespace SFA.DAS.Tools.Servicebus.Support.Functions
 {
@@ -58,7 +60,13 @@ namespace SFA.DAS.Tools.Servicebus.Support.Functions
             services.AddTransient<IMessageService, MessageService>();
             services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>();
             services.AddSingleton<IServiceBusPolicies, ServiceBusPolicies>();
-            
+            services.AddTransient<IAuditApiClient, AuditApiClient>();
+            services.AddTransient<IAuditMessageBuilder, BaseAuditMessageBuilder>();
+            services.AddTransient<IAuditMessageBuilder, ChangedByMessageBuilder>();
+            services.AddTransient<IAuditService, AuditService>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.Configure<AuditApiConfiguration>(configuration.GetSection(AuditApiConfiguration.AuditApiSettingsKey));
+            services.AddTransient<IAuditApiConfiguration>(resolver => resolver.GetRequiredService<IOptions<AuditApiConfiguration>>().Value);
             return services;
         }
     }
