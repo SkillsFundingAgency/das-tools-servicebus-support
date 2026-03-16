@@ -8,62 +8,64 @@ using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessage;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers
+namespace SFA.DAS.Tools.Servicebus.Support.Web.Controllers;
+
+public class MessageDetailsController(
+    IQueryHandler<GetMessageQuery, GetMessageQueryResponse> getMessageQuery,
+    IUserService userService,
+    IMessageDetailRedactor redactor)
+    : Controller
 {
-    public class MessageDetailsController : Controller
+    public async Task<IActionResult> Index(string id, int returnOffset = 0, int returnLimit = 10, string returnSearch = null,
+        string returnSort = null, string returnOrder = null, int returnGetQuantity = 250)
     {
-        private readonly IQueryHandler<GetMessageQuery, GetMessageQueryResponse> _getMessageQuery;
-        private readonly IUserService _userService;
-        private readonly IMessageDetailRedactor _redactor;
-
-        public MessageDetailsController(IQueryHandler<GetMessageQuery, GetMessageQueryResponse> getMessageQuery, IUserService userService, IMessageDetailRedactor redactor)
+        var message = await getMessageQuery.Handle(new GetMessageQuery()
         {
-            _getMessageQuery = getMessageQuery;
-            _userService = userService;
-            _redactor = redactor;
-        }
+            UserId = userService.GetUserId(),
+            MessageId = id
 
-        public async Task<IActionResult> Index(string id)
+        });
+
+        return View(new MessageDetailViewModel
         {
-            var message = await _getMessageQuery.Handle(new GetMessageQuery()
-                {
-                    UserId = _userService.GetUserId(),
-                    MessageId = id
-
-                });
-
-            return View(new MessageDetailViewModel
+            Queue = message.Message.Queue,
+            Body = message.Message.Body,
+            Properties = redactor.Redact(ConvertPropertiesToList(message)).OrderBy(x => x.Key),
+            UserProperties = redactor.Redact(message.Message.UserProperties).OrderBy(x => x.Key),
+            ReturnState = new MessageListState
             {
-                Queue = message.Message.Queue,
-                Body = message.Message.Body,
-                Properties = _redactor.Redact(ConvertPropertiesToList(message)).OrderBy(x => x.Key),
-                UserProperties = _redactor.Redact(message.Message.UserProperties).OrderBy(x => x.Key)
-            });
-        }
+                ReturnOffset = returnOffset,
+                ReturnLimit = returnLimit,
+                ReturnSearch = returnSearch,
+                ReturnSort = returnSort,
+                ReturnOrder = returnOrder,
+                ReturnGetQuantity = returnGetQuantity
+            }
+        });
+    }
 
-        private static List<KeyValuePair<string, object>> ConvertPropertiesToList(GetMessageQueryResponse message)
+    private static List<KeyValuePair<string, object>> ConvertPropertiesToList(GetMessageQueryResponse message)
+    {
+        var properties = new List<KeyValuePair<string, object>>()
         {
-            var properties = new List<KeyValuePair<string, object>>()
-            {
-                new KeyValuePair<string, object>("ContentType", message.Message.OriginalMessage.ContentType ?? string.Empty),
-                new KeyValuePair<string, object>("CorrelationId",
-                    message.Message.OriginalMessage.CorrelationId ?? string.Empty),
-                new KeyValuePair<string, object>("Label", message.Message.OriginalMessage.Label ?? string.Empty),
-                new KeyValuePair<string, object>("MessageId", message.Message.OriginalMessage.MessageId ?? string.Empty),
-                new KeyValuePair<string, object>("PartitionKey", message.Message.OriginalMessage.PartitionKey ?? string.Empty),
-                new KeyValuePair<string, object>("ReplyTo", message.Message.OriginalMessage.ReplyTo ?? string.Empty),
-                new KeyValuePair<string, object>("ReplyToSessionId",
-                    message.Message.OriginalMessage.ReplyToSessionId ?? string.Empty),
-                new KeyValuePair<string, object>("Size", message.Message.OriginalMessage.Size.ToString()),
-                new KeyValuePair<string, object>("TimeToLive", message.Message.OriginalMessage.TimeToLive.ToString()),
-                new KeyValuePair<string, object>("To", message.Message.OriginalMessage.To ?? string.Empty),
-                new KeyValuePair<string, object>("ViaPartitionKey",
-                    message.Message.OriginalMessage.ViaPartitionKey ?? string.Empty),
-                new KeyValuePair<string, object>("ScheduledEnqueueTimeUtc",
-                    message.Message.OriginalMessage.ScheduledEnqueueTimeUtc.ToString(CultureInfo.CurrentCulture)),
-                new KeyValuePair<string, object>("SessionId", message.Message.OriginalMessage.SessionId ?? string.Empty)
-            };
-            return properties;
-        }
+            new KeyValuePair<string, object>("ContentType", message.Message.OriginalMessage.ContentType ?? string.Empty),
+            new KeyValuePair<string, object>("CorrelationId",
+                message.Message.OriginalMessage.CorrelationId ?? string.Empty),
+            new KeyValuePair<string, object>("Label", message.Message.OriginalMessage.Label ?? string.Empty),
+            new KeyValuePair<string, object>("MessageId", message.Message.OriginalMessage.MessageId ?? string.Empty),
+            new KeyValuePair<string, object>("PartitionKey", message.Message.OriginalMessage.PartitionKey ?? string.Empty),
+            new KeyValuePair<string, object>("ReplyTo", message.Message.OriginalMessage.ReplyTo ?? string.Empty),
+            new KeyValuePair<string, object>("ReplyToSessionId",
+                message.Message.OriginalMessage.ReplyToSessionId ?? string.Empty),
+            new KeyValuePair<string, object>("Size", message.Message.OriginalMessage.Size.ToString()),
+            new KeyValuePair<string, object>("TimeToLive", message.Message.OriginalMessage.TimeToLive.ToString()),
+            new KeyValuePair<string, object>("To", message.Message.OriginalMessage.To ?? string.Empty),
+            new KeyValuePair<string, object>("ViaPartitionKey",
+                message.Message.OriginalMessage.ViaPartitionKey ?? string.Empty),
+            new KeyValuePair<string, object>("ScheduledEnqueueTimeUtc",
+                message.Message.OriginalMessage.ScheduledEnqueueTimeUtc.ToString(CultureInfo.CurrentCulture)),
+            new KeyValuePair<string, object>("SessionId", message.Message.OriginalMessage.SessionId ?? string.Empty)
+        };
+        return properties;
     }
 }

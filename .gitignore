@@ -286,6 +286,9 @@ src/SFA.DAS.AssessorService.Web/wwwroot/javascripts/**/*.min.js
 # AppSetting environment files
 *.development.json
 
+# Data Protection key ring (local development)
+**/dataprotection-keys/
+
 #Redundant specflow project
 src/SFA.DAS.AssessorService.Application.Api.Specflow.Tests/**/*.*
 src/global.json

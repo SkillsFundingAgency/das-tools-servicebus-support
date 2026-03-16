@@ -1,88 +1,91 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetExpiredUserSessions;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
+using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSessions;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Functions
+namespace SFA.DAS.Tools.Servicebus.Support.Functions;
+
+public class CleanExpiredUserSessionsFunction(
+    IQueryHandler<GetExpiredUserSessionsQuery, GetExpiredUserSessionsQueryResponse> expiredUserSessionQuery,
+    IQueryHandler<GetUserSessionsQuery, GetUserSessionsQueryResponse> userSessionsQuery,
+    IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery,
+    IMessageService messageService,
+    IOrphanedMessageRecoveryService orphanedMessageRecoveryService,
+    ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> deleteUserSessionCommand,
+    IUserService userService,
+    ILogger<CleanExpiredUserSessionsFunction> logger)
 {
-    public class CleanExpiredUserSessionsFunction
+    [Function("CleanExpiredUserSessionsFunction")]
+    public async Task Run([TimerTrigger("%CleanExpiredUserSessionsFunctionTimer%", RunOnStartup = false)] TimerInfo myTimer)
     {
-        private readonly IQueryHandler<GetExpiredUserSessionsQuery, GetExpiredUserSessionsQueryResponse> _expiredUserSessionQuery;
-        private readonly IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> _getMessagesQuery;
-        private readonly IMessageService _messageService;
-        private readonly ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> _deleteUserSessionCommand;
-        private readonly IUserService _userService;
-        private readonly ILogger<CleanExpiredUserSessionsFunction> _logger;
-
-        public CleanExpiredUserSessionsFunction(
-            IQueryHandler<GetExpiredUserSessionsQuery, GetExpiredUserSessionsQueryResponse> expiredUserSessionQuery,
-            IQueryHandler<GetMessagesQuery, GetMessagesQueryResponse> getMessagesQuery,
-            IMessageService messageService,
-            ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> deleteUserSessionCommand,
-            IUserService userService,
-            ILogger<CleanExpiredUserSessionsFunction> logger)
+        try
         {
-            _expiredUserSessionQuery = expiredUserSessionQuery;
-            _getMessagesQuery = getMessagesQuery;
-            _messageService = messageService;
-            _deleteUserSessionCommand = deleteUserSessionCommand;
-            _userService = userService;
-            _logger = logger;
-        }
+            var queryResult = await expiredUserSessionQuery.Handle(new GetExpiredUserSessionsQuery());
 
-        [Function("CleanExpiredUserSessionsFunction")]
-        public async Task Run([TimerTrigger("%CleanExpiredUserSessionsFunctionTimer%", RunOnStartup = false)] TimerInfo myTimer)
-        {
-            try
+            foreach (var session in queryResult.ExpiredUserSessions)
             {
-                var queryResult = await _expiredUserSessionQuery.Handle(new GetExpiredUserSessionsQuery());
+                userService.Configure(session.UserId, "CleanExpiredUserSessionsFunction");
 
-                foreach (var session in queryResult.ExpiredUserSessions)
+                var getMessagesResponse = await GetMessages(session.UserId);
+                var iterations = 0;
+
+                while (getMessagesResponse.Messages.Any())
                 {
-                    _userService.Configure(session.UserId, "CleanExpiredUserSessionsFunction");
-
-                    var getMessagesResponse = await GetMessages(session.UserId);
-
-                    while (getMessagesResponse.Messages.Any())
+                    iterations++;
+                    if (iterations > 200)
                     {
-                        await _messageService.AbortMessages(getMessagesResponse.Messages, session.Queue);
-                        getMessagesResponse = await GetMessages(session.UserId);
+                        logger.LogError(
+                            "Stopping expired session cleanup after max iterations for userId={UserId} queue={Queue}",
+                            session.UserId, session.Queue);
+                        break;
                     }
 
-                    if (!getMessagesResponse.Messages.Any())
-                    {
-                        await _deleteUserSessionCommand.Handle(new DeleteUserSessionCommand
-                        {
-                            Id = session.Id,
-                            UserId = session.UserId
-                        });
-                    }
+                    await messageService.AbortMessages(getMessagesResponse.Messages, session.Queue);
+                    logger.LogInformation(
+                        "Released expired-session messages userId={UserId} queue={Queue} batchCount={BatchCount} iteration={Iteration}",
+                        session.UserId, session.Queue, getMessagesResponse.Messages.Count(), iterations);
+                    getMessagesResponse = await GetMessages(session.UserId);
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "CleanExpiredUserSessionsFunction failed");
-            }
-        }
 
-        private async Task<GetMessagesQueryResponse> GetMessages(string userId)
-        {
-            return await _getMessagesQuery.Handle(new GetMessagesQuery
-            {
-                UserId = userId,
-                SearchProperties = new SearchProperties
+                if (!getMessagesResponse.Messages.Any())
                 {
-                    Offset = 0,
-                    Limit = 100
+                    await deleteUserSessionCommand.Handle(new DeleteUserSessionCommand
+                    {
+                        Id = session.Id,
+                        UserId = session.UserId
+                    });
                 }
-            });
+            }
+
+            var activeSessions = (await userSessionsQuery.Handle(new GetUserSessionsQuery()))
+                .UserSessions
+                .Where(s => s.ExpiryDateUtc >= DateTime.UtcNow);
+            await orphanedMessageRecoveryService.RecoverOrphanedMessagesAsync(activeSessions);
         }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "CleanExpiredUserSessionsFunction failed");
+        }
+    }
+
+    private async Task<GetMessagesQueryResponse> GetMessages(string userId)
+    {
+        return await getMessagesQuery.Handle(new GetMessagesQuery
+        {
+            UserId = userId,
+            SearchProperties = new SearchProperties
+            {
+                Offset = 0,
+                Limit = 100
+            }
+        });
     }
 }
