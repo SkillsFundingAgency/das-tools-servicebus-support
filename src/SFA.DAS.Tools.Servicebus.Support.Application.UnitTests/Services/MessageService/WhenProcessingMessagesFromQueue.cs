@@ -1,4 +1,4 @@
-﻿using Microsoft.Azure.ServiceBus;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -46,7 +46,6 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
             for (var i = 0; i < 3; i++)
             {
                 var m = new Message(Encoding.UTF8.GetBytes("{}")) { MessageId = Guid.NewGuid().ToString() };
-                m.UserProperties.Add("NServiceBus.OriginatingEndpoint", "endpoint");
                 m.UserProperties.Add("NServiceBus.ProcessingEndpoint", "endpoint");
                 m.UserProperties.Add("NServiceBus.ExceptionInfo.Message", "Exception Message");
                 m.UserProperties.Add("NServiceBus.ExceptionInfo.ExceptionType", "Exception Type");

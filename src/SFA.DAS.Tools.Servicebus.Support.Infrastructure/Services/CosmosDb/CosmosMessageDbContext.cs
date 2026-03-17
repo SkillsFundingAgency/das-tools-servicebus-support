@@ -1,4 +1,4 @@
-﻿using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Domain;
@@ -166,11 +166,11 @@ public class CosmosMessageDbContext(
     {
         if (searchProperties.Search != null)
         {
-            queryDefinition = queryDefinition.Where(m => m.Body.Contains(searchProperties.Search)
-                                                         || m.ProcessingEndpoint.Contains(searchProperties.Search)
-                                                         || m.OriginatingEndpoint.Contains(searchProperties.Search)
-                                                         || m.Exception.Contains(searchProperties.Search)
-                                                         || m.ExceptionType.Contains(searchProperties.Search));
+            queryDefinition = queryDefinition.Where(m => (m.Body ?? string.Empty).Contains(searchProperties.Search)
+                                                         || (m.ProcessingEndpoint ?? string.Empty).Contains(searchProperties.Search)
+                                                         || (m.OriginatingEndpoint ?? string.Empty).Contains(searchProperties.Search)
+                                                         || (m.Exception ?? string.Empty).Contains(searchProperties.Search)
+                                                         || (m.ExceptionType ?? string.Empty).Contains(searchProperties.Search));
         }
 
         return queryDefinition;
