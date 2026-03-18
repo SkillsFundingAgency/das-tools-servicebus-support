@@ -2,7 +2,15 @@
 
 <div class="container-fluid">
     <div class="row mb-4">
-        <input type="button" class="govuk-button" onclick="history.go(-1)" value="Return to message list" />
+        <a class="govuk-button"
+           asp-controller="MessageList"
+           asp-action="Index"
+           asp-route-returnOffset="@Model.ReturnState.ReturnOffset"
+           asp-route-returnLimit="@Model.ReturnState.ReturnLimit"
+           asp-route-returnSearch="@Model.ReturnState.ReturnSearch"
+           asp-route-returnSort="@Model.ReturnState.ReturnSort"
+           asp-route-returnOrder="@Model.ReturnState.ReturnOrder"
+           asp-route-returnGetQuantity="@Model.ReturnState.ReturnGetQuantity">Return to message list</a>
     </div>
     <div class="row">
         <div class="col-sm-5">

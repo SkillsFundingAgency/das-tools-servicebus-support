@@ -1,9 +1,7 @@
-﻿namespace SFA.DAS.Tools.Servicebus.Support.Web.Models;
+namespace SFA.DAS.Tools.Servicebus.Support.Web.Models;
 
-public class ReceiveMessagesModel
+public class MessageListState
 {
-    public string QueueName { get; set; }
-    public int GetQuantity { get; set; }
     public int ReturnOffset { get; set; }
     public int ReturnLimit { get; set; } = 10;
     public string ReturnSearch { get; set; }

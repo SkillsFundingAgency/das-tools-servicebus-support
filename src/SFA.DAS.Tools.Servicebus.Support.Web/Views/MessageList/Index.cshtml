@@ -8,11 +8,45 @@
     <script type="text/javascript">
 
         function operateFormatter(value, row, index) {
-            return '<a class="detail" href=' + ($('#baseUrl').val() + "/?id=" + row.id) + ' title ="Detail">Detail</a>';
+            var state = getCurrentState();
+            var query = $.param({
+                id: row.id,
+                returnOffset: state.returnOffset,
+                returnLimit: state.returnLimit,
+                returnSearch: state.returnSearch,
+                returnSort: state.returnSort,
+                returnOrder: state.returnOrder,
+                returnGetQuantity: state.returnGetQuantity
+            });
+
+            return '<a class="detail" href=' + ($('#baseUrl').val() + "/?" + query) + ' title ="Detail">Detail</a>';
         };
 
         var $table = $("#table");
         var selections = [];
+
+        function getCurrentState() {
+            var options = $table.bootstrapTable('getOptions');
+            var searchInput = $('.search input').val();
+
+            return {
+                returnOffset: options.pageSize * (options.pageNumber - 1),
+                returnLimit: options.pageSize,
+                returnSearch: searchInput || options.searchText || '',
+                returnSort: options.sortName || '',
+                returnOrder: options.sortOrder || '',
+                returnGetQuantity: $('#getQty :selected').val()
+            };
+        }
+
+        function applyStateToForms() {
+            var state = getCurrentState();
+
+            $('.list-state-field').each(function() {
+                var fieldName = $(this).data('field');
+                $(this).val(state[fieldName]);
+            });
+        }
 
         function responseHandler(res) {
             $.each(res.rows,
@@ -57,12 +91,14 @@
 
             $('#deleteConfirmationModal').modal('hide');
             displayBusyIndicator();
+            applyStateToForms();
             $('#deleteMessagesIdsField').val(selections);
             $('#deleteMessagesForm').submit();
         })
 
         function releaseSelectedMessages() {
             displayBusyIndicator();
+            applyStateToForms();
             $('#releaseSelectedMessagesIdsField').val(selections);
             $('#releaseSelectedMessagesQueueNameField').val('@Model.QueueInfo.Name');
             $('#releaseSelectedMessagesForm').submit();
@@ -70,6 +106,7 @@
 
         function replayMessages() {
             displayBusyIndicator();
+            applyStateToForms();
             $('#replayMessagesIdsField').val(selections);
             $('#replayMessagesQueueNameField').val('@Model.QueueInfo.Name');
             $('#replayMessagesForm').submit();
@@ -77,6 +114,7 @@
 
         function getQueueMessages() {
             displayBusyIndicator();
+            applyStateToForms();
             var qtyValue = $('#getQty :selected').val();
             $('#receiveMessagesQtyField').val(qtyValue);
             $('#receiveMessagesQueueNameField').val('@Model.QueueInfo.Name');
@@ -94,6 +132,18 @@
 <div>
 
     <input id="baseUrl" type="hidden" value="@(Url.Action("Index", "MessageDetails"))" />
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="govuk-error-summary" data-module="govuk-error-summary">
+            <div role="alert">
+                <h2 class="govuk-error-summary__title">There is a problem</h2>
+                <div class="govuk-error-summary__body">
+                    <p class="govuk-body">@TempData["ErrorMessage"]</p>
+                </div>
+            </div>
+        </div>
+    }
 
     <h3 class="govuk-heading-l">Queue - @Model.QueueInfo.Name</h3>
 
@@ -121,31 +171,76 @@
             <legend>Message actions</legend>
 
             <select class="govuk-select" name="getQty" id="getQty">
-                <option value="250">250</option>
-                <option value="500">500</option>
-                <option value="1000">1000</option>
+                @if (Model.ListState.ReturnGetQuantity == 250)
+                {
+                    <option value="250" selected>250</option>
+                }
+                else
+                {
+                    <option value="250">250</option>
+                }
+                @if (Model.ListState.ReturnGetQuantity == 500)
+                {
+                    <option value="500" selected>500</option>
+                }
+                else
+                {
+                    <option value="500">500</option>
+                }
+                @if (Model.ListState.ReturnGetQuantity == 1000)
+                {
+                    <option value="1000" selected>1000</option>
+                }
+                else
+                {
+                    <option value="1000">1000</option>
+                }
             </select>
             <a class="govuk-link" id="btnReceiveMessages" href="#" onclick="getQueueMessages()" title="Get any further messages that may be on the queue">Get more</a> |
             <form method="post" id="receiveMessagesForm" asp-action="ReceiveMessagesFromQueue" hidden="hidden">
                 <input type="hidden" name="getQuantity" id="receiveMessagesQtyField" />
                 <input type="hidden" name="queueName" id="receiveMessagesQueueNameField" />
+                <input class="list-state-field" data-field="returnOffset" type="hidden" name="returnOffset" />
+                <input class="list-state-field" data-field="returnLimit" type="hidden" name="returnLimit" />
+                <input class="list-state-field" data-field="returnSearch" type="hidden" name="returnSearch" />
+                <input class="list-state-field" data-field="returnSort" type="hidden" name="returnSort" />
+                <input class="list-state-field" data-field="returnOrder" type="hidden" name="returnOrder" />
+                <input class="list-state-field" data-field="returnGetQuantity" type="hidden" name="returnGetQuantity" />
             </form>
 
             <a class="govuk-link" id="btnReplayMessages" href="#" onclick="replayMessages()" title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
             <form method="post" id="replayMessagesForm" asp-action="ReplayMessages" hidden="hidden">
                 <input type="hidden" name="ids" id="replayMessagesIdsField" />
                 <input type="hidden" name="queueName" id="replayMessagesQueueNameField" />
+                <input class="list-state-field" data-field="returnOffset" type="hidden" name="returnOffset" />
+                <input class="list-state-field" data-field="returnLimit" type="hidden" name="returnLimit" />
+                <input class="list-state-field" data-field="returnSearch" type="hidden" name="returnSearch" />
+                <input class="list-state-field" data-field="returnSort" type="hidden" name="returnSort" />
+                <input class="list-state-field" data-field="returnOrder" type="hidden" name="returnOrder" />
+                <input class="list-state-field" data-field="returnGetQuantity" type="hidden" name="returnGetQuantity" />
             </form>
 
             <a class="govuk-link" id="btnDeleteMessages" href="#" title="Delete the selected messages permanently">Delete selected</a> |
             <form method="post" id="deleteMessagesForm" asp-action="DeleteMessages" hidden="hidden">
                 <input type="hidden" name="ids" id="deleteMessagesIdsField" />
+                <input class="list-state-field" data-field="returnOffset" type="hidden" name="returnOffset" />
+                <input class="list-state-field" data-field="returnLimit" type="hidden" name="returnLimit" />
+                <input class="list-state-field" data-field="returnSearch" type="hidden" name="returnSearch" />
+                <input class="list-state-field" data-field="returnSort" type="hidden" name="returnSort" />
+                <input class="list-state-field" data-field="returnOrder" type="hidden" name="returnOrder" />
+                <input class="list-state-field" data-field="returnGetQuantity" type="hidden" name="returnGetQuantity" />
             </form>
 
             <a class="govuk-link" id="btnReleaseSelectedMessages" href="#" onclick="releaseSelectedMessages()" title="Release selected messages back to the ServiceBus Queue they came from">Release selected</a> |
             <form method="post" id="releaseSelectedMessagesForm" asp-action="ReleaseSelectedMessages" hidden="hidden">
                 <input type="hidden" name="ids" id="releaseSelectedMessagesIdsField" />
                 <input type="hidden" name="queueName" id="releaseSelectedMessagesQueueNameField" />
+                <input class="list-state-field" data-field="returnOffset" type="hidden" name="returnOffset" />
+                <input class="list-state-field" data-field="returnLimit" type="hidden" name="returnLimit" />
+                <input class="list-state-field" data-field="returnSearch" type="hidden" name="returnSearch" />
+                <input class="list-state-field" data-field="returnSort" type="hidden" name="returnSort" />
+                <input class="list-state-field" data-field="returnOrder" type="hidden" name="returnOrder" />
+                <input class="list-state-field" data-field="returnGetQuantity" type="hidden" name="returnGetQuantity" />
             </form>
 
             <a class="govuk-link" asp-controller="MessageList" asp-action="ReleaseAllMessages" asp-route-queue="@Model.QueueInfo.Name" onclick="displayBusyIndicator()" title="Release messages back to the servicebus queue they came from">Release all</a>
@@ -160,6 +255,11 @@
            data-click-to-select="true"
            data-sortable="true"
            data-side-pagination="server"
+           data-page-size="@Model.ListState.ReturnLimit"
+           data-page-number="@((Model.ListState.ReturnOffset / Model.ListState.ReturnLimit) + 1)"
+           data-search-text="@Model.ListState.ReturnSearch"
+           data-sort-name="@Model.ListState.ReturnSort"
+           data-sort-order="@Model.ListState.ReturnOrder"
            data-url="@Url.Action("Index", "Messages")"
            style="table-layout: fixed"
            data-response-handler="responseHandler">
