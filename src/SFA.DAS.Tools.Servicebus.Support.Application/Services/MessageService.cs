@@ -6,7 +6,6 @@ using System.Transactions;
 using Microsoft.Extensions.Logging;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
-using SFA.DAS.Tools.Servicebus.Support.Audit;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 
@@ -16,15 +15,14 @@ public class MessageService(
     IBatchSendMessageStrategy batchSendMessageStrategy,
     ILogger<MessageService> logger,
     ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse> sendMessagesCommand,
-    ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
-    IAuditService auditService)
+    ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse> deleteQueueMessageCommand)
     : IMessageService
 {
-    public async Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue) => await SendMessageAndDeleteFromDb(messages, queue,true);
+    public async Task ReplayMessages(IEnumerable<QueueMessage> messages, string queue) => await SendMessageAndDeleteFromDb(messages, queue);
         
     public async Task AbortMessages(IEnumerable<QueueMessage> messages, string queue) => await SendMessageAndDeleteFromDb(messages, queue);
 
-    private async Task SendMessageAndDeleteFromDb(IEnumerable<QueueMessage> messages, string queue, bool createAudit = false)
+    private async Task SendMessageAndDeleteFromDb(IEnumerable<QueueMessage> messages, string queue)
     {
         await batchSendMessageStrategy.Execute(messages,
             async (messages) =>
@@ -44,14 +42,6 @@ public class MessageService(
                     });
 
                     ts.Complete();
-
-                    if (createAudit)
-                    {                               
-                        foreach (var message in messages)
-                        {
-                            await auditService.WriteAudit(new MessageQueueReplayAuditMessage(message));                                
-                        }
-                    }                        
                 }
                 catch (Exception ex)
                 {

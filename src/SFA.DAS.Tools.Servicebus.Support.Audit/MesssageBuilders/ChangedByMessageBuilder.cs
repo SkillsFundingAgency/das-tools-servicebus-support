@@ -9,7 +9,7 @@ namespace SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private const string _userIdClaim = ClaimTypes.NameIdentifier;
-        private const string _userEmailClaim = ClaimTypes.Email;
+        private const string _userEmailClaim = ClaimTypes.Name;
 
         public ChangedByMessageBuilder(IHttpContextAccessor httpContextAccessor)
         {
