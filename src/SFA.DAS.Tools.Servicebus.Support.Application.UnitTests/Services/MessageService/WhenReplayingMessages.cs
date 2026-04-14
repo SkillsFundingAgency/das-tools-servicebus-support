@@ -5,7 +5,6 @@ using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
-using SFA.DAS.Tools.Servicebus.Support.Audit;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using System;
@@ -24,37 +23,44 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
         private readonly Mock<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>> _sendMessagesCommand = new Mock<ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>>();
         private readonly Mock<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>> _deleteQueueMessageCommand = new Mock<ICommandHandler<DeleteQueueMessagesCommand, DeleteQueueMessagesCommandResponse>>();
 
+        [SetUp]
+        public void Setup()
+        {
+            _sendMessagesCommand.Invocations.Clear();
+            _deleteQueueMessageCommand.Invocations.Clear();
+        }
+
 
         [Test]
-        public async Task ThenAuditServiceShouldBeCalled()
+        public async Task ThenReplayMessagesShouldCallSendAndDeleteCommands()
         {
-            var _auditService = new Mock<IAuditService>();
             var messages = new List<QueueMessage>();
             var queueMessage = new QueueMessage
             {
                 OriginalMessage = new Message(Encoding.UTF8.GetBytes("{}")) { MessageId = Guid.NewGuid().ToString() }
             };
             messages.Add(queueMessage);
-
-            _auditService.Setup(x => x.WriteAudit(It.IsAny<MessageQueueReplayAuditMessage>()));
+            _sendMessagesCommand.Setup(x => x.Handle(It.IsAny<SendMessagesCommand>()))
+                .ReturnsAsync(new SendMessagesCommandResponse());
+            _deleteQueueMessageCommand.Setup(x => x.Handle(It.IsAny<DeleteQueueMessagesCommand>()))
+                .ReturnsAsync(new DeleteQueueMessagesCommandResponse());
 
             var sut = new Service.MessageService(
                 new BatchSendMessageStrategy(),
                 _logger.Object,
                 _sendMessagesCommand.Object,
-                _deleteQueueMessageCommand.Object,
-                _auditService.Object
+                _deleteQueueMessageCommand.Object
             );
 
             await sut.ReplayMessages(messages, "test");
 
-            _auditService.Verify(s => s.WriteAudit(It.IsAny<MessageQueueReplayAuditMessage>()), Times.Once);
+            _sendMessagesCommand.Verify(s => s.Handle(It.IsAny<SendMessagesCommand>()), Times.Once);
+            _deleteQueueMessageCommand.Verify(s => s.Handle(It.IsAny<DeleteQueueMessagesCommand>()), Times.Once);
         }
 
         [Test]
-        public async Task ThenAuditServiceShouldBeCalledOnceForEveryMessage()
+        public async Task ThenAbortMessagesShouldCallSendAndDeleteCommands()
         {
-            var _auditService = new Mock<IAuditService>();
             var messages = new List<QueueMessage>();
 
             for (var i = 0; i < 4; i++)
@@ -65,20 +71,22 @@ namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Services.Messag
                 };
                 messages.Add(queueMessage);
             }
-
-            _auditService.Setup(x => x.WriteAudit(It.IsAny<MessageQueueReplayAuditMessage>()));
+            _sendMessagesCommand.Setup(x => x.Handle(It.IsAny<SendMessagesCommand>()))
+                .ReturnsAsync(new SendMessagesCommandResponse());
+            _deleteQueueMessageCommand.Setup(x => x.Handle(It.IsAny<DeleteQueueMessagesCommand>()))
+                .ReturnsAsync(new DeleteQueueMessagesCommandResponse());
 
             var sut = new Service.MessageService(
                 new BatchSendMessageStrategy(),
                 _logger.Object,
                 _sendMessagesCommand.Object,
-                _deleteQueueMessageCommand.Object,
-                _auditService.Object
+                _deleteQueueMessageCommand.Object
             );
 
-            await sut.ReplayMessages(messages, "test");
+            await sut.AbortMessages(messages, "test");
 
-            _auditService.Verify(s => s.WriteAudit(It.IsAny<MessageQueueReplayAuditMessage>()), Times.Exactly(4));
+            _sendMessagesCommand.Verify(s => s.Handle(It.IsAny<SendMessagesCommand>()), Times.Once);
+            _deleteQueueMessageCommand.Verify(s => s.Handle(It.IsAny<DeleteQueueMessagesCommand>()), Times.Once);
         }
     }
 }
