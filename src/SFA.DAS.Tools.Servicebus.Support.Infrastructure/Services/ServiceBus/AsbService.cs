@@ -109,6 +109,30 @@ namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus
 
         public async Task<long> GetQueueMessageCountAsync(string queueName) => (await GetQueueDetailsAsync(queueName)).MessageCount;
 
+        public async Task<bool> QueueExistsAsync(string queueName)
+        {
+            var exists = false;
+
+            await _policies.ResiliencePolicy.ExecuteAsync(async token =>
+            {
+                exists = await _managementClient.QueueExistsAsync(queueName, token).ConfigureAwait(false);
+            }, new CancellationToken());
+
+            return exists;
+        }
+
+        public async Task<bool> TopicExistsAsync(string topicName)
+        {
+            var exists = false;
+
+            await _policies.ResiliencePolicy.ExecuteAsync(async token =>
+            {
+                exists = await _managementClient.TopicExistsAsync(topicName, token).ConfigureAwait(false);
+            }, new CancellationToken());
+
+            return exists;
+        }
+
         public async Task SendMessagesAsync(IEnumerable<QueueMessage> messages, string queueName)
         {
             if (!messages.Any())
