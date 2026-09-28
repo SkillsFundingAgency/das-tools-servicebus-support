@@ -12,9 +12,12 @@ public static class ReplayDestinationValidator
     public const string ConfirmationMismatch = "Type the destination name again so it matches.";
     public const string SameAsSourceQueue = "That is the queue these messages were taken from. Use Release selected to put them back there.";
 
+    private static readonly TimeSpan MatchTimeout = TimeSpan.FromMilliseconds(100);
+
     private static readonly Regex NamePattern = new(
         "^[A-Za-z0-9]$|^[A-Za-z0-9][A-Za-z0-9._-]{0,258}[A-Za-z0-9]$",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+        RegexOptions.CultureInvariant | RegexOptions.Compiled,
+        MatchTimeout);
 
     public static string Validate(ReplayDestinationRequest request)
     {
@@ -36,7 +39,14 @@ public static class ReplayDestinationValidator
             return DestinationRequired;
         }
 
-        if (!NamePattern.IsMatch(destination))
+        try
+        {
+            if (!NamePattern.IsMatch(destination))
+            {
+                return DestinationInvalid;
+            }
+        }
+        catch (RegexMatchTimeoutException)
         {
             return DestinationInvalid;
         }
