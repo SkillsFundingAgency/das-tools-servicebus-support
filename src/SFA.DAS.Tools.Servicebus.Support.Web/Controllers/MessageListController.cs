@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SFA.DAS.Tools.Servicebus.Support.Application;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDeleteQueueMessages;
@@ -16,6 +17,7 @@ using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Extensions;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 using SFA.DAS.Tools.Servicebus.Support.Web.App_Start;
 using SFA.DAS.Tools.Servicebus.Support.Web.Models;
 
@@ -32,7 +34,9 @@ public class MessageListController(
     IOptions<ServiceBusErrorManagementSettings> settings,
     ICommandHandler<BatchDeleteQueueMessagesCommand, BatchDeleteQueueMessagesCommandResponse> deleteQueueMessageCommand,
     IRetrieveMessagesService retrieveMessagesService,
-    IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse> getQueueMessageCountQuery)
+    IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse> getQueueMessageCountQuery,
+    IAsbService asbService,
+    ILogger<MessageListController> logger)
     : Controller
 {
     private readonly ServiceBusErrorManagementSettings _settings = settings.Value;
@@ -152,6 +156,83 @@ public class MessageListController(
     }
 
     [HttpPost]
+    public async Task<IActionResult> ReplayMessagesToDestination(ReplayMessagesToDestinationModel model)
+    {
+        if (!Enum.TryParse<ReplayDestinationKind>(model.DestinationKind, true, out var kind))
+        {
+            kind = ReplayDestinationKind.Unspecified;
+        }
+
+        var validationError = ReplayDestinationValidator.Validate(new ReplayDestinationRequest
+        {
+            Confirmed = model.Confirmed,
+            Kind = kind,
+            Destination = model.DestinationName,
+            Confirmation = model.ConfirmationName,
+            SourceQueue = model.QueueName
+        });
+
+        if (validationError != null)
+        {
+            TempData["ErrorMessage"] = validationError;
+            return RedirectToAction("Index", BuildRouteValues(model));
+        }
+
+        var ids = model.Ids?.Split(",", StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+        if (ids.Length == 0)
+        {
+            TempData["ErrorMessage"] = "Select at least one message.";
+            return RedirectToAction("Index", BuildRouteValues(model));
+        }
+
+        var destination = model.DestinationName.Trim();
+
+        try
+        {
+            var exists = kind == ReplayDestinationKind.Queue
+                ? await asbService.QueueExistsAsync(destination)
+                : await asbService.TopicExistsAsync(destination);
+
+            if (!exists)
+            {
+                TempData["ErrorMessage"] = kind == ReplayDestinationKind.Queue
+                    ? $"No queue named {destination} exists in this namespace."
+                    : $"No topic named {destination} exists in this namespace.";
+                return RedirectToAction("Index", BuildRouteValues(model));
+            }
+
+            var response = await getMessagesByIdQuery.Handle(new GetMessagesByIdQuery()
+            {
+                UserId = userService.GetUserId(),
+                Ids = ids
+            });
+
+            if (response.Messages == null || !response.Messages.Any())
+            {
+                TempData["ErrorMessage"] = "Select at least one message.";
+                return RedirectToAction("Index", BuildRouteValues(model));
+            }
+
+            logger.LogInformation(
+                "Replaying {MessageCount} messages from {SourceQueue} to {DestinationKind} {Destination} for user {UserId}",
+                response.Messages.Count(),
+                model.QueueName,
+                kind,
+                destination,
+                userService.GetUserId());
+
+            await messageService.ReplayMessages(response.Messages, destination);
+
+            return RedirectToAction("Index", BuildRouteValues(model));
+        }
+        catch
+        {
+            TempData["ErrorMessage"] = "Could not send the selected messages to that destination. Please try again.";
+            return RedirectToAction("Index", BuildRouteValues(model));
+        }
+    }
+
+    [HttpPost]
     public async Task<IActionResult> DeleteMessages(DeleteMessagesModel model)
     {
         try
@@ -189,6 +270,9 @@ public class MessageListController(
             ReturnGetQuantity = returnGetQuantity <= 0 ? 250 : returnGetQuantity
         };
     }
+
+    private static object BuildRouteValues(ReplayMessagesToDestinationModel model) => BuildRouteValues(model.ReturnOffset,
+        model.ReturnLimit, model.ReturnSearch, model.ReturnSort, model.ReturnOrder, model.ReturnGetQuantity);
 
     private static object BuildRouteValues(ReplayMessagesModel model) => BuildRouteValues(model.ReturnOffset,
         model.ReturnLimit, model.ReturnSearch, model.ReturnSort, model.ReturnOrder, model.ReturnGetQuantity);

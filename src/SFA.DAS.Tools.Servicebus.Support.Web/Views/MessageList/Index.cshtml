@@ -112,6 +112,47 @@
             $('#replayMessagesForm').submit();
         }
 
+        function openReplayToDestination() {
+            $('#replayDestinationError').text('');
+            $('#replayDestinationNameInput').val('');
+            $('#replayDestinationConfirmationInput').val('');
+            $('input[name="replayDestinationKindChoice"]').prop('checked', false);
+            $('#replayToDestinationModal').modal();
+        }
+
+        $('#btnReplayToDestinationConfirmation').click(function () {
+            var destination = $.trim($('#replayDestinationNameInput').val());
+            var confirmation = $.trim($('#replayDestinationConfirmationInput').val());
+            var kind = $('input[name="replayDestinationKindChoice"]:checked').val();
+            var sourceQueue = '@Model.QueueInfo.Name';
+
+            if (!selections.length) {
+                $('#replayDestinationError').text('Select at least one message.');
+                return;
+            }
+
+            if (!kind || !destination || destination.toLowerCase() !== confirmation.toLowerCase()) {
+                $('#replayDestinationError').text('Choose a queue or a topic, enter the destination, and type the same name again.');
+                return;
+            }
+
+            if (destination.toLowerCase() === sourceQueue.toLowerCase()) {
+                $('#replayDestinationError').text('That is the queue these messages were taken from. Use Release selected to put them back there.');
+                return;
+            }
+
+            $('#replayToDestinationModal').modal('hide');
+            displayBusyIndicator();
+            applyStateToForms();
+            $('#replayToDestinationIdsField').val(selections);
+            $('#replayToDestinationQueueNameField').val(sourceQueue);
+            $('#replayToDestinationNameField').val(destination);
+            $('#replayToDestinationKindField').val(kind);
+            $('#replayToDestinationConfirmationField').val(confirmation);
+            $('#replayToDestinationConfirmedField').val('true');
+            $('#replayToDestinationForm').submit();
+        });
+
         function getQueueMessages() {
             displayBusyIndicator();
             applyStateToForms();
@@ -209,9 +250,25 @@
             </form>
 
             <a class="govuk-link" id="btnReplayMessages" href="#" onclick="replayMessages()" title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
+            <a class="govuk-link" id="btnReplayToDestination" href="#" onclick="openReplayToDestination()" title="Send selected messages to a queue or topic you name">Move selected to another queue or topic</a> |
             <form method="post" id="replayMessagesForm" asp-action="ReplayMessages" hidden="hidden">
                 <input type="hidden" name="ids" id="replayMessagesIdsField" />
                 <input type="hidden" name="queueName" id="replayMessagesQueueNameField" />
+                <input class="list-state-field" data-field="returnOffset" type="hidden" name="returnOffset" />
+                <input class="list-state-field" data-field="returnLimit" type="hidden" name="returnLimit" />
+                <input class="list-state-field" data-field="returnSearch" type="hidden" name="returnSearch" />
+                <input class="list-state-field" data-field="returnSort" type="hidden" name="returnSort" />
+                <input class="list-state-field" data-field="returnOrder" type="hidden" name="returnOrder" />
+                <input class="list-state-field" data-field="returnGetQuantity" type="hidden" name="returnGetQuantity" />
+            </form>
+
+            <form method="post" id="replayToDestinationForm" asp-action="ReplayMessagesToDestination" hidden="hidden">
+                <input type="hidden" name="ids" id="replayToDestinationIdsField" />
+                <input type="hidden" name="queueName" id="replayToDestinationQueueNameField" />
+                <input type="hidden" name="destinationName" id="replayToDestinationNameField" />
+                <input type="hidden" name="destinationKind" id="replayToDestinationKindField" />
+                <input type="hidden" name="confirmationName" id="replayToDestinationConfirmationField" />
+                <input type="hidden" name="confirmed" id="replayToDestinationConfirmedField" value="false" />
                 <input class="list-state-field" data-field="returnOffset" type="hidden" name="returnOffset" />
                 <input class="list-state-field" data-field="returnLimit" type="hidden" name="returnLimit" />
                 <input class="list-state-field" data-field="returnSearch" type="hidden" name="returnSearch" />
@@ -343,6 +400,51 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="govuk-button" data-module="govuk-button" id="btnDeleteMessagesModalConfirmation">Confirm</button>
+                    <button type="button" class="govuk-button govuk-button--secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="replayToDestinationModal" tabindex="-1" role="dialog" aria-labelledby="replayToDestinationTitle" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title govuk-heading-m" id="replayToDestinationTitle">Send to another queue or topic</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="govuk-body">This does not use the processing queue. The selected messages are sent to the name you type, then removed from investigating.</p>
+                    <p class="govuk-body">A queue send goes only to that queue. A topic send publishes to that topic, so every matching subscription can receive it.</p>
+                    <div class="govuk-form-group">
+                        <fieldset class="govuk-fieldset">
+                            <legend class="govuk-fieldset__legend">Destination</legend>
+                            <div class="govuk-radios">
+                                <div class="govuk-radios__item">
+                                    <input class="govuk-radios__input" id="replayDestinationKindQueue" name="replayDestinationKindChoice" type="radio" value="Queue">
+                                    <label class="govuk-label govuk-radios__label" for="replayDestinationKindQueue">Queue</label>
+                                </div>
+                                <div class="govuk-radios__item">
+                                    <input class="govuk-radios__input" id="replayDestinationKindTopic" name="replayDestinationKindChoice" type="radio" value="Topic">
+                                    <label class="govuk-label govuk-radios__label" for="replayDestinationKindTopic">Topic</label>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div class="govuk-form-group">
+                        <label class="govuk-label" for="replayDestinationNameInput">Name</label>
+                        <input class="govuk-input" id="replayDestinationNameInput" type="text" autocomplete="off">
+                    </div>
+                    <div class="govuk-form-group">
+                        <label class="govuk-label" for="replayDestinationConfirmationInput">Type the name again</label>
+                        <input class="govuk-input" id="replayDestinationConfirmationInput" type="text" autocomplete="off">
+                    </div>
+                    <p class="govuk-error-message" id="replayDestinationError"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="govuk-button govuk-button--warning" data-module="govuk-button" id="btnReplayToDestinationConfirmation">Send</button>
                     <button type="button" class="govuk-button govuk-button--secondary" data-dismiss="modal">Cancel</button>
                 </div>
             </div>
