@@ -112,6 +112,55 @@
             $('#replayMessagesForm').submit();
         }
 
+        var replayAllRunning = false;
+
+        function replayAllToProcessingQueue() {
+            if (replayAllRunning) {
+                return;
+            }
+
+            var investigating = @Model.Count;
+            if (!window.confirm('Move all ' + investigating + ' messages checked out to you back to the processing queue?')) {
+                return;
+            }
+
+            replayAllRunning = true;
+            replayAllBatches(investigating);
+        }
+
+        async function replayAllBatches(investigating) {
+            var moved = 0;
+            var form = document.getElementById('replayAllForm');
+            setLoadingProgress('Moved 0 of ' + investigating);
+
+            try {
+                while (true) {
+                    var response = await fetch(form.action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        credentials: 'same-origin'
+                    });
+                    var data = await response.json();
+                    if (!response.ok || data.error) {
+                        setLoadingProgress((data.error || 'Could not replay messages. Please try again.') + ' Moved ' + moved + ' so far.');
+                        replayAllRunning = false;
+                        return;
+                    }
+
+                    moved += data.processed;
+                    setLoadingProgress('Moved ' + moved + ' of ' + (moved + data.remaining));
+
+                    if (data.done || data.processed === 0) {
+                        window.location.reload();
+                        return;
+                    }
+                }
+            } catch (e) {
+                setLoadingProgress('Could not replay messages. Please try again. Moved ' + moved + ' so far.');
+                replayAllRunning = false;
+            }
+        }
+
         function openReplayToDestination() {
             $('#replayDestinationError').text('');
             $('#replayDestinationNameInput').val('');
@@ -250,6 +299,10 @@
             </form>
 
             <a class="govuk-link" id="btnReplayMessages" href="#" onclick="replayMessages()" title="Move selected messages back to the processing queue">Move selected to processing queue</a> |
+            <a class="govuk-link" id="btnReplayAllMessages" href="#" onclick="replayAllToProcessingQueue(); return false;" title="Move every message checked out to you back to the processing queue">Move all to processing queue</a> |
+            <form method="post" id="replayAllForm" asp-action="ReplayAllToProcessingQueue" hidden="hidden">
+                <input type="hidden" name="queueName" value="@Model.QueueInfo.Name" />
+            </form>
             <a class="govuk-link" id="btnReplayToDestination" href="#" onclick="openReplayToDestination()" title="Send selected messages to a queue or topic you name">Move selected to another queue or topic</a> |
             <form method="post" id="replayMessagesForm" asp-action="ReplayMessages" hidden="hidden">
                 <input type="hidden" name="ids" id="replayMessagesIdsField" />
