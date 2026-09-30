@@ -39,6 +39,8 @@ public class MessageListController(
     ILogger<MessageListController> logger)
     : Controller
 {
+    public const int ReplayAllBatchSize = 100;
+
     private readonly ServiceBusErrorManagementSettings _settings = settings.Value;
 
     public async Task<IActionResult> Index(int returnOffset = 0, int returnLimit = 10, string returnSearch = null,
@@ -152,6 +154,71 @@ public class MessageListController(
         {
             TempData["ErrorMessage"] = "Could not replay the selected messages. Please try again.";
             return RedirectToAction("Index", BuildRouteValues(model));
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ReplayAllToProcessingQueue(string queueName)
+    {
+        if (string.IsNullOrWhiteSpace(queueName))
+        {
+            return BadRequest(new ReplayAllBatchResponse
+            {
+                Error = "Could not replay messages. Please try again."
+            });
+        }
+
+        try
+        {
+            var userId = userService.GetUserId();
+            var response = await getMessagesQuery.Handle(new GetMessagesQuery
+            {
+                UserId = userId,
+                SearchProperties = new SearchProperties
+                {
+                    Offset = 0,
+                    Limit = ReplayAllBatchSize
+                }
+            });
+
+            var messages = response.Messages?.ToList();
+            if (messages == null || messages.Count == 0)
+            {
+                return Json(new ReplayAllBatchResponse
+                {
+                    Processed = 0,
+                    Remaining = 0,
+                    Done = true
+                });
+            }
+
+            var processingQueueName = queueName.GetProcessingQueueName(_settings.ErrorQueueRegex);
+
+            logger.LogInformation(
+                "Replaying {MessageCount} of {CheckedOutCount} messages from {SourceQueue} to processing queue {ProcessingQueue} for user {UserId}",
+                messages.Count,
+                response.UnfilteredCount,
+                queueName,
+                processingQueueName,
+                userId);
+
+            await messageService.ReplayMessages(messages, processingQueueName);
+
+            var remaining = Math.Max(0, response.UnfilteredCount - messages.Count);
+            return Json(new ReplayAllBatchResponse
+            {
+                Processed = messages.Count,
+                Remaining = remaining,
+                Done = remaining == 0
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to replay a batch from {SourceQueue} for user {UserId}", queueName, userService.GetUserId());
+            return StatusCode(StatusCodes.Status500InternalServerError, new ReplayAllBatchResponse
+            {
+                Error = "Could not replay messages. Please try again."
+            });
         }
     }
 
